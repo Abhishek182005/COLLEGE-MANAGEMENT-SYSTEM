@@ -1,16 +1,40 @@
 {% extends 'base.html' %}
 
-{% block title %}Bulk Excel Import{% endblock %}
-{% block page_heading %}Student Bulk Import{% endblock %}
+{% block title %}Bulk Student Enrollment from Excel{% endblock %}
+{% block page_heading %}Bulk Student Excel Import{% endblock %}
 
 {% block content %}
-<div class="row justify-content-center">
-    <div class="col-lg-7">
-        <div class="card p-4">
-            <h5 class="fw-bold mb-2"><i class="fa-solid fa-file-excel text-success me-2"></i> Import Students from Excel</h5>
+<div class="row g-4 justify-content-center">
+    <!-- Top Action Card: Download Template -->
+    <div class="col-12">
+        <div class="card p-4 bg-light border shadow-sm">
+            <div class="d-flex flex-wrap align-items-center justify-content-between gap-3">
+                <div>
+                    <h5 class="fw-bold mb-1 text-dark">
+                        <i class="fa-solid fa-file-excel text-success me-2 fs-4"></i> Download Ready-to-Use Excel Template
+                    </h5>
+                    <p class="text-secondary small mb-0">
+                        Use our standard pre-formatted Excel template with sample rows and column headers to avoid formatting errors.
+                    </p>
+                </div>
+                <div class="d-flex gap-2">
+                    <a href="{% url 'download_student_excel_sample' %}" class="btn btn-success shadow-sm">
+                        <i class="fa-solid fa-download me-2"></i> Download Sample Template (.xlsx)
+                    </a>
+                    <a href="{% url 'student_list' %}" class="btn btn-outline-secondary">
+                        <i class="fa-solid fa-arrow-left me-1"></i> Back to Directory
+                    </a>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Upload Form -->
+    <div class="col-lg-6">
+        <div class="card p-4 shadow-sm h-100">
+            <h5 class="fw-bold mb-2"><i class="fa-solid fa-cloud-arrow-up text-primary me-2"></i> Upload Completed Spreadsheet</h5>
             <p class="text-secondary small mb-4">
-                Upload a standard spreadsheet (.xlsx) with student rows. Columns expected:
-                <code>RollNo, RegNo, Username, Email, FirstName, LastName, Phone, BloodGroup</code>.
+                Select your default academic allocations below. If your spreadsheet does not specify Department or Batch columns, these selected values will be applied automatically.
             </p>
 
             <form method="post" enctype="multipart/form-data">
@@ -51,14 +75,89 @@
                     <div class="col-12">
                         <label class="form-label small fw-semibold">Choose Excel File (.xlsx) *</label>
                         <input type="file" name="excel_file" class="form-control" accept=".xlsx" required>
+                        <div class="form-text small">Accepted format: Microsoft Excel Spreadsheet (.xlsx).</div>
                     </div>
                 </div>
 
-                <div class="mt-4 d-flex gap-2">
-                    <button type="submit" class="btn btn-success px-4"><i class="fa-solid fa-upload me-2"></i> Upload & Process</button>
-                    <a href="{% url 'student_list' %}" class="btn btn-light">Back to Directory</a>
+                <div class="mt-4 pt-3 border-top d-flex gap-2">
+                    <button type="submit" class="btn btn-primary px-4">
+                        <i class="fa-solid fa-upload me-2"></i> Process & Import Students
+                    </button>
+                    <a href="{% url 'student_list' %}" class="btn btn-light">Cancel</a>
                 </div>
             </form>
+        </div>
+    </div>
+
+    <!-- Instructions & Column Guidelines -->
+    <div class="col-lg-6">
+        <div class="card p-4 shadow-sm h-100">
+            <h5 class="fw-bold mb-2"><i class="fa-solid fa-circle-info text-info me-2"></i> Spreadsheet Column Legend</h5>
+            <p class="text-secondary small mb-3">Columns recognized by the import engine:</p>
+
+            <div class="table-responsive">
+                <table class="table table-sm table-bordered small align-middle mb-3">
+                    <thead class="table-light">
+                        <tr>
+                            <th>Column Name</th>
+                            <th>Status</th>
+                            <th>Example Value</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        <tr>
+                            <td><b>Roll Number</b></td>
+                            <td><span class="badge bg-danger">Required</span></td>
+                            <td><code>CS-2026-101</code></td>
+                        </tr>
+                        <tr>
+                            <td><b>Registration Number</b></td>
+                            <td><span class="badge bg-danger">Required</span></td>
+                            <td><code>REG-CS-101</code></td>
+                        </tr>
+                        <tr>
+                            <td><b>First Name</b></td>
+                            <td><span class="badge bg-danger">Required</span></td>
+                            <td><code>Rahul</code></td>
+                        </tr>
+                        <tr>
+                            <td><b>Last Name</b></td>
+                            <td><span class="badge bg-danger">Required</span></td>
+                            <td><code>Sharma</code></td>
+                        </tr>
+                        <tr>
+                            <td><b>Email Address</b></td>
+                            <td><span class="badge bg-danger">Required</span></td>
+                            <td><code>rahul@college.edu</code></td>
+                        </tr>
+                        <tr>
+                            <td><b>Phone Number</b></td>
+                            <td><span class="badge bg-secondary">Optional</span></td>
+                            <td><code>+91 9876543210</code></td>
+                        </tr>
+                        <tr>
+                            <td><b>Blood Group</b></td>
+                            <td><span class="badge bg-secondary">Optional</span></td>
+                            <td><code>B+, O+, A-, etc.</code></td>
+                        </tr>
+                        <tr>
+                            <td><b>Guardian Name & Phone</b></td>
+                            <td><span class="badge bg-secondary">Optional</span></td>
+                            <td><code>Sanjay Sharma</code></td>
+                        </tr>
+                        <tr>
+                            <td><b>Dept / Course / Sem / Batch</b></td>
+                            <td><span class="badge bg-secondary">Optional</span></td>
+                            <td>Fallbacks to form if left blank</td>
+                        </tr>
+                    </tbody>
+                </table>
+            </div>
+
+            <div class="alert alert-info py-2 small mb-0">
+                <i class="fa-solid fa-key me-1"></i>
+                <b>Default Student Credentials:</b> Every successfully imported student gets an active user account with default password: <code>Student@123</code>.
+            </div>
         </div>
     </div>
 </div>

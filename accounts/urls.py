@@ -8,4 +8,5 @@ urlpatterns = [
     path('change-password/', views.change_password_view, name='change_password'),
     path('users/', views.UserManagementView.as_view(), name='user_management'),
     path('users/<int:user_id>/toggle/', views.toggle_user_active, name='toggle_user_active'),
+    path('college-settings/', views.college_settings_view, name='college_settings'),
 ]

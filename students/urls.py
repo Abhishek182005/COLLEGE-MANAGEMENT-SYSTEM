@@ -11,4 +11,5 @@ urlpatterns = [
     path('<int:pk>/id-card/', views.student_id_card_pdf_view, name='student_id_card_pdf'),
     path('export/excel/', views.export_students_excel_view, name='export_students_excel'),
     path('import/excel/', views.import_students_excel_view, name='import_students_excel'),
+    path('import/excel/sample/', views.download_student_excel_sample_view, name='download_student_excel_sample'),
 ]

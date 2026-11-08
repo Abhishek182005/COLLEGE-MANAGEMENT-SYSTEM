@@ -276,3 +276,77 @@ def toggle_user_active(request, user_id):
     )
     messages.success(request, f"User {target_user.username} has been {status_str}.")
     return redirect('user_management')
+
+
+@login_required
+@role_required('ADMIN')
+def college_settings_view(request):
+    """
+    White-labeling & Institutional Profile Configuration.
+    Allows administrators to change college name, short code, branding, logo, contact, and affiliation.
+    """
+    from .models import CollegeSetting
+    settings_obj = CollegeSetting.get_settings()
+
+    if request.method == 'POST':
+        name = request.POST.get('name', '').strip()
+        short_name = request.POST.get('short_name', '').strip()
+        college_code = request.POST.get('college_code', '').strip()
+        tagline = request.POST.get('tagline', '').strip()
+        address = request.POST.get('address', '').strip()
+        email = request.POST.get('email', '').strip()
+        phone = request.POST.get('phone', '').strip()
+        website = request.POST.get('website', '').strip()
+        affiliation = request.POST.get('affiliation', '').strip()
+        established_year = request.POST.get('established_year', '').strip()
+        attendance_threshold = request.POST.get('attendance_threshold', '').strip()
+        principal_name = request.POST.get('principal_name', '').strip()
+        footer_text = request.POST.get('footer_text', '').strip()
+
+        if name:
+            settings_obj.name = name
+        if short_name:
+            settings_obj.short_name = short_name
+        if college_code:
+            settings_obj.college_code = college_code
+        if tagline:
+            settings_obj.tagline = tagline
+        if address:
+            settings_obj.address = address
+        if email:
+            settings_obj.email = email
+        if phone:
+            settings_obj.phone = phone
+        if website:
+            settings_obj.website = website
+        if affiliation:
+            settings_obj.affiliation = affiliation
+        if established_year and established_year.isdigit():
+            settings_obj.established_year = int(established_year)
+        if attendance_threshold and attendance_threshold.isdigit():
+            settings_obj.attendance_threshold = int(attendance_threshold)
+        if principal_name:
+            settings_obj.principal_name = principal_name
+        if footer_text:
+            settings_obj.footer_text = footer_text
+
+        if request.FILES.get('logo'):
+            settings_obj.logo = request.FILES['logo']
+
+        settings_obj.save()
+
+        log_audit(
+            request=request,
+            action="COLLEGE_SETTINGS_UPDATED",
+            entity_type="CollegeSetting",
+            entity_id=settings_obj.id,
+            details=f"Institutional profile updated: Name set to '{settings_obj.name}', Code '{settings_obj.college_code}'."
+        )
+
+        messages.success(
+            request,
+            f"Institutional settings for '{settings_obj.name}' updated successfully! Changes are active immediately across all portals, PDF ID cards, and marksheets."
+        )
+        return redirect('college_settings')
+
+    return render(request, 'accounts/college_settings.html', {'settings': settings_obj})

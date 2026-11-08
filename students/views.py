@@ -200,6 +200,17 @@ def export_students_excel_view(request):
 
 @login_required
 @role_required('ADMIN')
+def download_student_excel_sample_view(request):
+    """Downloads a pre-formatted Excel template for bulk student enrollment."""
+    from reports.utils import generate_student_excel_template
+    excel_bytes = generate_student_excel_template()
+    response = HttpResponse(excel_bytes, content_type='application/vnd.openxmlformats-officedocument.spreadsheetml.sheet')
+    response['Content-Disposition'] = 'attachment; filename="Student_Bulk_Enrollment_Template.xlsx"'
+    return response
+
+
+@login_required
+@role_required('ADMIN')
 def import_students_excel_view(request):
     if request.method == 'POST' and request.FILES.get('excel_file'):
         file_obj = request.FILES['excel_file']
@@ -216,10 +227,19 @@ def import_students_excel_view(request):
 
             created_count, errors = parse_and_import_students_excel(file_obj, dept, course, sem, batch)
             if created_count > 0:
-                messages.success(request, f"Successfully imported {created_count} students!")
+                log_audit(
+                    request=request,
+                    action="BULK_STUDENTS_IMPORTED",
+                    entity_type="Student",
+                    entity_id=None,
+                    details=f"Bulk imported {created_count} students via Excel ({file_obj.name}) into {course.code} (Batch {batch.name})."
+                )
+                messages.success(request, f"Successfully imported {created_count} students! Default passwords set to 'Student@123'.")
             if errors:
-                for err in errors[:5]:
+                for err in errors[:8]:
                     messages.warning(request, err)
+                if len(errors) > 8:
+                    messages.info(request, f"...and {len(errors) - 8} more warnings/errors skipped.")
         except Exception as e:
             messages.error(request, f"Failed to import: {str(e)}")
 

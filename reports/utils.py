@@ -101,9 +101,19 @@ def generate_student_id_card_pdf(student):
     elements = []
 
     # Header Card
-    college_name = getattr(settings, 'COLLEGE_NAME', 'CAMPUSCONNECT INSTITUTE')
+    try:
+        from accounts.models import CollegeSetting
+        college_obj = CollegeSetting.get_settings()
+        college_name = college_obj.name
+        signatory_name = college_obj.principal_name
+        tagline_txt = college_obj.tagline
+    except Exception:
+        college_name = getattr(settings, 'COLLEGE_NAME', 'CAMPUSCONNECT INSTITUTE')
+        signatory_name = "Principal / Authorized Signatory"
+        tagline_txt = "STUDENT IDENTITY CARD"
+
     elements.append(Paragraph(college_name.upper(), title_style))
-    elements.append(Paragraph("STUDENT IDENTITY CARD", subtitle_style))
+    elements.append(Paragraph(tagline_txt, subtitle_style))
     elements.append(Spacer(1, 8))
 
     # Badge Ribbon
@@ -144,7 +154,7 @@ def generate_student_id_card_pdf(student):
 
     # Signature line
     sig_data = [
-        [Paragraph("Student's Signature", subtitle_style), Paragraph("Principal / Authorized Signatory", subtitle_style)]
+        [Paragraph("Student's Signature", subtitle_style), Paragraph(signatory_name, subtitle_style)]
     ]
     sig_table = Table(sig_data, colWidths=[135, 135])
     sig_table.setStyle(TableStyle([
@@ -219,9 +229,20 @@ def generate_marksheet_pdf(student, examination):
     elements = []
 
     # Header
-    college_name = getattr(settings, 'COLLEGE_NAME', 'CAMPUSCONNECT INSTITUTE OF TECHNOLOGY')
+    try:
+        from accounts.models import CollegeSetting
+        college_obj = CollegeSetting.get_settings()
+        college_name = college_obj.name
+        affiliation_txt = college_obj.affiliation
+        principal_title = college_obj.principal_name
+    except Exception:
+        college_name = getattr(settings, 'COLLEGE_NAME', 'CAMPUSCONNECT INSTITUTE OF TECHNOLOGY')
+        affiliation_txt = "OFFICIAL ACADEMIC TRANSCRIPT & MARKSHEET"
+        principal_title = "College Principal"
+
     elements.append(Paragraph(college_name.upper(), title_style))
     elements.append(Paragraph("OFFICIAL ACADEMIC TRANSCRIPT & MARKSHEET", subtitle_style))
+    elements.append(Paragraph(affiliation_txt, subtitle_style))
     elements.append(Paragraph(f"{examination.name} • Academic Session: {examination.academic_session.name}", subtitle_style))
     elements.append(Spacer(1, 14))
     elements.append(HRFlowable(width="100%", thickness=1.5, color=colors.HexColor('#2563eb'), spaceAfter=14))
@@ -345,7 +366,7 @@ def generate_marksheet_pdf(student, examination):
         [
             Paragraph("Controller of Examinations", subtitle_style),
             Paragraph("Dean of Academic Affairs", subtitle_style),
-            Paragraph("College Principal", subtitle_style)
+            Paragraph(principal_title, subtitle_style)
         ]
     ]
     sig_table = Table(sig_data, colWidths=[170, 170, 170])
@@ -430,12 +451,18 @@ def export_students_to_excel(students_queryset):
 
 def export_attendance_to_excel(session):
     """Exports attendance records for a specific session to Excel."""
+    from accounts.models import CollegeSetting
+    try:
+        college_name = CollegeSetting.get_settings().name
+    except Exception:
+        college_name = "CampusConnect"
+
     wb = Workbook()
     ws = wb.active
     ws.title = "Attendance Session"
 
     # Title block
-    ws["A1"] = f"CampusConnect - Attendance Report: {session.subject.name} ({session.subject.code})"
+    ws["A1"] = f"{college_name} - Attendance Report: {session.subject.name} ({session.subject.code})"
     ws["A1"].font = Font(size=14, bold=True, color="1E3A8A")
     ws["A2"] = f"Date: {session.date} | Slot: {session.lecture_slot} | Faculty: {session.faculty.full_name} | Batch: {session.batch.name if session.batch else 'All'}"
     ws["A2"].font = Font(size=10, italic=True)
@@ -473,34 +500,245 @@ def export_attendance_to_excel(session):
     return buffer.getvalue()
 
 
-def parse_and_import_students_excel(file_obj, department_default, course_default, semester_default, batch_default):
-    """Parses an uploaded Excel file and imports student accounts."""
-    from accounts.models import CustomUser
-    from students.models import Student
+def generate_student_excel_template():
+    """
+    Generates a sample Excel (.xlsx) spreadsheet for bulk student imports.
+    Includes styled headers, sample rows, instructions, and column definitions.
+    """
+    from accounts.models import CollegeSetting
+    try:
+        college_obj = CollegeSetting.get_settings()
+        college_name = college_obj.name
+    except Exception:
+        college_name = "CampusConnect College ERP"
 
-    wb = load_workbook(file_obj)
+    wb = Workbook()
+    ws = wb.active
+    ws.title = "Student Import Template"
+
+    # Title block
+    ws["A1"] = f"{college_name} - Bulk Student Enrollment Template"
+    ws["A1"].font = Font(name="Calibri", size=13, bold=True, color="1E3A8A")
+    ws["A2"] = "Instructions: Enter student records below. Fields with (*) are required. Department/Course/Semester/Batch columns are optional and fallback to form defaults if left blank."
+    ws["A2"].font = Font(name="Calibri", size=9, italic=True, color="475569")
+
+    header_font = Font(name="Calibri", size=10, bold=True, color="FFFFFF")
+    header_fill = PatternFill(start_color="1E40AF", end_color="1E40AF", fill_type="solid")
+    center_align = Alignment(horizontal="center", vertical="center", wrap_text=True)
+    thin_border = Border(
+        left=Side(style='thin', color='CBD5E1'),
+        right=Side(style='thin', color='CBD5E1'),
+        top=Side(style='thin', color='CBD5E1'),
+        bottom=Side(style='thin', color='CBD5E1')
+    )
+
+    headers = [
+        "Roll Number *",
+        "Registration Number *",
+        "First Name *",
+        "Last Name *",
+        "Email Address *",
+        "Phone Number",
+        "Blood Group",
+        "Guardian Name",
+        "Guardian Phone",
+        "Department Code",
+        "Course Code",
+        "Semester Number",
+        "Batch Name"
+    ]
+
+    ws.append([])  # row 3 empty
+    ws.append(headers)  # row 4
+
+    for cell in ws[4]:
+        cell.font = header_font
+        cell.fill = header_fill
+        cell.alignment = center_align
+        cell.border = thin_border
+    ws.row_dimensions[4].height = 26
+
+    sample_rows = [
+        [
+            "CS-2026-101", "REG-CS-101", "Rahul", "Sharma", "rahul.sharma@campusconnect.edu",
+            "+91 9876543210", "B+", "Sanjay Sharma", "+91 9876500001", "CSE", "BT-CS", 5, "Batch 2024-2028"
+        ],
+        [
+            "EC-2026-102", "REG-EC-102", "Priya", "Nair", "priya.nair@campusconnect.edu",
+            "+91 9876543211", "O+", "Suresh Nair", "+91 9876500002", "ECE", "BT-EC", 5, "Batch 2024-2028"
+        ],
+        [
+            "ME-2026-103", "REG-ME-103", "Vikram", "Singh", "vikram.singh@campusconnect.edu",
+            "+91 9876543212", "A+", "Kuldip Singh", "+91 9876500003", "ME", "BT-ME", 5, "Batch 2024-2028"
+        ],
+    ]
+
+    for row in sample_rows:
+        ws.append(row)
+
+    for row in ws.iter_rows(min_row=5, max_row=7):
+        for cell in row:
+            cell.font = Font(name="Calibri", size=10)
+            cell.border = thin_border
+            cell.alignment = Alignment(vertical="center")
+        ws.row_dimensions[row[0].row].height = 20
+
+    col_widths = {
+        'A': 18, 'B': 22, 'C': 16, 'D': 16, 'E': 32, 'F': 18,
+        'G': 14, 'H': 20, 'I': 18, 'J': 18, 'K': 16, 'L': 18, 'M': 20
+    }
+    for col_letter, width in col_widths.items():
+        ws.column_dimensions[col_letter].width = width
+
+    buffer = io.BytesIO()
+    wb.save(buffer)
+    buffer.seek(0)
+    return buffer.getvalue()
+
+
+def parse_and_import_students_excel(file_obj, department_default, course_default, semester_default, batch_default):
+    """
+    Parses an uploaded Excel file and imports student accounts.
+    Dynamically maps column headers (supports both template and legacy formats).
+    Supports optional row-level overrides for Department, Course, Semester, and Batch.
+    """
+    from accounts.models import CustomUser
+    from academics.models import Department, Course, Semester
+    from students.models import Student, Batch
+
+    wb = load_workbook(file_obj, data_only=True)
     ws = wb.active
     created_count = 0
     errors = []
 
-    # Expected columns: RollNo, RegNo, Username, Email, FirstName, LastName, Phone, BloodGroup
-    for idx, row in enumerate(ws.iter_rows(min_row=2, values_only=True), start=2):
-        if not row or not row[0]:
-            continue
-        try:
-            roll_no = str(row[0]).strip()
-            reg_no = str(row[1]).strip() if len(row) > 1 and row[1] else f"REG-{roll_no}"
-            username = str(row[2]).strip() if len(row) > 2 and row[2] else roll_no.lower()
-            email = str(row[3]).strip() if len(row) > 3 and row[3] else f"{username}@campusconnect.edu"
-            first_name = str(row[4]).strip() if len(row) > 4 and row[4] else "Student"
-            last_name = str(row[5]).strip() if len(row) > 5 and row[5] else roll_no
-            phone = str(row[6]).strip() if len(row) > 6 and row[6] else ""
-            blood_group = str(row[7]).strip() if len(row) > 7 and row[7] else ""
+    # Find the header row (check first 6 rows)
+    header_row_idx = None
+    header_map = {}
 
+    for row_idx, row in enumerate(ws.iter_rows(max_row=6, values_only=True), start=1):
+        if not row:
+            continue
+        row_str = " ".join([str(c).lower() for c in row if c])
+        if "roll" in row_str or "reg" in row_str or "email" in row_str or "first" in row_str:
+            header_row_idx = row_idx
+            for col_idx, val in enumerate(row):
+                if not val:
+                    continue
+                v = str(val).lower().replace(" ", "").replace("_", "").replace("*", "")
+                if "roll" in v:
+                    header_map['roll'] = col_idx
+                elif "reg" in v:
+                    header_map['reg'] = col_idx
+                elif "first" in v:
+                    header_map['first_name'] = col_idx
+                elif "last" in v:
+                    header_map['last_name'] = col_idx
+                elif "email" in v:
+                    header_map['email'] = col_idx
+                elif "guardianname" in v or v == "guardian":
+                    header_map['guardian_name'] = col_idx
+                elif "guardianphone" in v:
+                    header_map['guardian_phone'] = col_idx
+                elif "phone" in v:
+                    header_map['phone'] = col_idx
+                elif "blood" in v:
+                    header_map['blood'] = col_idx
+                elif "username" in v:
+                    header_map['username'] = col_idx
+                elif "dept" in v:
+                    header_map['dept'] = col_idx
+                elif "course" in v:
+                    header_map['course'] = col_idx
+                elif "sem" in v:
+                    header_map['semester'] = col_idx
+                elif "batch" in v:
+                    header_map['batch'] = col_idx
+            break
+
+    if header_row_idx is None:
+        header_row_idx = 1
+        # Fallback to positional mapping
+        header_map = {
+            'roll': 0, 'reg': 1, 'first_name': 2, 'last_name': 3,
+            'email': 4, 'phone': 5, 'blood': 6
+        }
+
+    start_data_row = header_row_idx + 1
+
+    for row_idx, row in enumerate(ws.iter_rows(min_row=start_data_row, values_only=True), start=start_data_row):
+        if not row or all(c is None for c in row):
+            continue
+
+        def get_val(key, default=""):
+            idx = header_map.get(key)
+            if idx is not None and idx < len(row) and row[idx] is not None:
+                return str(row[idx]).strip()
+            return default
+
+        roll_no = get_val('roll')
+        if not roll_no:
+            continue
+
+        reg_no = get_val('reg', f"REG-{roll_no}")
+        first_name = get_val('first_name', "Student")
+        last_name = get_val('last_name', roll_no)
+        username = get_val('username', roll_no.lower().replace("-", "_").replace(" ", ""))
+        email = get_val('email', f"{username}@campusconnect.edu")
+        phone = get_val('phone')
+        blood_group = get_val('blood').upper()
+        guardian_name = get_val('guardian_name')
+        guardian_phone = get_val('guardian_phone')
+
+        # Check existing roll number
+        if Student.objects.filter(roll_number=roll_no).exists():
+            errors.append(f"Row {row_idx}: Roll number '{roll_no}' already exists in student directory.")
+            continue
+
+        # Check existing username
+        if CustomUser.objects.filter(username=username).exists():
+            username = f"{username}_{roll_no.lower().replace('-', '_')}"
             if CustomUser.objects.filter(username=username).exists():
-                errors.append(f"Row {idx}: Username '{username}' already exists.")
+                errors.append(f"Row {row_idx}: User account for roll '{roll_no}' already exists.")
                 continue
 
+        # Check existing email
+        if CustomUser.objects.filter(email=email).exists():
+            errors.append(f"Row {row_idx}: Email '{email}' is already associated with another user.")
+            continue
+
+        # Department resolution
+        dept_val = get_val('dept')
+        dept_obj = department_default
+        if dept_val:
+            found_dept = Department.objects.filter(models.Q(code__iexact=dept_val) | models.Q(name__iexact=dept_val)).first()
+            if found_dept:
+                dept_obj = found_dept
+
+        # Course resolution
+        course_val = get_val('course')
+        course_obj = course_default
+        if course_val:
+            found_course = Course.objects.filter(models.Q(code__iexact=course_val) | models.Q(name__iexact=course_val)).first()
+            if found_course:
+                course_obj = found_course
+
+        # Semester resolution
+        sem_val = get_val('semester')
+        sem_obj = semester_default
+        if sem_val and sem_val.isdigit():
+            found_sem = Semester.objects.filter(course=course_obj, semester_number=int(sem_val)).first()
+            if found_sem:
+                sem_obj = found_sem
+
+        # Batch resolution
+        batch_val = get_val('batch')
+        batch_obj = batch_default
+        if batch_val:
+            found_batch = Batch.objects.filter(course=course_obj, name__iexact=batch_val).first()
+            if found_batch:
+                batch_obj = found_batch
+
+        try:
             user = CustomUser.objects.create_user(
                 username=username,
                 email=email,
@@ -511,18 +749,22 @@ def parse_and_import_students_excel(file_obj, department_default, course_default
                 role=CustomUser.ROLE_STUDENT
             )
 
+            valid_blood = blood_group if blood_group in ['A+', 'A-', 'B+', 'B-', 'O+', 'O-', 'AB+', 'AB-'] else None
+
             Student.objects.create(
                 user=user,
                 roll_number=roll_no,
                 registration_number=reg_no,
-                department=department_default,
-                course=course_default,
-                current_semester=semester_default,
-                batch=batch_default,
-                blood_group=blood_group if blood_group in ['A+', 'A-', 'B+', 'B-', 'O+', 'O-', 'AB+', 'AB-'] else None,
+                department=dept_obj,
+                course=course_obj,
+                current_semester=sem_obj,
+                batch=batch_obj,
+                blood_group=valid_blood,
+                guardian_name=guardian_name or None,
+                guardian_phone=guardian_phone or None,
             )
             created_count += 1
         except Exception as e:
-            errors.append(f"Row {idx}: {str(e)}")
+            errors.append(f"Row {row_idx} ({roll_no}): {str(e)}")
 
     return created_count, errors

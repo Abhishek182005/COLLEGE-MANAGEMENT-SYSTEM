@@ -62,3 +62,34 @@ class StudentManagementAndInteractiveTests(TestCase):
         self.assertEqual(post_resp.status_code, 302)
         self.assertFalse(Student.objects.filter(id=self.student.id).exists())
         self.assertFalse(CustomUser.objects.filter(id=self.student_user.id).exists())
+
+
+    def test_download_student_excel_sample(self):
+        url = reverse('download_student_excel_sample')
+        resp = self.client.get(url)
+        self.assertEqual(resp.status_code, 200)
+        self.assertEqual(resp['Content-Type'], 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet')
+        self.assertIn('Student_Bulk_Enrollment_Template.xlsx', resp['Content-Disposition'])
+
+    def test_bulk_student_excel_import(self):
+        from reports.utils import generate_student_excel_template
+        import io
+
+        sample_excel_bytes = generate_student_excel_template()
+        file_obj = io.BytesIO(sample_excel_bytes)
+        file_obj.name = 'sample.xlsx'
+
+        url = reverse('import_students_excel')
+        resp = self.client.post(url, {
+            'department': self.dept.id,
+            'course': self.course.id,
+            'semester': self.sem.id,
+            'batch': self.batch.id,
+            'excel_file': file_obj,
+        })
+        self.assertEqual(resp.status_code, 302)
+
+        # Verify sample students were created (CS-2026-101, EC-2026-102, ME-2026-103)
+        self.assertTrue(Student.objects.filter(roll_number='CS-2026-101').exists())
+        self.assertTrue(Student.objects.filter(roll_number='EC-2026-102').exists())
+        self.assertTrue(Student.objects.filter(roll_number='ME-2026-103').exists())

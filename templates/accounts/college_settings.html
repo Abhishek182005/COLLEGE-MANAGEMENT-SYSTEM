@@ -1,0 +1,207 @@
+{% extends 'base.html' %}
+
+{% block title %}College Settings & Institutional Branding{% endblock %}
+{% block page_heading %}Institutional Customization & Branding{% endblock %}
+
+{% block content %}
+<div class="row g-4 mb-4">
+    <!-- Active Identity Summary Banner -->
+    <div class="col-12">
+        <div class="card p-4 text-white shadow-sm" style="background: linear-gradient(135deg, #0f172a 0%, #1e3a8a 100%);">
+            <div class="d-flex flex-wrap align-items-center justify-content-between gap-3">
+                <div class="d-flex align-items-center gap-3">
+                    {% if settings.logo %}
+                        <img src="{{ settings.logo.url }}" alt="Logo" class="rounded bg-white p-1 border shadow-sm" width="70" height="70" style="object-fit: contain;">
+                    {% else %}
+                        <div class="rounded bg-white text-primary d-flex align-items-center justify-content-center shadow-sm" style="width: 70px; height: 70px; font-size: 2rem;">
+                            <i class="fa-solid fa-graduation-cap"></i>
+                        </div>
+                    {% endif %}
+                    <div>
+                        <div class="d-flex align-items-center gap-2 mb-1">
+                            <h3 class="fw-bold mb-0 text-white">{{ settings.name }}</h3>
+                            <span class="badge bg-primary-subtle text-light border border-light-subtle">{{ settings.short_name }}</span>
+                            <span class="badge bg-secondary-subtle text-light border border-light-subtle">{{ settings.college_code }}</span>
+                        </div>
+                        <p class="text-white-50 mb-1 small italic">"{{ settings.tagline }}"</p>
+                        <small class="text-white-50">
+                            <i class="fa-solid fa-certificate text-warning me-1"></i> {{ settings.affiliation }}
+                        </small>
+                    </div>
+                </div>
+                <div class="text-end">
+                    <span class="badge bg-success py-2 px-3 rounded-pill">
+                        <i class="fa-solid fa-shield-halved me-1"></i> White-Label Active
+                    </span>
+                    <small class="d-block text-white-50 mt-1">Est. {{ settings.established_year }}</small>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Form Section -->
+    <div class="col-lg-8">
+        <div class="card p-4 shadow-sm">
+            <div class="d-flex justify-content-between align-items-center mb-4 pb-2 border-bottom">
+                <div>
+                    <h5 class="fw-bold mb-1"><i class="fa-solid fa-sliders text-primary me-2"></i> Configure College Identity</h5>
+                    <p class="text-secondary small mb-0">Update institutional name, credentials, and branding to re-brand the ERP for your college.</p>
+                </div>
+            </div>
+
+            <form method="post" enctype="multipart/form-data">
+                {% csrf_token %}
+                <div class="row g-3">
+                    <!-- General Information -->
+                    <div class="col-12">
+                        <h6 class="fw-bold text-secondary small text-uppercase mb-2">1. Basic Institutional Identity</h6>
+                    </div>
+                    <div class="col-md-8">
+                        <label class="form-label small fw-semibold">College / University Full Name *</label>
+                        <input type="text" name="name" class="form-control" value="{{ settings.name }}" placeholder="e.g. St. Xavier's Institute of Engineering" required>
+                        <div class="form-text small">Appears on page titles, marksheets, ID cards, and official reports.</div>
+                    </div>
+                    <div class="col-md-4">
+                        <label class="form-label small fw-semibold">Short Acronym / Code *</label>
+                        <input type="text" name="short_name" class="form-control" value="{{ settings.short_name }}" placeholder="e.g. SXIE" required>
+                    </div>
+
+                    <div class="col-md-6">
+                        <label class="form-label small fw-semibold">College Code / AISHE Code *</label>
+                        <input type="text" name="college_code" class="form-control" value="{{ settings.college_code }}" placeholder="e.g. C-45920 / SXIE-092" required>
+                    </div>
+                    <div class="col-md-6">
+                        <label class="form-label small fw-semibold">Established Year</label>
+                        <input type="number" name="established_year" class="form-control" value="{{ settings.established_year }}" placeholder="e.g. 1998">
+                    </div>
+
+                    <div class="col-12">
+                        <label class="form-label small fw-semibold">Motto / Tagline</label>
+                        <input type="text" name="tagline" class="form-control" value="{{ settings.tagline }}" placeholder="e.g. Empowering Innovation, Research & Leadership">
+                    </div>
+
+                    <div class="col-12">
+                        <label class="form-label small fw-semibold">Affiliation & Accreditation Line</label>
+                        <input type="text" name="affiliation" class="form-control" value="{{ settings.affiliation }}" placeholder="e.g. Approved by AICTE, Affiliated to State University, NAAC Grade A+">
+                        <div class="form-text small">Printed in the header of transcripts, marksheets, and official circulars.</div>
+                    </div>
+
+                    <!-- Contact & Location -->
+                    <div class="col-12 mt-4">
+                        <h6 class="fw-bold text-secondary small text-uppercase mb-2">2. Campus Contact & Location</h6>
+                    </div>
+                    <div class="col-12">
+                        <label class="form-label small fw-semibold">Campus Postal Address</label>
+                        <textarea name="address" class="form-control" rows="2" placeholder="Full campus street address, city, state, pin code...">{{ settings.address }}</textarea>
+                    </div>
+
+                    <div class="col-md-4">
+                        <label class="form-label small fw-semibold">Official Contact Email *</label>
+                        <input type="email" name="email" class="form-control" value="{{ settings.email }}" required>
+                    </div>
+                    <div class="col-md-4">
+                        <label class="form-label small fw-semibold">Phone / Helpline *</label>
+                        <input type="text" name="phone" class="form-control" value="{{ settings.phone }}" required>
+                    </div>
+                    <div class="col-md-4">
+                        <label class="form-label small fw-semibold">Official Website</label>
+                        <input type="url" name="website" class="form-control" value="{{ settings.website }}">
+                    </div>
+
+                    <!-- Branding Assets -->
+                    <div class="col-12 mt-4">
+                        <h6 class="fw-bold text-secondary small text-uppercase mb-2">3. Institutional Emblem & Signatory</h6>
+                    </div>
+                    <div class="col-md-6">
+                        <label class="form-label small fw-semibold">College Logo / Seal Image</label>
+                        <input type="file" name="logo" class="form-control" accept="image/*">
+                        {% if settings.logo %}
+                            <div class="mt-2 d-flex align-items-center gap-2">
+                                <img src="{{ settings.logo.url }}" width="40" height="40" class="rounded border" style="object-fit: contain;">
+                                <small class="text-muted">Current Logo: {{ settings.logo.name }}</small>
+                            </div>
+                        {% endif %}
+                    </div>
+                    <div class="col-md-6">
+                        <label class="form-label small fw-semibold">Principal / Director / Dean Name</label>
+                        <input type="text" name="principal_name" class="form-control" value="{{ settings.principal_name }}" placeholder="Dr. Principal Name">
+                        <div class="form-text small">Rendered as authorized signatory on official marksheets.</div>
+                    </div>
+
+                    <div class="col-md-6">
+                        <label class="form-label small fw-semibold">Minimum Attendance Requirement (%)</label>
+                        <div class="input-group">
+                            <input type="number" name="attendance_threshold" class="form-control" value="{{ settings.attendance_threshold }}" min="50" max="100">
+                            <span class="input-group-text">%</span>
+                        </div>
+                        <div class="form-text small">Threshold below which shortage warnings are triggered.</div>
+                    </div>
+
+                    <div class="col-md-6">
+                        <label class="form-label small fw-semibold">Footer Branding Text</label>
+                        <input type="text" name="footer_text" class="form-control" value="{{ settings.footer_text }}" placeholder="Copyright text...">
+                    </div>
+                </div>
+
+                <div class="mt-4 pt-3 border-top d-flex gap-2">
+                    <button type="submit" class="btn btn-primary px-4">
+                        <i class="fa-solid fa-check me-2"></i> Save & Apply Changes
+                    </button>
+                    <a href="{% url 'admin_dashboard' %}" class="btn btn-light">Cancel</a>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <!-- Live Preview & Sales White-Label Information -->
+    <div class="col-lg-4">
+        <!-- Live Preview Card -->
+        <div class="card p-4 mb-4 shadow-sm">
+            <h6 class="fw-bold mb-3"><i class="fa-solid fa-eye text-info me-2"></i> Real-time Application Impact</h6>
+            
+            <div class="p-3 bg-light rounded border mb-3">
+                <small class="fw-bold d-block text-secondary mb-1">Navbar & Browser Title:</small>
+                <div class="d-flex align-items-center gap-2 bg-dark p-2 rounded text-white small">
+                    <i class="fa-solid fa-graduation-cap text-info"></i>
+                    <span class="fw-bold">{{ settings.short_name }}</span>
+                    <span class="text-secondary">| {{ settings.college_code }}</span>
+                </div>
+                <small class="text-muted d-block mt-1">Title: <code>Dashboard | {{ settings.name }}</code></small>
+            </div>
+
+            <div class="p-3 bg-light rounded border mb-3">
+                <small class="fw-bold d-block text-secondary mb-1">Student ID Card (ReportLab PDF):</small>
+                <div class="p-2 border rounded bg-white text-center shadow-xs">
+                    <div class="fw-bold text-primary small text-uppercase">{{ settings.name }}</div>
+                    <div class="text-muted" style="font-size: 0.68rem;">STUDENT IDENTITY CARD</div>
+                    <div class="badge bg-primary my-1" style="font-size: 0.65rem;">STUDENT PASS</div>
+                    <div class="text-secondary" style="font-size: 0.65rem;">{{ settings.address|truncatechars:45 }}</div>
+                </div>
+            </div>
+
+            <div class="p-3 bg-light rounded border">
+                <small class="fw-bold d-block text-secondary mb-1">Official Marksheet Header:</small>
+                <div class="p-2 border rounded bg-white text-center shadow-xs">
+                    <div class="fw-bold text-dark small">{{ settings.name }}</div>
+                    <div class="text-secondary small" style="font-size: 0.7rem;">OFFICIAL ACADEMIC TRANSCRIPT</div>
+                    <div class="text-muted" style="font-size: 0.65rem;">{{ settings.affiliation|truncatechars:50 }}</div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Software Selling / White-Labeling Guide -->
+        <div class="card p-4 bg-primary-subtle border-primary-subtle shadow-sm">
+            <h6 class="fw-bold text-primary mb-2"><i class="fa-solid fa-tag me-2"></i> Ready for Software Sale</h6>
+            <p class="text-dark small mb-3">
+                When onboarding a new client institution, simply update these settings once. All student ID cards, marksheets, notifications, navigation menus, and login pages adapt immediately without code changes!
+            </p>
+            <ul class="text-secondary small mb-0 ps-3">
+                <li class="mb-1">Instant logo & color identity change.</li>
+                <li class="mb-1">Configurable attendance compliance threshold.</li>
+                <li class="mb-1">Print-ready official PDF transcripts.</li>
+                <li>Single database row handles all branding.</li>
+            </ul>
+        </div>
+    </div>
+</div>
+{% endblock %}

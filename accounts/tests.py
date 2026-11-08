@@ -106,3 +106,43 @@ class AccountsSecurityAndRoleTests(TestCase):
         })
         self.assertEqual(response.status_code, 200)
         self.assertContains(response, "inactive")
+
+
+    def test_college_settings_update(self):
+        """Admin can update institutional name and settings for white-labeling."""
+        self.client.login(username='admin_test', password='Password123')
+        url = reverse('college_settings')
+
+        # GET settings page
+        get_resp = self.client.get(url)
+        self.assertEqual(get_resp.status_code, 200)
+
+        # POST new college name
+        post_resp = self.client.post(url, {
+            'name': "St. Xavier's Engineering College",
+            'short_name': "SXEC",
+            'college_code': "SXEC-101",
+            'tagline': "Excellence in Engineering",
+            'address': "123 Tech Campus Road",
+            'email': "info@sxec.edu",
+            'phone': "+91 9999888877",
+            'website': "https://sxec.edu",
+            'affiliation': "Affiliated to State University | NAAC A+",
+            'established_year': 2005,
+            'attendance_threshold': 75,
+            'principal_name': "Dr. Xavier Roy",
+            'footer_text': "Powered by CampusConnect ERP"
+        })
+        self.assertEqual(post_resp.status_code, 302)
+
+        from accounts.models import CollegeSetting
+        active_settings = CollegeSetting.get_settings()
+        self.assertEqual(active_settings.name, "St. Xavier's Engineering College")
+        self.assertEqual(active_settings.short_name, "SXEC")
+
+        # Verify context processor renders new name on login page for guest
+        self.client.logout()
+        login_resp = self.client.get(reverse('login'))
+        self.assertEqual(login_resp.status_code, 200)
+        self.assertContains(login_resp, "Excellence in Engineering")
+        self.assertContains(login_resp, "St. Xavier&#x27;s Engineering College")
