@@ -13,7 +13,16 @@
             <span class="badge bg-primary px-3 py-1 rounded-pill mx-auto mb-3">{{ faculty.get_designation_display }}</span>
 
             <div class="text-start border-top pt-3 small text-secondary">
-                <p class="mb-1"><b>Department:</b> {{ faculty.department.name }}</p>
+                <p class="mb-2">
+                    <b>Department:</b>
+                    {% if faculty.department %}
+                        <a href="{% url 'department_detail' faculty.department.id %}" class="badge bg-light text-primary border text-decoration-none">
+                            <i class="fa-solid fa-building me-1"></i> {{ faculty.department.name }}
+                        </a>
+                    {% else %}
+                        N/A
+                    {% endif %}
+                </p>
                 <p class="mb-1"><b>Qualification:</b> {{ faculty.qualification }}</p>
                 <p class="mb-1"><b>Cabin Office:</b> {{ faculty.cabin_number|default:"N/A" }}</p>
                 <p class="mb-1"><b>Official Email:</b> {{ faculty.email }}</p>
@@ -21,6 +30,17 @@
                 <p class="mb-1"><b>Emergency:</b> {{ faculty.emergency_contact|default:"N/A" }}</p>
                 <p class="mb-0"><b>Weekly Workload:</b> <span class="badge bg-success">{{ workload_hours }} Class Hours / Week</span></p>
             </div>
+
+            {% if request.user.role == 'ADMIN' %}
+            <div class="border-top pt-3 mt-3 d-flex gap-2 justify-content-center">
+                <a href="{% url 'faculty_edit' faculty.id %}" class="btn btn-sm btn-outline-primary">
+                    <i class="fa-solid fa-pencil me-1"></i> Edit
+                </a>
+                <a href="{% url 'faculty_delete' faculty.id %}" class="btn btn-sm btn-outline-danger">
+                    <i class="fa-solid fa-trash me-1"></i> Delete
+                </a>
+            </div>
+            {% endif %}
         </div>
     </div>
 
@@ -31,9 +51,18 @@
             <div class="row g-3">
                 {% for alloc in allocations %}
                     <div class="col-md-6">
-                        <div class="border rounded p-3 bg-light">
-                            <span class="badge bg-primary mb-1">{{ alloc.subject.code }}</span>
-                            <h6 class="fw-bold text-dark mb-1">{{ alloc.subject.name }}</h6>
+                        <div class="border rounded p-3 bg-light position-relative">
+                            <div class="d-flex justify-content-between align-items-center mb-1">
+                                <span class="badge bg-primary">{{ alloc.subject.code }}</span>
+                                <a href="{% url 'subject_detail' alloc.subject.id %}" class="btn btn-sm btn-outline-secondary py-0 px-2" title="View Subject">
+                                    <i class="fa-solid fa-arrow-right"></i>
+                                </a>
+                            </div>
+                            <h6 class="fw-bold text-dark mb-1">
+                                <a href="{% url 'subject_detail' alloc.subject.id %}" class="text-dark text-decoration-none hover-primary">
+                                    {{ alloc.subject.name }}
+                                </a>
+                            </h6>
                             <small class="text-muted d-block">Credits: {{ alloc.subject.credits }} • Sem {{ alloc.subject.semester.semester_number }}</small>
                             <small class="text-secondary">Type: {{ alloc.subject.get_subject_type_display }}</small>
                         </div>
@@ -63,7 +92,11 @@
                             <tr>
                                 <td class="fw-semibold">{{ c.get_day_of_week_display }}</td>
                                 <td><span class="badge bg-light text-dark border">{{ c.time_slot }}</span></td>
-                                <td>{{ c.subject.code }} - {{ c.subject.name }}</td>
+                                <td>
+                                    <a href="{% url 'subject_detail' c.subject.id %}" class="text-decoration-none fw-semibold">
+                                        {{ c.subject.code }} - {{ c.subject.name }}
+                                    </a>
+                                </td>
                                 <td>Room {{ c.classroom.room_number }}</td>
                                 <td>Sem {{ c.semester.semester_number }}{% if c.batch %} (Batch {{ c.batch.name }}){% endif %}</td>
                             </tr>

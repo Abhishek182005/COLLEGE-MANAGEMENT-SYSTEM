@@ -42,13 +42,18 @@
                             </small>
                         </div>
                         {% if is_admin %}
-                            <a href="{% url 'toggle_exam_publish' ex.id %}" class="btn btn-sm {% if ex.is_published %}btn-outline-warning{% else %}btn-success{% endif %}">
-                                {% if ex.is_published %}
-                                    <i class="fa-solid fa-eye-slash me-1"></i> Unpublish Results
-                                {% else %}
-                                    <i class="fa-solid fa-globe me-1"></i> Publish Results
-                                {% endif %}
-                            </a>
+                            <div class="d-flex gap-2">
+                                <a href="{% url 'toggle_exam_publish' ex.id %}" class="btn btn-sm {% if ex.is_published %}btn-outline-warning{% else %}btn-success{% endif %}">
+                                    {% if ex.is_published %}
+                                        <i class="fa-solid fa-eye-slash me-1"></i> Unpublish Results
+                                    {% else %}
+                                        <i class="fa-solid fa-globe me-1"></i> Publish Results
+                                    {% endif %}
+                                </a>
+                                <a href="{% url 'exam_delete' ex.id %}" class="btn btn-sm btn-outline-danger">
+                                    <i class="fa-solid fa-trash me-1"></i> Delete
+                                </a>
+                            </div>
                         {% endif %}
                     </div>
 
@@ -70,8 +75,12 @@
                                 {% for comp in ex.components.all %}
                                     <tr>
                                         <td>
-                                            <span class="fw-semibold text-primary">{{ comp.subject.code }}</span>
-                                            <span class="text-dark small">- {{ comp.subject.name }}</span>
+                                            <a href="{% url 'subject_detail' comp.subject.id %}" class="fw-semibold text-primary text-decoration-none">
+                                                {{ comp.subject.code }}
+                                            </a>
+                                            <a href="{% url 'subject_detail' comp.subject.id %}" class="text-dark small text-decoration-none">
+                                                - {{ comp.subject.name }}
+                                            </a>
                                         </td>
                                         <td>{{ comp.title }}</td>
                                         <td><b>{{ comp.max_marks }}</b></td>

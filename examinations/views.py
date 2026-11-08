@@ -191,3 +191,16 @@ def download_marksheet_pdf_view(request, exam_id):
     response = HttpResponse(pdf_bytes, content_type='application/pdf')
     response['Content-Disposition'] = f'inline; filename="Marksheet_{student.roll_number}_{examination.id}.pdf"'
     return response
+
+@login_required
+@role_required('ADMIN')
+def exam_delete_view(request, pk):
+    exam = get_object_or_404(Examination, pk=pk)
+    if request.method == 'POST':
+        name = exam.name
+        exam_id = exam.id
+        exam.delete()
+        log_audit(request, "EXAM_DELETED", "Examination", exam_id, f"Deleted examination '{name}'.")
+        messages.success(request, f"Examination '{name}' deleted successfully.")
+        return redirect('examination_list')
+    return render(request, 'academics/confirm_delete.html', {'object': exam, 'type': 'Examination', 'cancel_url': 'examination_list'})

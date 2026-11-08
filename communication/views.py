@@ -101,3 +101,16 @@ def notice_create_view(request):
         'audience_choices': Notice.AUDIENCE_CHOICES,
     }
     return render(request, 'communication/notice_form.html', context)
+
+@login_required
+@role_required('ADMIN', 'FACULTY')
+def notice_delete_view(request, pk):
+    notice = get_object_or_404(Notice, pk=pk)
+    if request.method == 'POST':
+        title = notice.title
+        n_id = notice.id
+        notice.delete()
+        log_audit(request, "NOTICE_DELETED", "Notice", n_id, f"Deleted notice '{title}'.")
+        messages.success(request, f"Notice '{title}' deleted successfully.")
+        return redirect('notice_list')
+    return render(request, 'academics/confirm_delete.html', {'object': notice, 'type': 'Campus Notice', 'cancel_url': 'notice_detail'})

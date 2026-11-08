@@ -134,3 +134,25 @@ def timetable_create_view(request):
         'batches': Batch.objects.all(),
     }
     return render(request, 'timetable/timetable_form.html', context)
+
+@login_required
+@role_required('ADMIN')
+def timetable_delete_view(request, pk):
+    entry = get_object_or_404(Timetable, pk=pk)
+    if request.method == 'POST':
+        subj_code = entry.subject.code
+        slot = entry.time_slot
+        day = entry.get_day_of_week_display()
+        entry_id = entry.id
+        entry.delete()
+        log_audit(
+            request=request,
+            action="TIMETABLE_DELETED",
+            entity_type="Timetable",
+            entity_id=entry_id,
+            details=f"Removed timetable schedule: {subj_code} on {day} ({slot})."
+        )
+        messages.success(request, f"Schedule for {subj_code} ({day} {slot}) removed successfully.")
+        return redirect('timetable_master')
+
+    return render(request, 'academics/confirm_delete.html', {'object': entry, 'type': 'Timetable Class Slot', 'cancel_url': 'timetable_master'})

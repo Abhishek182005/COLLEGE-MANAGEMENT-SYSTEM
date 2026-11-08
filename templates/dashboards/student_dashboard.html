@@ -17,7 +17,12 @@
                             Roll No: <b>{{ student.roll_number }}</b> • Reg No: {{ student.registration_number }}
                         </p>
                         <small class="text-white-50">
-                            {{ student.course.name }} (Sem {{ student.current_semester.semester_number }}) • Batch: {{ student.batch.name }}
+                            {% if student.course %}
+                                <a href="{% url 'course_detail' student.course.id %}" class="text-white text-decoration-underline">
+                                    {{ student.course.name }}
+                                </a>
+                            {% endif %}
+                            (Sem {{ student.current_semester.semester_number }}) • Batch: {{ student.batch.name }}
                         </small>
                     </div>
                 </div>
@@ -79,8 +84,17 @@
                                 <span class="badge bg-primary-subtle text-primary border border-primary fw-semibold">{{ c.time_slot }}</span>
                                 <span class="badge bg-light text-dark border"><i class="fa-solid fa-door-open me-1"></i> Room {{ c.classroom.room_number }}</span>
                             </div>
-                            <h6 class="fw-bold text-dark mb-1">{{ c.subject.name }} ({{ c.subject.code }})</h6>
-                            <small class="text-secondary"><i class="fa-solid fa-user-tie me-1"></i> {{ c.faculty.full_name }}</small>
+                            <h6 class="fw-bold text-dark mb-1">
+                                <a href="{% url 'subject_detail' c.subject.id %}" class="text-dark text-decoration-none">
+                                    {{ c.subject.name }} ({{ c.subject.code }})
+                                </a>
+                            </h6>
+                            <small class="text-secondary">
+                                <i class="fa-solid fa-user-tie me-1"></i>
+                                <a href="{% url 'faculty_detail' c.faculty.id %}" class="text-secondary text-decoration-none">
+                                    {{ c.faculty.full_name }}
+                                </a>
+                            </small>
                         </div>
                     {% empty %}
                         <div class="text-center py-4 text-muted">
@@ -115,8 +129,14 @@
                             {% for m in recent_marks %}
                                 <tr>
                                     <td>
-                                        <div class="fw-semibold text-dark">{{ m.assessment_component.subject.code }}</div>
-                                        <small class="text-secondary">{{ m.assessment_component.subject.name|truncatechars:18 }}</small>
+                                        <div class="fw-semibold text-dark">
+                                            <a href="{% url 'subject_detail' m.assessment_component.subject.id %}" class="text-dark text-decoration-none">
+                                                {{ m.assessment_component.subject.code }}
+                                            </a>
+                                        </div>
+                                        <a href="{% url 'subject_detail' m.assessment_component.subject.id %}" class="text-secondary small text-decoration-none">
+                                            {{ m.assessment_component.subject.name|truncatechars:18 }}
+                                        </a>
                                     </td>
                                     <td><small class="text-muted">{{ m.assessment_component.examination.name|truncatechars:20 }}</small></td>
                                     <td>
@@ -160,7 +180,11 @@
                                 </a>
                                 <span class="badge bg-warning text-dark">Due: {{ a.due_date|date:"M d" }}</span>
                             </div>
-                            <small class="text-secondary d-block">{{ a.subject.code }}: {{ a.subject.name }}</small>
+                            <small class="text-secondary d-block">
+                                <a href="{% url 'subject_detail' a.subject.id %}" class="text-secondary text-decoration-none">
+                                    {{ a.subject.code }}: {{ a.subject.name }}
+                                </a>
+                            </small>
                             <div class="mt-2 text-end">
                                 <a href="{% url 'assignment_detail' a.id %}" class="btn btn-sm btn-primary">
                                     <i class="fa-solid fa-upload me-1"></i> Submit Work

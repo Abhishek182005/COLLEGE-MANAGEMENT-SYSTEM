@@ -1,0 +1,171 @@
+{% extends 'base.html' %}
+
+{% block title %}{{ course.name }} | Course{% endblock %}
+{% block page_heading %}Degree Program & Curriculum{% endblock %}
+
+{% block content %}
+<div class="row g-4 mb-4">
+    <div class="col-12">
+        <div class="card p-4" style="background: linear-gradient(135deg, #1e3a8a 0%, #3b82f6 100%); color: #fff;">
+            <div class="d-flex flex-wrap justify-content-between align-items-center gap-3">
+                <div>
+                    <div class="d-flex align-items-center gap-2 mb-1">
+                        <span class="badge bg-white text-primary fs-6">{{ course.code }}</span>
+                        <a href="{% url 'department_detail' course.department.id %}" class="badge bg-white text-dark text-decoration-none">
+                            <i class="fa-solid fa-building-columns me-1"></i> {{ course.department.name }}
+                        </a>
+                    </div>
+                    <h4 class="fw-bold mb-1">{{ course.name }}</h4>
+                    <p class="mb-0 text-white-50 small">
+                        Duration: <b>{{ course.duration_years }} Years</b> • {{ course.total_semesters }} Semesters • {{ total_students_count }} Students Enrolled
+                    </p>
+                </div>
+
+                {% if is_admin %}
+                    <div class="d-flex gap-2">
+                        <a href="{% url 'subject_create' %}" class="btn btn-light text-primary btn-sm fw-semibold shadow-sm">
+                            <i class="fa-solid fa-plus me-1"></i> Add Subject
+                        </a>
+                        <a href="{% url 'course_edit' course.id %}" class="btn btn-outline-light btn-sm">
+                            <i class="fa-solid fa-pen-to-square me-1"></i> Edit Course
+                        </a>
+                        <a href="{% url 'course_delete' course.id %}" class="btn btn-danger btn-sm shadow-sm">
+                            <i class="fa-solid fa-trash me-1"></i> Delete
+                        </a>
+                    </div>
+                {% endif %}
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Tabs for Semesters, Batches, Students -->
+<div class="card">
+    <div class="card-header bg-white border-bottom-0 pb-0">
+        <ul class="nav nav-tabs card-header-tabs" role="tablist">
+            <li class="nav-item">
+                <button class="nav-link active fw-semibold" data-bs-toggle="tab" data-bs-target="#tab-curriculum">
+                    <i class="fa-solid fa-book-open me-1"></i> Semester Curriculum ({{ semesters.count }})
+                </button>
+            </li>
+            <li class="nav-item">
+                <button class="nav-link fw-semibold" data-bs-toggle="tab" data-bs-target="#tab-batches">
+                    <i class="fa-solid fa-users-rectangle me-1"></i> Batches & Sections ({{ batches.count }})
+                </button>
+            </li>
+            <li class="nav-item">
+                <button class="nav-link fw-semibold" data-bs-toggle="tab" data-bs-target="#tab-enrolled">
+                    <i class="fa-solid fa-user-graduate me-1"></i> Enrolled Students ({{ total_students_count }})
+                </button>
+            </li>
+        </ul>
+    </div>
+
+    <div class="card-body p-4 tab-content">
+        <!-- Tab 1: Semester Curriculum -->
+        <div class="tab-pane fade show active" id="tab-curriculum">
+            <div class="row g-4">
+                {% for sem in semesters %}
+                    <div class="col-md-6">
+                        <div class="border rounded-3 p-3 bg-light h-100">
+                            <div class="d-flex justify-content-between align-items-center mb-2 pb-2 border-bottom">
+                                <h6 class="fw-bold mb-0 text-primary">Semester {{ sem.semester_number }}</h6>
+                                <small class="text-secondary">{{ sem.academic_session.name }}</small>
+                            </div>
+
+                            <ul class="list-group list-group-flush bg-transparent">
+                                {% for s in sem.subjects.all %}
+                                    <li class="list-group-item bg-transparent px-0 py-2 d-flex justify-content-between align-items-center">
+                                        <div>
+                                            <a href="{% url 'subject_detail' s.id %}" class="fw-semibold text-dark text-decoration-none">
+                                                <span class="badge bg-primary-subtle text-primary border border-primary me-1">{{ s.code }}</span>
+                                                {{ s.name }}
+                                            </a>
+                                            <small class="text-muted d-block ms-1">Credits: {{ s.credits }} • {{ s.get_subject_type_display }}</small>
+                                        </div>
+                                        <div class="d-flex align-items-center gap-1">
+                                            <a href="{% url 'subject_detail' s.id %}" class="btn btn-sm btn-light"><i class="fa-solid fa-eye"></i></a>
+                                            {% if is_admin %}
+                                                <a href="{% url 'subject_delete' s.id %}" class="btn btn-sm btn-outline-danger"><i class="fa-solid fa-trash"></i></a>
+                                            {% endif %}
+                                        </div>
+                                    </li>
+                                {% empty %}
+                                    <li class="list-group-item bg-transparent px-0 text-muted small">No subjects registered for this semester yet.</li>
+                                {% endfor %}
+                            </ul>
+                        </div>
+                    </div>
+                {% empty %}
+                    <div class="col-12 text-center py-4 text-muted">No semesters configured for this course.</div>
+                {% endfor %}
+            </div>
+        </div>
+
+        <!-- Tab 2: Batches -->
+        <div class="tab-pane fade" id="tab-batches">
+            <div class="row g-3">
+                {% for b in batches %}
+                    <div class="col-md-4">
+                        <div class="border rounded-3 p-3 bg-light">
+                            <h6 class="fw-bold text-dark mb-1">{{ b.name }}</h6>
+                            <small class="badge bg-secondary mb-2">Section {{ b.section }}</small>
+                            <div class="small text-secondary">{{ b.students.count }} Students Enrolled</div>
+                        </div>
+                    </div>
+                {% empty %}
+                    <div class="col-12 text-center py-4 text-muted">No batches registered.</div>
+                {% endfor %}
+            </div>
+        </div>
+
+        <!-- Tab 3: Enrolled Students -->
+        <div class="tab-pane fade" id="tab-enrolled">
+            <div class="table-responsive">
+                <table class="table table-hover align-middle">
+                    <thead>
+                        <tr>
+                            <th>Student</th>
+                            <th>Roll Number</th>
+                            <th>Semester</th>
+                            <th>Batch</th>
+                            <th>Attendance</th>
+                            <th class="text-end">Actions</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for st in students %}
+                            {% with stats=st.get_attendance_stats %}
+                            <tr>
+                                <td>
+                                    <a href="{% url 'student_detail' st.id %}" class="fw-semibold text-dark text-decoration-none">
+                                        {{ st.full_name }}
+                                    </a>
+                                </td>
+                                <td><span class="badge bg-light text-dark border">{{ st.roll_number }}</span></td>
+                                <td>Sem {{ st.current_semester.semester_number }}</td>
+                                <td>{{ st.batch.name }} ({{ st.batch.section }})</td>
+                                <td>
+                                    <span class="badge {% if stats.shortage %}bg-danger{% else %}bg-success{% endif %}">
+                                        {{ stats.percentage }}%
+                                    </span>
+                                </td>
+                                <td class="text-end">
+                                    <a href="{% url 'student_detail' st.id %}" class="btn btn-sm btn-light"><i class="fa-solid fa-chevron-right"></i></a>
+                                    {% if is_admin %}
+                                        <a href="{% url 'student_edit' st.id %}" class="btn btn-sm btn-outline-secondary"><i class="fa-solid fa-pen"></i></a>
+                                        <a href="{% url 'student_delete' st.id %}" class="btn btn-sm btn-outline-danger"><i class="fa-solid fa-trash"></i></a>
+                                    {% endif %}
+                                </td>
+                            </tr>
+                            {% endwith %}
+                        {% empty %}
+                            <tr><td colspan="6" class="text-center py-4 text-muted">No students enrolled in this course yet.</td></tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

@@ -113,3 +113,75 @@ def faculty_create_view(request):
         'designations': Faculty.DESIGNATION_CHOICES,
     }
     return render(request, 'faculty/faculty_form.html', context)
+
+@login_required
+@role_required('ADMIN')
+def faculty_edit_view(request, pk):
+    faculty = get_object_or_404(Faculty, pk=pk)
+    user = faculty.user
+    if request.method == 'POST':
+        fname = request.POST.get('first_name')
+        lname = request.POST.get('last_name')
+        email = request.POST.get('email')
+        phone = request.POST.get('phone')
+        dept_id = request.POST.get('department')
+        designation = request.POST.get('designation')
+        qualification = request.POST.get('qualification')
+        cabin = request.POST.get('cabin_number')
+        emergency = request.POST.get('emergency_contact')
+
+        user.first_name = fname
+        user.last_name = lname
+        user.email = email
+        user.phone = phone
+        user.save()
+
+        faculty.department_id = dept_id
+        faculty.designation = designation
+        faculty.qualification = qualification
+        faculty.cabin_number = cabin
+        faculty.emergency_contact = emergency
+        faculty.save()
+
+        log_audit(
+            request=request,
+            action="FACULTY_UPDATED",
+            entity_type="Faculty",
+            entity_id=faculty.id,
+            details=f"Faculty details updated for {faculty.employee_id} ({fname} {lname}) by admin."
+        )
+        messages.success(request, f"Faculty {fname} {lname} updated successfully.")
+        return redirect('faculty_detail', pk=faculty.pk)
+
+    context = {
+        'faculty': faculty,
+        'departments': Department.objects.all(),
+        'designations': Faculty.DESIGNATION_CHOICES,
+        'is_edit': True,
+    }
+    return render(request, 'faculty/faculty_form.html', context)
+
+
+@login_required
+@role_required('ADMIN')
+def faculty_delete_view(request, pk):
+    faculty = get_object_or_404(Faculty, pk=pk)
+    if request.method == 'POST':
+        emp_id = faculty.employee_id
+        name = faculty.full_name
+        fac_id = faculty.id
+        user = faculty.user
+        faculty.delete()
+        if user:
+            user.delete()
+        log_audit(
+            request=request,
+            action="FACULTY_DELETED",
+            entity_type="Faculty",
+            entity_id=fac_id,
+            details=f"Permanently deleted faculty member {emp_id} ({name}) and user account."
+        )
+        messages.success(request, f"Faculty {name} ({emp_id}) deleted successfully.")
+        return redirect('faculty_list')
+
+    return render(request, 'academics/confirm_delete.html', {'object': faculty, 'type': 'Faculty Member', 'cancel_url': 'faculty_detail'})

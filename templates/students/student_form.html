@@ -1,45 +1,48 @@
 {% extends 'base.html' %}
 
-{% block title %}Add New Student{% endblock %}
-{% block page_heading %}Student Enrollment{% endblock %}
+{% block title %}{% if is_edit %}Edit {{ student.full_name }}{% else %}Enroll Student{% endif %}{% endblock %}
+{% block page_heading %}{% if is_edit %}Edit Student Record{% else %}Student Enrollment{% endif %}{% endblock %}
 
 {% block content %}
 <div class="row justify-content-center">
     <div class="col-lg-9">
         <div class="card p-4">
-            <h5 class="fw-bold mb-3"><i class="fa-solid fa-user-plus text-primary me-2"></i> Enroll New Student</h5>
+            <h5 class="fw-bold mb-3">
+                <i class="fa-solid fa-user-graduate text-primary me-2"></i>
+                {% if is_edit %}Update Student Record: {{ student.full_name }}{% else %}Enroll New Student{% endif %}
+            </h5>
             <form method="post">
                 {% csrf_token %}
                 <div class="row g-3">
                     <div class="col-md-6">
                         <label class="form-label small fw-semibold">Roll Number *</label>
-                        <input type="text" name="roll_number" class="form-control" placeholder="e.g. 2026CS110" required>
+                        <input type="text" name="roll_number" class="form-control" placeholder="e.g. 2026CS110" value="{{ student.roll_number|default:'' }}" required>
                     </div>
                     <div class="col-md-6">
                         <label class="form-label small fw-semibold">Registration Number *</label>
-                        <input type="text" name="registration_number" class="form-control" placeholder="e.g. REG2026010" required>
+                        <input type="text" name="registration_number" class="form-control" placeholder="e.g. REG2026010" value="{{ student.registration_number|default:'' }}" required>
                     </div>
                     <div class="col-md-6">
                         <label class="form-label small fw-semibold">First Name *</label>
-                        <input type="text" name="first_name" class="form-control" placeholder="First Name" required>
+                        <input type="text" name="first_name" class="form-control" placeholder="First Name" value="{{ student.user.first_name|default:'' }}" required>
                     </div>
                     <div class="col-md-6">
                         <label class="form-label small fw-semibold">Last Name *</label>
-                        <input type="text" name="last_name" class="form-control" placeholder="Last Name" required>
+                        <input type="text" name="last_name" class="form-control" placeholder="Last Name" value="{{ student.user.last_name|default:'' }}" required>
                     </div>
                     <div class="col-md-6">
                         <label class="form-label small fw-semibold">Email Address *</label>
-                        <input type="email" name="email" class="form-control" placeholder="student@campusconnect.edu" required>
+                        <input type="email" name="email" class="form-control" placeholder="student@campusconnect.edu" value="{{ student.user.email|default:'' }}" required>
                     </div>
                     <div class="col-md-6">
                         <label class="form-label small fw-semibold">Phone Number</label>
-                        <input type="text" name="phone" class="form-control" placeholder="+91 9876543210">
+                        <input type="text" name="phone" class="form-control" placeholder="+91 9876543210" value="{{ student.user.phone|default:'' }}">
                     </div>
                     <div class="col-md-6">
                         <label class="form-label small fw-semibold">Department *</label>
                         <select name="department" class="form-select" required>
                             {% for d in departments %}
-                                <option value="{{ d.id }}">{{ d.name }} ({{ d.code }})</option>
+                                <option value="{{ d.id }}" {% if student.department_id == d.id %}selected{% endif %}>{{ d.name }} ({{ d.code }})</option>
                             {% endfor %}
                         </select>
                     </div>
@@ -47,7 +50,7 @@
                         <label class="form-label small fw-semibold">Course *</label>
                         <select name="course" class="form-select" required>
                             {% for c in courses %}
-                                <option value="{{ c.id }}">{{ c.name }} ({{ c.code }})</option>
+                                <option value="{{ c.id }}" {% if student.course_id == c.id %}selected{% endif %}>{{ c.name }} ({{ c.code }})</option>
                             {% endfor %}
                         </select>
                     </div>
@@ -55,7 +58,7 @@
                         <label class="form-label small fw-semibold">Current Semester *</label>
                         <select name="semester" class="form-select" required>
                             {% for s in semesters %}
-                                <option value="{{ s.id }}">{{ s.course.code }} - Sem {{ s.semester_number }}</option>
+                                <option value="{{ s.id }}" {% if student.current_semester_id == s.id %}selected{% endif %}>{{ s.course.code }} - Sem {{ s.semester_number }}</option>
                             {% endfor %}
                         </select>
                     </div>
@@ -63,7 +66,7 @@
                         <label class="form-label small fw-semibold">Batch & Section *</label>
                         <select name="batch" class="form-select" required>
                             {% for b in batches %}
-                                <option value="{{ b.id }}">{{ b.name }} (Sec {{ b.section }})</option>
+                                <option value="{{ b.id }}" {% if student.batch_id == b.id %}selected{% endif %}>{{ b.name }} (Sec {{ b.section }})</option>
                             {% endfor %}
                         </select>
                     </div>
@@ -72,22 +75,25 @@
                         <select name="blood_group" class="form-select">
                             <option value="">Select</option>
                             {% for bg, label in blood_groups %}
-                                <option value="{{ bg }}">{{ label }}</option>
+                                <option value="{{ bg }}" {% if student.blood_group == bg %}selected{% endif %}>{{ label }}</option>
                             {% endfor %}
                         </select>
                     </div>
                     <div class="col-md-6">
                         <label class="form-label small fw-semibold">Guardian Name</label>
-                        <input type="text" name="guardian_name" class="form-control" placeholder="Parent or Guardian Name">
+                        <input type="text" name="guardian_name" class="form-control" placeholder="Parent or Guardian Name" value="{{ student.guardian_name|default:'' }}">
                     </div>
                     <div class="col-md-6">
                         <label class="form-label small fw-semibold">Guardian Contact</label>
-                        <input type="text" name="guardian_phone" class="form-control" placeholder="Guardian Phone Number">
+                        <input type="text" name="guardian_phone" class="form-control" placeholder="Guardian Phone Number" value="{{ student.guardian_phone|default:'' }}">
                     </div>
                 </div>
+
                 <div class="mt-4 d-flex gap-2">
-                    <button type="submit" class="btn btn-primary px-4"><i class="fa-solid fa-check me-2"></i> Create Student Account</button>
-                    <a href="{% url 'student_list' %}" class="btn btn-light">Cancel</a>
+                    <button type="submit" class="btn btn-primary px-4">
+                        <i class="fa-solid fa-check me-2"></i> {% if is_edit %}Save Changes{% else %}Create Student Account{% endif %}
+                    </button>
+                    <a href="{% if is_edit %}{% url 'student_detail' student.id %}{% else %}{% url 'student_list' %}{% endif %}" class="btn btn-light">Cancel</a>
                 </div>
             </form>
         </div>

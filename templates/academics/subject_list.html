@@ -5,7 +5,7 @@
 
 {% block content %}
 <div class="card p-4">
-    <div class="d-flex justify-content-between align-items-center mb-4">
+    <div class="d-flex flex-wrap justify-content-between align-items-center gap-3 mb-4">
         <div>
             <h5 class="fw-bold mb-1">Subjects & Curriculum</h5>
             <p class="text-secondary small mb-0">Theory, labs, credit weightages, and allocated teaching faculty.</p>
@@ -27,14 +27,28 @@
                     <th>Credits</th>
                     <th>Type</th>
                     <th>Allocated Faculty</th>
+                    <th class="text-end">Actions</th>
                 </tr>
             </thead>
             <tbody>
                 {% for s in subjects %}
                     <tr>
-                        <td><span class="badge bg-primary fs-6">{{ s.code }}</span></td>
-                        <td class="fw-semibold text-dark">{{ s.name }}</td>
-                        <td>{{ s.semester.course.code }} - Sem {{ s.semester.semester_number }}</td>
+                        <td>
+                            <a href="{% url 'subject_detail' s.id %}" class="badge bg-primary fs-6 text-decoration-none">
+                                {{ s.code }}
+                            </a>
+                        </td>
+                        <td>
+                            <a href="{% url 'subject_detail' s.id %}" class="fw-bold text-dark text-decoration-none">
+                                {{ s.name }}
+                            </a>
+                        </td>
+                        <td>
+                            <a href="{% url 'course_detail' s.semester.course.id %}" class="text-decoration-none text-dark fw-semibold">
+                                {{ s.semester.course.code }}
+                            </a>
+                            <small class="text-secondary d-block">Sem {{ s.semester.semester_number }}</small>
+                        </td>
                         <td><span class="badge bg-light text-dark border">{{ s.credits }} Credits</span></td>
                         <td>
                             {% if s.subject_type == 'THEORY' %}
@@ -47,14 +61,29 @@
                         </td>
                         <td>
                             {% for alloc in s.allocations.all %}
-                                <span class="badge bg-light text-dark border"><i class="fa-solid fa-user-tie text-secondary me-1"></i> {{ alloc.faculty.full_name }}</span>
+                                <a href="{% url 'faculty_detail' alloc.faculty.id %}" class="badge bg-light text-dark border text-decoration-none">
+                                    <i class="fa-solid fa-user-tie text-secondary me-1"></i> {{ alloc.faculty.full_name }}
+                                </a>
                             {% empty %}
                                 <span class="text-danger small">Unallocated</span>
                             {% endfor %}
                         </td>
+                        <td class="text-end">
+                            <a href="{% url 'subject_detail' s.id %}" class="btn btn-sm btn-light" title="View Details">
+                                <i class="fa-solid fa-eye"></i>
+                            </a>
+                            {% if is_admin %}
+                                <a href="{% url 'subject_edit' s.id %}" class="btn btn-sm btn-outline-secondary" title="Edit">
+                                    <i class="fa-solid fa-pen"></i>
+                                </a>
+                                <a href="{% url 'subject_delete' s.id %}" class="btn btn-sm btn-outline-danger" title="Delete">
+                                    <i class="fa-solid fa-trash"></i>
+                                </a>
+                            {% endif %}
+                        </td>
                     </tr>
                 {% empty %}
-                    <tr><td colspan="6" class="text-center py-4 text-muted">No subjects registered yet.</td></tr>
+                    <tr><td colspan="7" class="text-center py-5 text-muted">No subjects registered yet.</td></tr>
                 {% endfor %}
             </tbody>
         </table>

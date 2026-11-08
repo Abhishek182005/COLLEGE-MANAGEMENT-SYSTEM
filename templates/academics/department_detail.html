@@ -1,0 +1,264 @@
+{% extends 'base.html' %}
+
+{% block title %}{{ department.name }} | Department{% endblock %}
+{% block page_heading %}Department Profile & Programs{% endblock %}
+
+{% block content %}
+<div class="row g-4 mb-4">
+    <!-- Department Overview Header Card -->
+    <div class="col-12">
+        <div class="card p-4" style="background: linear-gradient(135deg, #1e3a8a 0%, #0284c7 100%); color: #fff;">
+            <div class="d-flex flex-wrap justify-content-between align-items-center gap-3">
+                <div class="d-flex align-items-center gap-3">
+                    <div class="rounded-3 bg-white text-primary d-flex align-items-center justify-content-center shadow-sm" style="width: 64px; height: 64px; font-size: 1.75rem; font-weight: 800;">
+                        {{ department.code }}
+                    </div>
+                    <div>
+                        <h4 class="fw-bold mb-1">{{ department.name }}</h4>
+                        <p class="mb-0 text-white-50 small">
+                            <i class="fa-solid fa-calendar-check me-1"></i> Established Year: <b>{{ department.established_year }}</b> • {{ department.courses.count }} Degree Courses • {{ faculty_members.count }} Faculty Members • {{ total_students_count }} Students Enrolled
+                        </p>
+                    </div>
+                </div>
+
+                <!-- Admin Action Buttons -->
+                {% if is_admin %}
+                    <div class="d-flex flex-wrap gap-2">
+                        <a href="{% url 'course_create' %}?department={{ department.id }}" class="btn btn-light text-primary fw-semibold btn-sm shadow-sm">
+                            <i class="fa-solid fa-plus me-1"></i> Add Course
+                        </a>
+                        <a href="{% url 'department_edit' department.id %}" class="btn btn-outline-light btn-sm">
+                            <i class="fa-solid fa-pen-to-square me-1"></i> Edit Department
+                        </a>
+                        <a href="{% url 'department_delete' department.id %}" class="btn btn-danger btn-sm shadow-sm">
+                            <i class="fa-solid fa-trash me-1"></i> Delete
+                        </a>
+                    </div>
+                {% endif %}
+            </div>
+
+            {% if department.description %}
+                <div class="mt-3 pt-3 border-top border-white-50 text-white-75 small">
+                    {{ department.description }}
+                </div>
+            {% endif %}
+        </div>
+    </div>
+</div>
+
+<!-- Tabbed Interactive Navigation for Department Resources -->
+<div class="card">
+    <div class="card-header bg-white border-bottom-0 pb-0">
+        <ul class="nav nav-tabs card-header-tabs" role="tablist">
+            <li class="nav-item">
+                <button class="nav-link active fw-semibold" data-bs-toggle="tab" data-bs-target="#tab-courses">
+                    <i class="fa-solid fa-graduation-cap me-1"></i> Degree Courses ({{ courses.count }})
+                </button>
+            </li>
+            <li class="nav-item">
+                <button class="nav-link fw-semibold" data-bs-toggle="tab" data-bs-target="#tab-faculty">
+                    <i class="fa-solid fa-chalkboard-user me-1"></i> Faculty Staff ({{ faculty_members.count }})
+                </button>
+            </li>
+            <li class="nav-item">
+                <button class="nav-link fw-semibold" data-bs-toggle="tab" data-bs-target="#tab-students">
+                    <i class="fa-solid fa-user-graduate me-1"></i> Enrolled Students ({{ total_students_count }})
+                </button>
+            </li>
+            <li class="nav-item">
+                <button class="nav-link fw-semibold" data-bs-toggle="tab" data-bs-target="#tab-subjects">
+                    <i class="fa-solid fa-book me-1"></i> Subjects ({{ subjects.count }})
+                </button>
+            </li>
+        </ul>
+    </div>
+
+    <div class="card-body p-4 tab-content">
+        <!-- Tab 1: Degree Courses -->
+        <div class="tab-pane fade show active" id="tab-courses">
+            <div class="d-flex justify-content-between align-items-center mb-3">
+                <h6 class="fw-bold mb-0">Undergraduate & Postgraduate Programs</h6>
+                {% if is_admin %}
+                    <a href="{% url 'course_create' %}?department={{ department.id }}" class="btn btn-sm btn-outline-primary">
+                        <i class="fa-solid fa-plus me-1"></i> New Course
+                    </a>
+                {% endif %}
+            </div>
+
+            <div class="row g-3">
+                {% for c in courses %}
+                    <div class="col-md-6 col-lg-4">
+                        <div class="card card-interactive h-100 p-3 border shadow-sm rounded-3">
+                            <div class="d-flex justify-content-between align-items-start mb-2">
+                                <span class="badge bg-primary fs-6">{{ c.code }}</span>
+                                <small class="text-secondary">{{ c.duration_years }} Years Duration</small>
+                            </div>
+                            <h6 class="fw-bold text-dark mb-1">
+                                <a href="{% url 'course_detail' c.id %}" class="text-decoration-none text-dark">
+                                    {{ c.name }}
+                                </a>
+                            </h6>
+                            <small class="text-muted d-block mb-3">{{ c.total_semesters }} Semesters • {{ c.students.count }} Enrolled Students</small>
+                            <div class="d-flex justify-content-between align-items-center pt-2 border-top mt-auto">
+                                <a href="{% url 'course_detail' c.id %}" class="btn btn-sm btn-light">
+                                    View Syllabus <i class="fa-solid fa-chevron-right ms-1"></i>
+                                </a>
+                                {% if is_admin %}
+                                    <div class="d-flex gap-1">
+                                        <a href="{% url 'course_edit' c.id %}" class="btn btn-sm btn-outline-secondary" title="Edit">
+                                            <i class="fa-solid fa-pen"></i>
+                                        </a>
+                                        <a href="{% url 'course_delete' c.id %}" class="btn btn-sm btn-outline-danger" title="Delete">
+                                            <i class="fa-solid fa-trash"></i>
+                                        </a>
+                                    </div>
+                                {% endif %}
+                            </div>
+                        </div>
+                    </div>
+                {% empty %}
+                    <div class="col-12 text-center py-4 text-muted">No courses configured under this department yet.</div>
+                {% endfor %}
+            </div>
+        </div>
+
+        <!-- Tab 2: Faculty Members -->
+        <div class="tab-pane fade" id="tab-faculty">
+            <div class="row g-3">
+                {% for fac in faculty_members %}
+                    <div class="col-md-6 col-lg-4">
+                        <div class="card card-interactive p-3 border rounded-3 h-100">
+                            <div class="d-flex align-items-center gap-3 mb-2">
+                                <img src="{{ fac.user.avatar_url }}" alt="Faculty" class="rounded-circle border" width="46" height="46">
+                                <div>
+                                    <a href="{% url 'faculty_detail' fac.id %}" class="fw-bold text-dark text-decoration-none d-block">
+                                        {{ fac.full_name }}
+                                    </a>
+                                    <small class="badge bg-light text-secondary border">{{ fac.get_designation_display }}</small>
+                                </div>
+                            </div>
+                            <div class="small text-secondary mb-3">
+                                <div><i class="fa-solid fa-award me-1 text-primary"></i> {{ fac.qualification }}</div>
+                                <div><i class="fa-solid fa-door-open me-1 text-muted"></i> {{ fac.cabin_number|default:"Office Main" }}</div>
+                                <div><i class="fa-solid fa-envelope me-1 text-muted"></i> {{ fac.email }}</div>
+                            </div>
+                            <div class="d-flex justify-content-between align-items-center pt-2 border-top mt-auto">
+                                <a href="{% url 'faculty_detail' fac.id %}" class="btn btn-sm btn-light">Profile</a>
+                                {% if is_admin %}
+                                    <div class="d-flex gap-1">
+                                        <a href="{% url 'faculty_edit' fac.id %}" class="btn btn-sm btn-outline-secondary"><i class="fa-solid fa-pen"></i></a>
+                                        <a href="{% url 'faculty_delete' fac.id %}" class="btn btn-sm btn-outline-danger"><i class="fa-solid fa-trash"></i></a>
+                                    </div>
+                                {% endif %}
+                            </div>
+                        </div>
+                    </div>
+                {% empty %}
+                    <div class="col-12 text-center py-4 text-muted">No faculty members assigned to this department.</div>
+                {% endfor %}
+            </div>
+        </div>
+
+        <!-- Tab 3: Enrolled Students -->
+        <div class="tab-pane fade" id="tab-students">
+            <div class="table-responsive">
+                <table class="table table-hover align-middle">
+                    <thead>
+                        <tr>
+                            <th>Student</th>
+                            <th>Roll Number</th>
+                            <th>Course</th>
+                            <th>Semester</th>
+                            <th>Attendance</th>
+                            <th class="text-end">Actions</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for st in students %}
+                            {% with stats=st.get_attendance_stats %}
+                            <tr>
+                                <td>
+                                    <div class="d-flex align-items-center gap-2">
+                                        <img src="{{ st.user.avatar_url }}" class="rounded-circle" width="30" height="30" alt="">
+                                        <a href="{% url 'student_detail' st.id %}" class="fw-semibold text-dark text-decoration-none">
+                                            {{ st.full_name }}
+                                        </a>
+                                    </div>
+                                </td>
+                                <td><span class="badge bg-light text-dark border">{{ st.roll_number }}</span></td>
+                                <td>{{ st.course.code }}</td>
+                                <td>Sem {{ st.current_semester.semester_number }}</td>
+                                <td>
+                                    <span class="badge {% if stats.shortage %}bg-danger{% else %}bg-success{% endif %}">
+                                        {{ stats.percentage }}%
+                                    </span>
+                                </td>
+                                <td class="text-end">
+                                    <a href="{% url 'student_detail' st.id %}" class="btn btn-sm btn-light"><i class="fa-solid fa-chevron-right"></i></a>
+                                    {% if is_admin %}
+                                        <a href="{% url 'student_edit' st.id %}" class="btn btn-sm btn-outline-secondary"><i class="fa-solid fa-pen"></i></a>
+                                        <a href="{% url 'student_delete' st.id %}" class="btn btn-sm btn-outline-danger"><i class="fa-solid fa-trash"></i></a>
+                                    {% endif %}
+                                </td>
+                            </tr>
+                            {% endwith %}
+                        {% empty %}
+                            <tr><td colspan="6" class="text-center py-4 text-muted">No students currently enrolled in this department.</td></tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+        </div>
+
+        <!-- Tab 4: Subjects -->
+        <div class="tab-pane fade" id="tab-subjects">
+            <div class="table-responsive">
+                <table class="table table-hover align-middle">
+                    <thead>
+                        <tr>
+                            <th>Code</th>
+                            <th>Subject Name</th>
+                            <th>Course / Sem</th>
+                            <th>Credits</th>
+                            <th>Type</th>
+                            <th>Allocated Faculty</th>
+                            <th class="text-end">Actions</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for subj in subjects %}
+                            <tr>
+                                <td><span class="badge bg-primary">{{ subj.code }}</span></td>
+                                <td class="fw-semibold">
+                                    <a href="{% url 'subject_detail' subj.id %}" class="text-decoration-none text-dark">
+                                        {{ subj.name }}
+                                    </a>
+                                </td>
+                                <td>{{ subj.semester.course.code }} Sem {{ subj.semester.semester_number }}</td>
+                                <td>{{ subj.credits }}</td>
+                                <td><span class="badge bg-light text-secondary border">{{ subj.get_subject_type_display }}</span></td>
+                                <td>
+                                    {% for alloc in subj.allocations.all %}
+                                        <small class="badge bg-light text-dark border"><i class="fa-solid fa-user-tie me-1"></i> {{ alloc.faculty.full_name }}</small>
+                                    {% empty %}
+                                        <small class="text-danger">Unallocated</small>
+                                    {% endfor %}
+                                </td>
+                                <td class="text-end">
+                                    <a href="{% url 'subject_detail' subj.id %}" class="btn btn-sm btn-light"><i class="fa-solid fa-eye"></i></a>
+                                    {% if is_admin %}
+                                        <a href="{% url 'subject_edit' subj.id %}" class="btn btn-sm btn-outline-secondary"><i class="fa-solid fa-pen"></i></a>
+                                        <a href="{% url 'subject_delete' subj.id %}" class="btn btn-sm btn-outline-danger"><i class="fa-solid fa-trash"></i></a>
+                                    {% endif %}
+                                </td>
+                            </tr>
+                        {% empty %}
+                            <tr><td colspan="7" class="text-center py-4 text-muted">No subjects found for this department.</td></tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

@@ -11,20 +11,40 @@
             <img src="{{ student.user.avatar_url }}" alt="Student Avatar" class="rounded-circle border shadow-sm mx-auto mb-3" width="110" height="110">
             <h5 class="fw-bold mb-1">{{ student.full_name }}</h5>
             <p class="text-secondary small mb-2">Roll No: <b>{{ student.roll_number }}</b></p>
-            <span class="badge bg-primary-subtle text-primary border border-primary px-3 py-1 rounded-pill mx-auto mb-3">
-                {{ student.course.name }}
-            </span>
+            
+            <div class="d-flex justify-content-center gap-1 mb-3">
+                <a href="{% url 'course_detail' student.course.id %}" class="badge bg-primary-subtle text-primary border border-primary px-3 py-1 rounded-pill text-decoration-none">
+                    {{ student.course.name }}
+                </a>
+            </div>
 
             <div class="d-grid gap-2 mb-3">
                 <a href="{% url 'student_id_card_pdf' student.id %}" target="_blank" class="btn btn-primary btn-sm">
                     <i class="fa-solid fa-id-card me-2"></i> Download ID Card (PDF)
                 </a>
+                {% if is_admin %}
+                    <div class="d-flex gap-2">
+                        <a href="{% url 'student_edit' student.id %}" class="btn btn-outline-secondary btn-sm w-50">
+                            <i class="fa-solid fa-pen-to-square me-1"></i> Edit
+                        </a>
+                        <a href="{% url 'student_delete' student.id %}" class="btn btn-outline-danger btn-sm w-50">
+                            <i class="fa-solid fa-trash me-1"></i> Delete
+                        </a>
+                    </div>
+                {% endif %}
             </div>
 
             <div class="text-start border-top pt-3 small text-secondary">
                 <p class="mb-1"><b>Registration No:</b> {{ student.registration_number }}</p>
-                <p class="mb-1"><b>Department:</b> {{ student.department.name }} ({{ student.department.code }})</p>
-                <p class="mb-1"><b>Current Semester:</b> Semester {{ student.current_semester.semester_number }}</p>
+                <p class="mb-1">
+                    <b>Department:</b> 
+                    <a href="{% url 'department_detail' student.department.id %}" class="text-primary text-decoration-none">
+                        {{ student.department.name }} ({{ student.department.code }})
+                    </a>
+                </p>
+                <p class="mb-1">
+                    <b>Current Semester:</b> Semester {{ student.current_semester.semester_number }}
+                </p>
                 <p class="mb-1"><b>Batch & Section:</b> {{ student.batch.name }} - Sec {{ student.batch.section }}</p>
                 <p class="mb-1"><b>Blood Group:</b> {{ student.blood_group|default:"N/A" }}</p>
                 <p class="mb-1"><b>Email:</b> {{ student.email }}</p>
@@ -102,11 +122,17 @@
                                     <tr>
                                         <td>{{ r.session.date }}</td>
                                         <td>
-                                            <div class="fw-semibold">{{ r.session.subject.code }}</div>
-                                            <small class="text-muted">{{ r.session.subject.name|truncatechars:20 }}</small>
+                                            <a href="{% url 'subject_detail' r.session.subject.id %}" class="fw-semibold text-primary text-decoration-none">
+                                                {{ r.session.subject.code }}
+                                            </a>
+                                            <small class="text-muted d-block">{{ r.session.subject.name|truncatechars:20 }}</small>
                                         </td>
                                         <td><small class="badge bg-light text-dark border">{{ r.session.lecture_slot }}</small></td>
-                                        <td><small class="text-secondary">{{ r.session.faculty.full_name }}</small></td>
+                                        <td>
+                                            <a href="{% url 'faculty_detail' r.session.faculty.id %}" class="text-secondary text-decoration-none small">
+                                                {{ r.session.faculty.full_name }}
+                                            </a>
+                                        </td>
                                         <td>
                                             {% if r.status == 'PRESENT' %}
                                                 <span class="badge bg-success">Present</span>
@@ -142,7 +168,11 @@
                             <tbody>
                                 {% for m in marks_list %}
                                     <tr>
-                                        <td class="fw-semibold">{{ m.assessment_component.subject.code }}</td>
+                                        <td class="fw-semibold">
+                                            <a href="{% url 'subject_detail' m.assessment_component.subject.id %}" class="text-decoration-none text-dark">
+                                                {{ m.assessment_component.subject.code }}
+                                            </a>
+                                        </td>
                                         <td>{{ m.assessment_component.examination.name }}</td>
                                         <td>{{ m.assessment_component.title }}</td>
                                         <td class="fw-bold text-primary">{{ m.marks_obtained }}</td>
@@ -166,7 +196,7 @@
                                     <th>Assignment</th>
                                     <th>Subject</th>
                                     <th>Submitted On</th>
-                                    <th>Late Status</th>
+                                    <th>Timing</th>
                                     <th>Score</th>
                                     <th>Status</th>
                                 </tr>
@@ -174,7 +204,11 @@
                             <tbody>
                                 {% for sub in submissions_list %}
                                     <tr>
-                                        <td class="fw-semibold">{{ sub.assignment.title }}</td>
+                                        <td class="fw-semibold">
+                                            <a href="{% url 'assignment_detail' sub.assignment.id %}" class="text-decoration-none text-dark">
+                                                {{ sub.assignment.title }}
+                                            </a>
+                                        </td>
                                         <td>{{ sub.assignment.subject.code }}</td>
                                         <td>{{ sub.submitted_at|date:"M d, Y H:i" }}</td>
                                         <td>

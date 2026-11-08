@@ -66,7 +66,11 @@
                             </div>
                         </td>
                         <td><span class="badge bg-light text-dark border">{{ fac.employee_id }}</span></td>
-                        <td><span class="badge bg-primary-subtle text-primary border border-primary">{{ fac.department.code }}</span></td>
+                        <td>
+                            <a href="{% url 'department_detail' fac.department.id %}" class="badge bg-primary-subtle text-primary border border-primary text-decoration-none">
+                                {{ fac.department.code }}
+                            </a>
+                        </td>
                         <td>{{ fac.get_designation_display }}</td>
                         <td><small class="text-secondary">{{ fac.cabin_number|default:"-" }}</small></td>
                         <td>
@@ -75,13 +79,21 @@
                         </td>
                         <td class="text-end">
                             <a href="{% url 'faculty_detail' fac.id %}" class="btn btn-sm btn-light" title="View details & workload">
-                                <i class="fa-solid fa-chevron-right"></i>
+                                <i class="fa-solid fa-eye"></i>
                             </a>
+                            {% if is_admin %}
+                                <a href="{% url 'faculty_edit' fac.id %}" class="btn btn-sm btn-outline-secondary" title="Edit Faculty">
+                                    <i class="fa-solid fa-pen"></i>
+                                </a>
+                                <a href="{% url 'faculty_delete' fac.id %}" class="btn btn-sm btn-outline-danger" title="Delete Faculty">
+                                    <i class="fa-solid fa-trash"></i>
+                                </a>
+                            {% endif %}
                         </td>
                     </tr>
                 {% empty %}
                     <tr>
-                        <td colspan="7" class="text-center py-4 text-muted">No faculty members found matching your search.</td>
+                        <td colspan="7" class="text-center py-5 text-muted">No faculty members found matching your search.</td>
                     </tr>
                 {% endfor %}
             </tbody>

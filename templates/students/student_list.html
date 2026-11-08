@@ -97,11 +97,23 @@
                                 </div>
                             </div>
                         </td>
-                        <td><span class="badge bg-light text-dark border">{{ s.roll_number }}</span></td>
+                        <td>
+                            <a href="{% url 'student_detail' s.id %}" class="badge bg-light text-dark border text-decoration-none">
+                                {{ s.roll_number }}
+                            </a>
+                        </td>
                         <td><small class="text-secondary">{{ s.registration_number }}</small></td>
                         <td>
-                            <div class="fw-semibold">{{ s.course.code }}</div>
-                            <small class="text-muted">{{ s.department.code }}</small>
+                            <div>
+                                <a href="{% url 'course_detail' s.course.id %}" class="badge bg-primary-subtle text-primary border border-primary text-decoration-none">
+                                    {{ s.course.code }}
+                                </a>
+                            </div>
+                            <small>
+                                <a href="{% url 'department_detail' s.department.id %}" class="text-muted text-decoration-none">
+                                    {{ s.department.code }}
+                                </a>
+                            </small>
                         </td>
                         <td>
                             <span>Sem {{ s.current_semester.semester_number }}</span>
@@ -120,11 +132,17 @@
                                 <i class="fa-solid fa-id-card"></i>
                             </a>
                             <a href="{% url 'student_detail' s.id %}" class="btn btn-sm btn-light" title="View Profile">
-                                <i class="fa-solid fa-chevron-right"></i>
+                                <i class="fa-solid fa-eye"></i>
                             </a>
                             {% if is_admin %}
-                                <a href="{% url 'student_archive' s.id %}" class="btn btn-sm btn-outline-danger" title="{% if s.is_archived %}Restore{% else %}Archive / Soft Delete{% endif %}">
+                                <a href="{% url 'student_edit' s.id %}" class="btn btn-sm btn-outline-secondary" title="Edit Student">
+                                    <i class="fa-solid fa-pen"></i>
+                                </a>
+                                <a href="{% url 'student_archive' s.id %}" class="btn btn-sm btn-outline-warning" title="{% if s.is_archived %}Restore{% else %}Archive / Soft Delete{% endif %}">
                                     <i class="fa-solid fa-box-archive"></i>
+                                </a>
+                                <a href="{% url 'student_delete' s.id %}" class="btn btn-sm btn-outline-danger" title="Permanently Delete">
+                                    <i class="fa-solid fa-trash"></i>
                                 </a>
                             {% endif %}
                         </td>
@@ -132,7 +150,7 @@
                     {% endwith %}
                 {% empty %}
                     <tr>
-                        <td colspan="7" class="text-center py-4 text-muted">No students found matching your filters.</td>
+                        <td colspan="7" class="text-center py-5 text-muted">No students found matching your filters.</td>
                     </tr>
                 {% endfor %}
             </tbody>

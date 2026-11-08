@@ -7,48 +7,56 @@
 <!-- Metric Cards -->
 <div class="row g-3 mb-4">
     <div class="col-sm-6 col-xl-3">
-        <div class="stat-card">
-            <div class="stat-icon bg-primary-subtle text-primary">
-                <i class="fa-solid fa-user-graduate"></i>
+        <a href="{% url 'student_list' %}" class="text-decoration-none">
+            <div class="stat-card">
+                <div class="stat-icon bg-primary-subtle text-primary">
+                    <i class="fa-solid fa-user-graduate"></i>
+                </div>
+                <div>
+                    <span class="text-secondary small fw-semibold d-block">Total Students</span>
+                    <h3 class="fw-bold mb-0 text-dark">{{ total_students }}</h3>
+                </div>
             </div>
-            <div>
-                <span class="text-secondary small fw-semibold d-block">Total Students</span>
-                <h3 class="fw-bold mb-0 text-dark">{{ total_students }}</h3>
-            </div>
-        </div>
+        </a>
     </div>
     <div class="col-sm-6 col-xl-3">
-        <div class="stat-card">
-            <div class="stat-icon bg-success-subtle text-success">
-                <i class="fa-solid fa-chalkboard-user"></i>
+        <a href="{% url 'faculty_list' %}" class="text-decoration-none">
+            <div class="stat-card">
+                <div class="stat-icon bg-success-subtle text-success">
+                    <i class="fa-solid fa-chalkboard-user"></i>
+                </div>
+                <div>
+                    <span class="text-secondary small fw-semibold d-block">Active Faculty</span>
+                    <h3 class="fw-bold mb-0 text-dark">{{ total_faculty }}</h3>
+                </div>
             </div>
-            <div>
-                <span class="text-secondary small fw-semibold d-block">Active Faculty</span>
-                <h3 class="fw-bold mb-0 text-dark">{{ total_faculty }}</h3>
-            </div>
-        </div>
+        </a>
     </div>
     <div class="col-sm-6 col-xl-3">
-        <div class="stat-card">
-            <div class="stat-icon bg-info-subtle text-info">
-                <i class="fa-solid fa-building-columns"></i>
+        <a href="{% url 'department_list' %}" class="text-decoration-none">
+            <div class="stat-card">
+                <div class="stat-icon bg-info-subtle text-info">
+                    <i class="fa-solid fa-building-columns"></i>
+                </div>
+                <div>
+                    <span class="text-secondary small fw-semibold d-block">Departments</span>
+                    <h3 class="fw-bold mb-0 text-dark">{{ total_departments }}</h3>
+                </div>
             </div>
-            <div>
-                <span class="text-secondary small fw-semibold d-block">Departments</span>
-                <h3 class="fw-bold mb-0 text-dark">{{ total_departments }}</h3>
-            </div>
-        </div>
+        </a>
     </div>
     <div class="col-sm-6 col-xl-3">
-        <div class="stat-card">
-            <div class="stat-icon bg-warning-subtle text-warning">
-                <i class="fa-solid fa-triangle-exclamation"></i>
+        <a href="{% url 'attendance_shortage_report' %}" class="text-decoration-none">
+            <div class="stat-card">
+                <div class="stat-icon bg-warning-subtle text-warning">
+                    <i class="fa-solid fa-triangle-exclamation"></i>
+                </div>
+                <div>
+                    <span class="text-secondary small fw-semibold d-block">Attendance Shortages</span>
+                    <h3 class="fw-bold mb-0 text-danger">{{ shortage_count }}</h3>
+                </div>
             </div>
-            <div>
-                <span class="text-secondary small fw-semibold d-block">Attendance Shortages</span>
-                <h3 class="fw-bold mb-0 text-danger">{{ shortage_count }}</h3>
-            </div>
-        </div>
+        </a>
     </div>
 </div>
 
@@ -97,8 +105,17 @@
                                             {{ item.student.full_name }}
                                         </a>
                                     </td>
-                                    <td><span class="badge bg-light text-dark border">{{ item.student.roll_number }}</span></td>
-                                    <td>{{ item.student.course.code }} Sem {{ item.student.current_semester.semester_number }}</td>
+                                    <td>
+                                        <a href="{% url 'student_detail' item.student.id %}" class="badge bg-light text-dark border text-decoration-none">
+                                            {{ item.student.roll_number }}
+                                        </a>
+                                    </td>
+                                    <td>
+                                        <a href="{% url 'course_detail' item.student.course.id %}" class="badge bg-light text-primary border text-decoration-none">
+                                            {{ item.student.course.code }}
+                                        </a>
+                                        <span class="small text-muted ms-1">Sem {{ item.student.current_semester.semester_number }}</span>
+                                    </td>
                                     <td>
                                         <div class="d-flex align-items-center gap-2">
                                             <div class="progress flex-grow-1" style="height: 6px;">
@@ -157,15 +174,21 @@
 <div class="row g-4">
     <div class="col-lg-6">
         <div class="card p-3">
-            <h6 class="fw-bold mb-3"><i class="fa-solid fa-building-columns text-info me-2"></i> Department Student Distribution</h6>
+            <div class="d-flex justify-content-between align-items-center mb-3">
+                <h6 class="fw-bold mb-0"><i class="fa-solid fa-building-columns text-info me-2"></i> Department Student Distribution</h6>
+                <a href="{% url 'department_list' %}" class="btn btn-sm btn-light">View All</a>
+            </div>
             <div class="row g-2">
                 {% for dept in dept_distribution %}
                     <div class="col-6">
-                        <div class="border rounded p-3 bg-light text-center">
-                            <span class="badge bg-primary mb-1">{{ dept.code }}</span>
-                            <h4 class="fw-bold mb-0 text-dark">{{ dept.student_count }}</h4>
-                            <small class="text-secondary">{{ dept.name }}</small>
-                        </div>
+                        <a href="{% if dept.id %}{% url 'department_detail' dept.id %}{% else %}{% url 'department_list' %}{% endif %}" class="text-decoration-none">
+                            <div class="border rounded p-3 bg-light text-center h-100 shadow-sm" style="transition: transform 0.2s, box-shadow 0.2s;">
+                                <span class="badge bg-primary mb-1">{{ dept.code }}</span>
+                                <h4 class="fw-bold mb-0 text-dark">{{ dept.student_count }}</h4>
+                                <small class="text-secondary d-block">{{ dept.name }}</small>
+                                <span class="badge bg-light text-primary border mt-2 small">Explore Department &rarr;</span>
+                            </div>
+                        </a>
                     </div>
                 {% endfor %}
             </div>

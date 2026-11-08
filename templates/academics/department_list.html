@@ -3,12 +3,26 @@
 {% block title %}Departments{% endblock %}
 {% block page_heading %}Academic Departments{% endblock %}
 
+{% block extra_css %}
+<style>
+    .card-interactive {
+        transition: transform 0.2s ease, box-shadow 0.2s ease, border-color 0.2s ease;
+        cursor: pointer;
+    }
+    .card-interactive:hover {
+        transform: translateY(-4px);
+        box-shadow: 0 10px 25px rgba(0, 0, 0, 0.08);
+        border-color: #3b82f6 !important;
+    }
+</style>
+{% endblock %}
+
 {% block content %}
 <div class="card p-4">
-    <div class="d-flex justify-content-between align-items-center mb-4">
+    <div class="d-flex flex-wrap justify-content-between align-items-center gap-3 mb-4">
         <div>
             <h5 class="fw-bold mb-1">Academic Departments</h5>
-            <p class="text-secondary small mb-0">Manage college departments, branches, and established centers.</p>
+            <p class="text-secondary small mb-0">Click on any department card to explore its courses, faculty directory, enrolled students, and subjects.</p>
         </div>
         {% if is_admin %}
             <a href="{% url 'department_create' %}" class="btn btn-sm btn-primary">
@@ -17,24 +31,53 @@
         {% endif %}
     </div>
 
-    <div class="row g-3">
+    <div class="row g-4">
         {% for d in departments %}
             <div class="col-md-6 col-lg-4">
-                <div class="border rounded-3 p-3 bg-light h-100">
-                    <div class="d-flex justify-content-between align-items-start mb-2">
-                        <span class="badge bg-primary fs-6">{{ d.code }}</span>
-                        <small class="text-muted">Est. {{ d.established_year }}</small>
+                <div class="card card-interactive border rounded-3 p-3 bg-white h-100 shadow-sm d-flex flex-column justify-content-between" onclick="if(!event.target.closest('a') && !event.target.closest('button')) window.location.href='{% url 'department_detail' d.id %}';">
+                    <div>
+                        <div class="d-flex justify-content-between align-items-start mb-2">
+                            <a href="{% url 'department_detail' d.id %}" class="badge bg-primary fs-6 text-decoration-none">
+                                {{ d.code }}
+                            </a>
+                            <small class="badge bg-light text-secondary border">Est. {{ d.established_year }}</small>
+                        </div>
+                        <h5 class="fw-bold text-dark mb-1">
+                            <a href="{% url 'department_detail' d.id %}" class="text-decoration-none text-dark">
+                                {{ d.name }}
+                            </a>
+                        </h5>
+                        <p class="text-secondary small mb-3">{{ d.description|default:"Department of academic learning and research."|truncatewords:16 }}</p>
                     </div>
-                    <h6 class="fw-bold text-dark mb-2">{{ d.name }}</h6>
-                    <p class="text-secondary small mb-3">{{ d.description|default:"No description provided." }}</p>
-                    <div class="d-flex justify-content-between align-items-center pt-2 border-top small text-secondary">
-                        <span><i class="fa-solid fa-graduation-cap me-1"></i> {{ d.courses.count }} Courses</span>
-                        <span><i class="fa-solid fa-chalkboard-user me-1"></i> {{ d.faculty_members.count }} Faculty</span>
+
+                    <div class="pt-3 border-top mt-auto">
+                        <div class="d-flex justify-content-between align-items-center small text-secondary mb-3">
+                            <span><i class="fa-solid fa-graduation-cap text-primary me-1"></i> <b>{{ d.courses.count }}</b> Courses</span>
+                            <span><i class="fa-solid fa-chalkboard-user text-success me-1"></i> <b>{{ d.faculty_members.count }}</b> Faculty</span>
+                            <span><i class="fa-solid fa-user-graduate text-info me-1"></i> <b>{{ d.students.count }}</b> Students</span>
+                        </div>
+
+                        <div class="d-flex justify-content-between align-items-center">
+                            <a href="{% url 'department_detail' d.id %}" class="btn btn-sm btn-light">
+                                View Department <i class="fa-solid fa-arrow-right ms-1"></i>
+                            </a>
+
+                            {% if is_admin %}
+                                <div class="d-flex gap-1">
+                                    <a href="{% url 'department_edit' d.id %}" class="btn btn-sm btn-outline-secondary" title="Edit Department">
+                                        <i class="fa-solid fa-pen-to-square"></i>
+                                    </a>
+                                    <a href="{% url 'department_delete' d.id %}" class="btn btn-sm btn-outline-danger" title="Delete Department">
+                                        <i class="fa-solid fa-trash"></i>
+                                    </a>
+                                </div>
+                            {% endif %}
+                        </div>
                     </div>
                 </div>
             </div>
         {% empty %}
-            <div class="col-12 text-center py-4 text-muted">No departments created yet.</div>
+            <div class="col-12 text-center py-5 text-muted">No departments created yet.</div>
         {% endfor %}
     </div>
 </div>

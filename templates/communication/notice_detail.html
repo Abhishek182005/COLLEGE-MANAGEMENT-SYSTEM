@@ -17,9 +17,16 @@
                         Published by <b>{{ notice.published_by.get_full_name|default:notice.published_by.username }}</b> on {{ notice.created_at|date:"F d, Y - H:i" }}
                     </small>
                 </div>
-                <a href="{% url 'notice_list' %}" class="btn btn-sm btn-light">
-                    <i class="fa-solid fa-arrow-left me-1"></i> Back to Board
-                </a>
+                <div class="d-flex gap-2">
+                    <a href="{% url 'notice_list' %}" class="btn btn-sm btn-light">
+                        <i class="fa-solid fa-arrow-left me-1"></i> Back to Board
+                    </a>
+                    {% if request.user.role == 'ADMIN' or request.user == notice.published_by %}
+                        <a href="{% url 'notice_delete' notice.id %}" class="btn btn-sm btn-outline-danger">
+                            <i class="fa-solid fa-trash me-1"></i> Delete
+                        </a>
+                    {% endif %}
+                </div>
             </div>
 
             <div class="p-3 bg-light rounded-3 border mb-4 text-dark" style="font-size: 1rem; line-height: 1.7;">
@@ -41,10 +48,19 @@
                 </div>
             {% endif %}
 
-            <div class="border-top pt-3 text-secondary small d-flex justify-content-between align-items-center">
-                <span>Target Audience: <b>{{ notice.get_audience_type_display }}</b></span>
+            <div class="border-top pt-3 text-secondary small d-flex flex-wrap justify-content-between align-items-center gap-2">
+                <div>
+                    <span>Target Audience: <b>{{ notice.get_audience_type_display }}</b></span>
+                    {% if notice.department %}
+                        <span class="ms-2">Department: 
+                            <a href="{% url 'department_detail' notice.department.id %}" class="badge bg-light text-primary border text-decoration-none">
+                                {{ notice.department.name }}
+                            </a>
+                        </span>
+                    {% endif %}
+                </div>
                 {% if notice.expiry_date %}
-                    <span>Valid until: {{ notice.expiry_date }}</span>
+                    <span>Valid until: <b>{{ notice.expiry_date }}</b></span>
                 {% endif %}
             </div>
         </div>

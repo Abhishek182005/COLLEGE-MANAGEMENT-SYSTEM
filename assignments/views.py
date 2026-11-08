@@ -152,3 +152,16 @@ def grade_submission_view(request, submission_id):
             messages.success(request, f"Submission graded successfully ({score_dec}/{submission.assignment.max_score}).")
 
     return redirect('assignment_detail', pk=submission.assignment.pk)
+
+@login_required
+@role_required('FACULTY', 'ADMIN')
+def assignment_delete_view(request, pk):
+    assignment = get_object_or_404(Assignment, pk=pk)
+    if request.method == 'POST':
+        title = assignment.title
+        assign_id = assignment.id
+        assignment.delete()
+        log_audit(request, "ASSIGNMENT_DELETED", "Assignment", assign_id, f"Deleted assignment '{title}'.")
+        messages.success(request, f"Assignment '{title}' deleted successfully.")
+        return redirect('assignment_list')
+    return render(request, 'academics/confirm_delete.html', {'object': assignment, 'type': 'Assignment', 'cancel_url': 'assignment_list'})

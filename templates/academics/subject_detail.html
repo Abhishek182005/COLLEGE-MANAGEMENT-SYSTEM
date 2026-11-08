@@ -1,0 +1,165 @@
+{% extends 'base.html' %}
+
+{% block title %}{{ subject.code }} - {{ subject.name }}{% endblock %}
+{% block page_heading %}Subject Curriculum & Allocations{% endblock %}
+
+{% block content %}
+<div class="row g-4 mb-4">
+    <!-- Header Card -->
+    <div class="col-12">
+        <div class="card p-4" style="background: linear-gradient(135deg, #0f172a 0%, #1e3a8a 100%); color: #fff;">
+            <div class="d-flex flex-wrap justify-content-between align-items-center gap-3">
+                <div>
+                    <div class="d-flex align-items-center gap-2 mb-1">
+                        <span class="badge bg-primary fs-6">{{ subject.code }}</span>
+                        <a href="{% url 'course_detail' subject.semester.course.id %}" class="badge bg-white text-dark text-decoration-none">
+                            <i class="fa-solid fa-graduation-cap me-1"></i> {{ subject.semester.course.code }} Sem {{ subject.semester.semester_number }}
+                        </a>
+                        <span class="badge bg-info-subtle text-info border border-info">{{ subject.get_subject_type_display }}</span>
+                    </div>
+                    <h4 class="fw-bold mb-1">{{ subject.name }}</h4>
+                    <p class="mb-0 text-white-50 small">
+                        Credits: <b>{{ subject.credits }}</b> • {{ enrolled_count }} Students Enrolled • Session: {{ subject.semester.academic_session.name }}
+                    </p>
+                </div>
+
+                <div class="d-flex flex-wrap gap-2">
+                    <a href="{% url 'quick_mark_attendance' %}?subject_id={{ subject.id }}" class="btn btn-light text-primary fw-semibold btn-sm shadow-sm">
+                        <i class="fa-solid fa-check-double me-1"></i> Quick Attendance
+                    </a>
+                    {% if is_admin %}
+                        <a href="{% url 'subject_edit' subject.id %}" class="btn btn-outline-light btn-sm">
+                            <i class="fa-solid fa-pen-to-square me-1"></i> Edit Subject
+                        </a>
+                        <a href="{% url 'subject_delete' subject.id %}" class="btn btn-danger btn-sm shadow-sm">
+                            <i class="fa-solid fa-trash me-1"></i> Delete
+                        </a>
+                    {% endif %}
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<div class="row g-4">
+    <!-- Left Column: Allocated Faculty -->
+    <div class="col-lg-4">
+        <div class="card p-4 h-100">
+            <h6 class="fw-bold mb-3"><i class="fa-solid fa-chalkboard-user text-primary me-2"></i> Assigned Teaching Faculty</h6>
+            {% for alloc in allocations %}
+                <div class="d-flex align-items-center gap-3 p-3 bg-light rounded-3 border mb-3">
+                    <img src="{{ alloc.faculty.user.avatar_url }}" alt="Faculty" class="rounded-circle border" width="50" height="50">
+                    <div>
+                        <a href="{% url 'faculty_detail' alloc.faculty.id %}" class="fw-bold text-dark text-decoration-none">
+                            {{ alloc.faculty.full_name }}
+                        </a>
+                        <small class="badge bg-primary-subtle text-primary border border-primary d-block mt-1">{{ alloc.faculty.get_designation_display }}</small>
+                        <small class="text-secondary d-block mt-1"><i class="fa-solid fa-envelope me-1"></i> {{ alloc.faculty.email }}</small>
+                    </div>
+                </div>
+            {% empty %}
+                <div class="text-center py-4 text-muted">
+                    <i class="fa-solid fa-user-xmark fs-2 d-block mb-1 text-secondary"></i>
+                    No faculty currently assigned to teach this subject.
+                </div>
+            {% endfor %}
+        </div>
+    </div>
+
+    <!-- Right Column: Tabs for Attendance Sessions & Students -->
+    <div class="col-lg-8">
+        <div class="card h-100">
+            <div class="card-header bg-white border-bottom-0 pb-0">
+                <ul class="nav nav-tabs card-header-tabs" role="tablist">
+                    <li class="nav-item">
+                        <button class="nav-link active fw-semibold" data-bs-toggle="tab" data-bs-target="#tab-sessions">
+                            <i class="fa-solid fa-clipboard-check me-1"></i> Attendance Sessions ({{ attendance_sessions.count }})
+                        </button>
+                    </li>
+                    <li class="nav-item">
+                        <button class="nav-link fw-semibold" data-bs-toggle="tab" data-bs-target="#tab-students">
+                            <i class="fa-solid fa-user-graduate me-1"></i> Enrolled Students ({{ enrolled_count }})
+                        </button>
+                    </li>
+                </ul>
+            </div>
+
+            <div class="card-body p-4 tab-content">
+                <!-- Tab 1: Attendance Sessions -->
+                <div class="tab-pane fade show active" id="tab-sessions">
+                    <div class="table-responsive">
+                        <table class="table table-hover align-middle">
+                            <thead>
+                                <tr>
+                                    <th>Date</th>
+                                    <th>Slot</th>
+                                    <th>Conducted By</th>
+                                    <th>Turnout %</th>
+                                    <th class="text-end">Actions</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                {% for sess in attendance_sessions %}
+                                    <tr>
+                                        <td class="fw-semibold text-dark">{{ sess.date }}</td>
+                                        <td><span class="badge bg-light text-dark border">{{ sess.lecture_slot }}</span></td>
+                                        <td><small class="text-secondary">{{ sess.faculty.full_name }}</small></td>
+                                        <td>
+                                            <span class="badge {% if sess.attendance_percentage >= 75 %}bg-success{% else %}bg-warning text-dark{% endif %}">
+                                                {{ sess.attendance_percentage }}% ({{ sess.present_count }}/{{ sess.total_students }})
+                                            </span>
+                                        </td>
+                                        <td class="text-end">
+                                            <a href="{% url 'attendance_session_detail' sess.id %}" class="btn btn-sm btn-light" title="View Details">
+                                                <i class="fa-solid fa-eye"></i>
+                                            </a>
+                                        </td>
+                                    </tr>
+                                {% empty %}
+                                    <tr><td colspan="5" class="text-center py-4 text-muted">No attendance sessions recorded for this subject yet.</td></tr>
+                                {% endfor %}
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+
+                <!-- Tab 2: Enrolled Students -->
+                <div class="tab-pane fade" id="tab-students">
+                    <div class="table-responsive">
+                        <table class="table table-hover align-middle">
+                            <thead>
+                                <tr>
+                                    <th>Student</th>
+                                    <th>Roll Number</th>
+                                    <th>Batch</th>
+                                    <th class="text-end">View Profile</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                {% for st in enrolled_students %}
+                                    <tr>
+                                        <td>
+                                            <a href="{% url 'student_detail' st.id %}" class="fw-semibold text-dark text-decoration-none">
+                                                {{ st.full_name }}
+                                            </a>
+                                        </td>
+                                        <td><span class="badge bg-light text-dark border">{{ st.roll_number }}</span></td>
+                                        <td>{{ st.batch.name }} ({{ st.batch.section }})</td>
+                                        <td class="text-end">
+                                            <a href="{% url 'student_detail' st.id %}" class="btn btn-sm btn-light">
+                                                <i class="fa-solid fa-chevron-right"></i>
+                                            </a>
+                                        </td>
+                                    </tr>
+                                {% empty %}
+                                    <tr><td colspan="4" class="text-center py-4 text-muted">No students enrolled in this semester.</td></tr>
+                                {% endfor %}
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

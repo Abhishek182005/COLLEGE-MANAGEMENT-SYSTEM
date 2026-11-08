@@ -232,3 +232,86 @@ def import_students_excel_view(request):
         'batches': Batch.objects.all(),
     }
     return render(request, 'students/student_import.html', context)
+
+@login_required
+@role_required('ADMIN')
+def student_edit_view(request, pk):
+    student = get_object_or_404(Student, pk=pk)
+    user = student.user
+    if request.method == 'POST':
+        roll = request.POST.get('roll_number')
+        reg = request.POST.get('registration_number')
+        fname = request.POST.get('first_name')
+        lname = request.POST.get('last_name')
+        email = request.POST.get('email')
+        phone = request.POST.get('phone')
+        dept_id = request.POST.get('department')
+        course_id = request.POST.get('course')
+        sem_id = request.POST.get('semester')
+        batch_id = request.POST.get('batch')
+        blood_group = request.POST.get('blood_group')
+        gname = request.POST.get('guardian_name')
+        gphone = request.POST.get('guardian_phone')
+
+        user.first_name = fname
+        user.last_name = lname
+        user.email = email
+        user.phone = phone
+        user.save()
+
+        student.roll_number = roll
+        student.registration_number = reg
+        student.department_id = dept_id
+        student.course_id = course_id
+        student.current_semester_id = sem_id
+        student.batch_id = batch_id
+        student.blood_group = blood_group
+        student.guardian_name = gname
+        student.guardian_phone = gphone
+        student.save()
+
+        log_audit(
+            request=request,
+            action="STUDENT_UPDATED",
+            entity_type="Student",
+            entity_id=student.id,
+            details=f"Student details updated for {roll} ({fname} {lname}) by admin."
+        )
+        messages.success(request, f"Student {roll} updated successfully.")
+        return redirect('student_detail', pk=student.pk)
+
+    context = {
+        'student': student,
+        'departments': Department.objects.all(),
+        'courses': Course.objects.all(),
+        'semesters': Semester.objects.all(),
+        'batches': Batch.objects.all(),
+        'blood_groups': Student.BLOOD_GROUPS,
+        'is_edit': True,
+    }
+    return render(request, 'students/student_form.html', context)
+
+
+@login_required
+@role_required('ADMIN')
+def student_delete_view(request, pk):
+    student = get_object_or_404(Student, pk=pk)
+    if request.method == 'POST':
+        roll = student.roll_number
+        name = student.full_name
+        st_id = student.id
+        user = student.user
+        student.delete()
+        if user:
+            user.delete()
+        log_audit(
+            request=request,
+            action="STUDENT_DELETED",
+            entity_type="Student",
+            entity_id=st_id,
+            details=f"Permanently deleted student {roll} ({name}) and user account."
+        )
+        messages.success(request, f"Student {roll} permanently deleted.")
+        return redirect('student_list')
+
+    return render(request, 'academics/confirm_delete.html', {'object': student, 'type': 'Student', 'cancel_url': 'student_detail'})

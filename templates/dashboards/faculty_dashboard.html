@@ -14,7 +14,15 @@
                     <div>
                         <h4 class="fw-bold mb-1">{{ faculty.full_name }}</h4>
                         <p class="mb-0 text-white-50 small">
-                            <i class="fa-solid fa-briefcase me-1"></i> {{ faculty.get_designation_display }} • {{ faculty.department.name }} (Emp ID: {{ faculty.employee_id }})
+                            <i class="fa-solid fa-briefcase me-1"></i> {{ faculty.get_designation_display }} • 
+                            {% if faculty.department %}
+                                <a href="{% url 'department_detail' faculty.department.id %}" class="text-white text-decoration-underline">
+                                    {{ faculty.department.name }}
+                                </a>
+                            {% else %}
+                                General
+                            {% endif %}
+                            (Emp ID: {{ faculty.employee_id }})
                         </p>
                     </div>
                 </div>
@@ -41,13 +49,19 @@
                 <div class="row g-3">
                     {% for alloc in allocated_subjects %}
                         <div class="col-md-6">
-                            <div class="border rounded-3 p-3 bg-light h-100 d-flex flex-column justify-content-between">
+                            <div class="border rounded-3 p-3 bg-light h-100 d-flex flex-column justify-content-between shadow-sm">
                                 <div>
                                     <div class="d-flex justify-content-between align-items-start mb-1">
-                                        <span class="badge bg-primary">{{ alloc.subject.code }}</span>
+                                        <a href="{% url 'subject_detail' alloc.subject.id %}" class="badge bg-primary text-decoration-none">
+                                            {{ alloc.subject.code }}
+                                        </a>
                                         <small class="text-secondary">{{ alloc.subject.get_subject_type_display }}</small>
                                     </div>
-                                    <h6 class="fw-bold text-dark mb-1">{{ alloc.subject.name }}</h6>
+                                    <h6 class="fw-bold text-dark mb-1">
+                                        <a href="{% url 'subject_detail' alloc.subject.id %}" class="text-dark text-decoration-none">
+                                            {{ alloc.subject.name }}
+                                        </a>
+                                    </h6>
                                     <p class="text-muted small mb-3">Sem {{ alloc.subject.semester.semester_number }} • {{ alloc.subject.credits }} Credits</p>
                                 </div>
                                 <div class="d-grid gap-2">
@@ -80,7 +94,11 @@
                                 <span class="badge bg-info-subtle text-info border border-info fw-semibold">{{ c.time_slot }}</span>
                                 <span class="badge bg-light text-dark border"><i class="fa-solid fa-door-open me-1"></i> Room {{ c.classroom.room_number }}</span>
                             </div>
-                            <h6 class="fw-bold text-dark mb-1">{{ c.subject.name }} ({{ c.subject.code }})</h6>
+                            <h6 class="fw-bold text-dark mb-1">
+                                <a href="{% url 'subject_detail' c.subject.id %}" class="text-dark text-decoration-none">
+                                    {{ c.subject.name }} ({{ c.subject.code }})
+                                </a>
+                            </h6>
                             <small class="text-secondary d-block">
                                 Class: Sem {{ c.semester.semester_number }}{% if c.batch %} - Batch {{ c.batch.name }}{% endif %}
                             </small>
@@ -120,8 +138,14 @@
                             {% for sess in recent_sessions %}
                                 <tr>
                                     <td>
-                                        <div class="fw-semibold text-dark">{{ sess.subject.code }}</div>
-                                        <small class="text-secondary">{{ sess.subject.name|truncatechars:20 }}</small>
+                                        <div class="fw-semibold text-dark">
+                                            <a href="{% url 'subject_detail' sess.subject.id %}" class="text-dark text-decoration-none">
+                                                {{ sess.subject.code }}
+                                            </a>
+                                        </div>
+                                        <a href="{% url 'subject_detail' sess.subject.id %}" class="text-secondary small text-decoration-none">
+                                            {{ sess.subject.name|truncatechars:20 }}
+                                        </a>
                                     </td>
                                     <td>
                                         <div class="small fw-semibold">{{ sess.date }}</div>
@@ -171,7 +195,10 @@
                                 <span class="badge bg-light text-secondary border">Due: {{ a.due_date|date:"M d" }}</span>
                             </div>
                             <div class="d-flex justify-content-between align-items-center mt-2">
-                                <small class="text-secondary">{{ a.subject.code }} • Max: {{ a.max_score }} pts</small>
+                                <a href="{% url 'subject_detail' a.subject.id %}" class="badge bg-light text-primary border text-decoration-none">
+                                    {{ a.subject.code }}
+                                </a>
+                                <small class="text-secondary">Max: {{ a.max_score }} pts</small>
                                 <span class="badge bg-primary-subtle text-primary border border-primary">
                                     {{ a.total_submissions }} Submissions
                                 </span>

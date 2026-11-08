@@ -103,7 +103,7 @@ class AdminDashboardView(AdminRequiredMixin, TemplateView):
         ctx['recent_audits'] = AuditLog.objects.select_related('user').all()[:8]
 
         # Department distribution
-        dept_dist = Department.objects.annotate(student_count=Count('students')).values('name', 'code', 'student_count')
+        dept_dist = Department.objects.annotate(student_count=Count('students')).values('id', 'name', 'code', 'student_count')
         ctx['dept_distribution'] = list(dept_dist)
 
         return ctx

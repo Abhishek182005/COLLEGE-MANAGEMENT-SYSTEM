@@ -5,10 +5,10 @@
 
 {% block content %}
 <div class="card p-4">
-    <div class="d-flex justify-content-between align-items-center mb-4">
+    <div class="d-flex flex-wrap justify-content-between align-items-center gap-3 mb-4">
         <div>
             <h5 class="fw-bold mb-1">Degree Programs & Courses</h5>
-            <p class="text-secondary small mb-0">Manage degree curriculum, duration, and semester structures.</p>
+            <p class="text-secondary small mb-0">Browse academic programs, curriculum structures, semesters, and enrolled students.</p>
         </div>
         {% if is_admin %}
             <a href="{% url 'course_create' %}" class="btn btn-sm btn-primary">
@@ -25,22 +25,48 @@
                     <th>Course Name</th>
                     <th>Department</th>
                     <th>Duration</th>
-                    <th>Total Semesters</th>
+                    <th>Semesters</th>
                     <th>Enrolled Students</th>
+                    <th class="text-end">Actions</th>
                 </tr>
             </thead>
             <tbody>
                 {% for c in courses %}
                     <tr>
-                        <td><span class="badge bg-primary fs-6">{{ c.code }}</span></td>
-                        <td class="fw-semibold text-dark">{{ c.name }}</td>
-                        <td><span class="badge bg-light text-dark border">{{ c.department.code }}</span></td>
+                        <td>
+                            <a href="{% url 'course_detail' c.id %}" class="badge bg-primary fs-6 text-decoration-none">
+                                {{ c.code }}
+                            </a>
+                        </td>
+                        <td>
+                            <a href="{% url 'course_detail' c.id %}" class="fw-bold text-dark text-decoration-none">
+                                {{ c.name }}
+                            </a>
+                        </td>
+                        <td>
+                            <a href="{% url 'department_detail' c.department.id %}" class="badge bg-primary-subtle text-primary border border-primary text-decoration-none">
+                                <i class="fa-solid fa-building-columns me-1"></i> {{ c.department.name }}
+                            </a>
+                        </td>
                         <td>{{ c.duration_years }} Years</td>
-                        <td><span class="badge bg-info-subtle text-info border border-info">{{ c.total_semesters }} Semesters</span></td>
+                        <td><span class="badge bg-light text-dark border">{{ c.total_semesters }} Semesters</span></td>
                         <td><span class="badge bg-success-subtle text-success border border-success">{{ c.students.count }} Enrolled</span></td>
+                        <td class="text-end">
+                            <a href="{% url 'course_detail' c.id %}" class="btn btn-sm btn-light" title="View Course Details">
+                                <i class="fa-solid fa-eye"></i>
+                            </a>
+                            {% if is_admin %}
+                                <a href="{% url 'course_edit' c.id %}" class="btn btn-sm btn-outline-secondary" title="Edit Course">
+                                    <i class="fa-solid fa-pen"></i>
+                                </a>
+                                <a href="{% url 'course_delete' c.id %}" class="btn btn-sm btn-outline-danger" title="Delete Course">
+                                    <i class="fa-solid fa-trash"></i>
+                                </a>
+                            {% endif %}
+                        </td>
                     </tr>
                 {% empty %}
-                    <tr><td colspan="6" class="text-center py-4 text-muted">No courses registered yet.</td></tr>
+                    <tr><td colspan="7" class="text-center py-5 text-muted">No courses registered yet.</td></tr>
                 {% endfor %}
             </tbody>
         </table>

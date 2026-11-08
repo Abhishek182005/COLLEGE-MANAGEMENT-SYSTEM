@@ -1,34 +1,37 @@
 {% extends 'base.html' %}
 
-{% block title %}Add Department{% endblock %}
-{% block page_heading %}New Department{% endblock %}
+{% block title %}{% if is_edit %}Edit {{ department.name }}{% else %}Add Department{% endif %}{% endblock %}
+{% block page_heading %}{% if is_edit %}Edit Department{% else %}New Department{% endif %}{% endblock %}
 
 {% block content %}
 <div class="row justify-content-center">
     <div class="col-md-6">
         <div class="card p-4">
-            <h5 class="fw-bold mb-3"><i class="fa-solid fa-building-columns text-primary me-2"></i> Create Department</h5>
+            <h5 class="fw-bold mb-3">
+                <i class="fa-solid fa-building-columns text-primary me-2"></i>
+                {% if is_edit %}Update Department: {{ department.name }}{% else %}Create Department{% endif %}
+            </h5>
             <form method="post">
                 {% csrf_token %}
                 <div class="mb-3">
                     <label class="form-label small fw-semibold">Department Code *</label>
-                    <input type="text" name="code" class="form-control" placeholder="e.g. CSE or ECE" required>
+                    <input type="text" name="code" class="form-control text-uppercase" placeholder="e.g. CSE or ECE" value="{{ department.code|default:'' }}" required>
                 </div>
                 <div class="mb-3">
                     <label class="form-label small fw-semibold">Department Name *</label>
-                    <input type="text" name="name" class="form-control" placeholder="e.g. Computer Science & Engineering" required>
+                    <input type="text" name="name" class="form-control" placeholder="e.g. Computer Science & Engineering" value="{{ department.name|default:'' }}" required>
                 </div>
                 <div class="mb-3">
                     <label class="form-label small fw-semibold">Established Year</label>
-                    <input type="number" name="established_year" class="form-control" value="2020">
+                    <input type="number" name="established_year" class="form-control" value="{{ department.established_year|default:'2020' }}">
                 </div>
                 <div class="mb-3">
                     <label class="form-label small fw-semibold">Description</label>
-                    <textarea name="description" class="form-control" rows="3" placeholder="Department overview..."></textarea>
+                    <textarea name="description" class="form-control" rows="3" placeholder="Department overview...">{{ department.description|default:'' }}</textarea>
                 </div>
                 <div class="mt-4 d-flex gap-2">
-                    <button type="submit" class="btn btn-primary px-4">Create Department</button>
-                    <a href="{% url 'department_list' %}" class="btn btn-light">Cancel</a>
+                    <button type="submit" class="btn btn-primary px-4">{% if is_edit %}Update Department{% else %}Create Department{% endif %}</button>
+                    <a href="{% if is_edit %}{% url 'department_detail' department.id %}{% else %}{% url 'department_list' %}{% endif %}" class="btn btn-light">Cancel</a>
                 </div>
             </form>
         </div>
