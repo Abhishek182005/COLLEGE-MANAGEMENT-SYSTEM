@@ -1,0 +1,143 @@
+{% extends 'base.html' %}
+
+{% block title %}Schedule Class{% endblock %}
+{% block page_heading %}Class Schedule & Timetable Planner{% endblock %}
+
+{% block content %}
+<div class="row justify-content-center">
+    <div class="col-lg-8">
+        <div class="card p-4">
+            <h5 class="fw-bold mb-2"><i class="fa-solid fa-calendar-plus text-primary me-2"></i> Schedule Class Lecture</h5>
+            <p class="text-secondary small mb-4">Assign subjects, faculty, and classrooms with automated conflict detection.</p>
+
+            <div id="conflictAlert" class="d-none alert alert-danger py-2 px-3 small mb-3">
+                <i class="fa-solid fa-triangle-exclamation me-1"></i> <span id="conflictMessage"></span>
+            </div>
+
+            <div id="noConflictAlert" class="d-none alert alert-success py-2 px-3 small mb-3">
+                <i class="fa-solid fa-circle-check me-1"></i> Slot is available! No faculty, room, or batch conflicts detected.
+            </div>
+
+            <form method="post" id="timetableForm">
+                {% csrf_token %}
+                <div class="row g-3">
+                    <div class="col-md-6">
+                        <label class="form-label small fw-semibold">Day of Week *</label>
+                        <select name="day_of_week" id="id_day_of_week" class="form-select check-conflict" required>
+                            {% for num, name in days %}
+                                <option value="{{ num }}">{{ name }}</option>
+                            {% endfor %}
+                        </select>
+                    </div>
+                    <div class="col-md-6">
+                        <label class="form-label small fw-semibold">Time Slot *</label>
+                        <select name="time_slot" id="id_time_slot" class="form-select check-conflict" required>
+                            {% for code, label in slots %}
+                                <option value="{{ code }}">{{ label }}</option>
+                            {% endfor %}
+                        </select>
+                    </div>
+                    <div class="col-md-6">
+                        <label class="form-label small fw-semibold">Subject *</label>
+                        <select name="subject" id="id_subject" class="form-select check-conflict" required>
+                            {% for s in subjects %}
+                                <option value="{{ s.id }}">{{ s.code }} - {{ s.name }} (Sem {{ s.semester.semester_number }})</option>
+                            {% endfor %}
+                        </select>
+                    </div>
+                    <div class="col-md-6">
+                        <label class="form-label small fw-semibold">Teaching Faculty *</label>
+                        <select name="faculty" id="id_faculty" class="form-select check-conflict" required>
+                            {% for f in faculty_members %}
+                                <option value="{{ f.id }}">{{ f.full_name }} ({{ f.department.code }})</option>
+                            {% endfor %}
+                        </select>
+                    </div>
+                    <div class="col-md-6">
+                        <label class="form-label small fw-semibold">Classroom / Lab *</label>
+                        <select name="classroom" id="id_classroom" class="form-select check-conflict" required>
+                            {% for r in classrooms %}
+                                <option value="{{ r.id }}">Room {{ r.room_number }} ({{ r.building }} - Cap: {{ r.capacity }})</option>
+                            {% endfor %}
+                        </select>
+                    </div>
+                    <div class="col-md-6">
+                        <label class="form-label small fw-semibold">Semester *</label>
+                        <select name="semester" id="id_semester" class="form-select check-conflict" required>
+                            {% for sem in semesters %}
+                                <option value="{{ sem.id }}">{{ sem.course.code }} - Sem {{ sem.semester_number }}</option>
+                            {% endfor %}
+                        </select>
+                    </div>
+                    <div class="col-md-6">
+                        <label class="form-label small fw-semibold">Batch / Section (Optional)</label>
+                        <select name="batch" id="id_batch" class="form-select check-conflict">
+                            <option value="">All Batches</option>
+                            {% for b in batches %}
+                                <option value="{{ b.id }}">{{ b.name }} (Sec {{ b.section }})</option>
+                            {% endfor %}
+                        </select>
+                    </div>
+                </div>
+
+                <div class="mt-4 d-flex gap-2">
+                    <button type="submit" class="btn btn-primary px-4 fw-semibold" id="btnSubmit">
+                        <i class="fa-solid fa-calendar-check me-2"></i> Save Schedule Entry
+                    </button>
+                    <a href="{% url 'timetable_master' %}" class="btn btn-light">Cancel</a>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+    function runConflictCheck() {
+        const payload = {
+            day_of_week: document.getElementById('id_day_of_week').value,
+            time_slot: document.getElementById('id_time_slot').value,
+            faculty_id: document.getElementById('id_faculty').value,
+            classroom_id: document.getElementById('id_classroom').value,
+            semester_id: document.getElementById('id_semester').value,
+            batch_id: document.getElementById('id_batch').value || null
+        };
+
+        fetch('/api/timetable/conflict-check/', {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+                'X-CSRFToken': '{{ csrf_token }}'
+            },
+            body: JSON.stringify(payload)
+        })
+        .then(res => res.json())
+        .then(data => {
+            const cAlert = document.getElementById('conflictAlert');
+            const ncAlert = document.getElementById('noConflictAlert');
+            const submitBtn = document.getElementById('btnSubmit');
+
+            if (data.has_conflict) {
+                cAlert.classList.remove('d-none');
+                ncAlert.classList.add('d-none');
+                document.getElementById('conflictMessage').textContent = data.conflicts.map(c => c.message).join(' | ');
+                submitBtn.classList.remove('btn-primary');
+                submitBtn.classList.add('btn-danger');
+            } else {
+                cAlert.classList.add('d-none');
+                ncAlert.classList.remove('d-none');
+                submitBtn.classList.remove('btn-danger');
+                submitBtn.classList.add('btn-primary');
+            }
+        })
+        .catch(err => console.error(err));
+    }
+
+    document.querySelectorAll('.check-conflict').forEach(elem => {
+        elem.addEventListener('change', runConflictCheck);
+    });
+
+    document.addEventListener('DOMContentLoaded', runConflictCheck);
+</script>
+{% endblock %}

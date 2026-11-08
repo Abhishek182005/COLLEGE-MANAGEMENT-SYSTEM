@@ -1,0 +1,49 @@
+{% extends 'base.html' %}
+
+{% block title %}Courses & Programs{% endblock %}
+{% block page_heading %}Courses & Degree Programs{% endblock %}
+
+{% block content %}
+<div class="card p-4">
+    <div class="d-flex justify-content-between align-items-center mb-4">
+        <div>
+            <h5 class="fw-bold mb-1">Degree Programs & Courses</h5>
+            <p class="text-secondary small mb-0">Manage degree curriculum, duration, and semester structures.</p>
+        </div>
+        {% if is_admin %}
+            <a href="{% url 'course_create' %}" class="btn btn-sm btn-primary">
+                <i class="fa-solid fa-plus me-1"></i> Add Course
+            </a>
+        {% endif %}
+    </div>
+
+    <div class="table-responsive">
+        <table class="table table-hover align-middle">
+            <thead>
+                <tr>
+                    <th>Course Code</th>
+                    <th>Course Name</th>
+                    <th>Department</th>
+                    <th>Duration</th>
+                    <th>Total Semesters</th>
+                    <th>Enrolled Students</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for c in courses %}
+                    <tr>
+                        <td><span class="badge bg-primary fs-6">{{ c.code }}</span></td>
+                        <td class="fw-semibold text-dark">{{ c.name }}</td>
+                        <td><span class="badge bg-light text-dark border">{{ c.department.code }}</span></td>
+                        <td>{{ c.duration_years }} Years</td>
+                        <td><span class="badge bg-info-subtle text-info border border-info">{{ c.total_semesters }} Semesters</span></td>
+                        <td><span class="badge bg-success-subtle text-success border border-success">{{ c.students.count }} Enrolled</span></td>
+                    </tr>
+                {% empty %}
+                    <tr><td colspan="6" class="text-center py-4 text-muted">No courses registered yet.</td></tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+</div>
+{% endblock %}

@@ -1,0 +1,58 @@
+{% extends 'base.html' %}
+
+{% block title %}Create Examination{% endblock %}
+{% block page_heading %}New Academic Examination{% endblock %}
+
+{% block content %}
+<div class="row justify-content-center">
+    <div class="col-md-7">
+        <div class="card p-4">
+            <h5 class="fw-bold mb-3"><i class="fa-solid fa-file-signature text-primary me-2"></i> Configure Examination Schedule</h5>
+            <form method="post">
+                {% csrf_token %}
+                <div class="row g-3">
+                    <div class="col-12">
+                        <label class="form-label small fw-semibold">Examination Name *</label>
+                        <input type="text" name="name" class="form-control" placeholder="e.g. Mid-Term Examination Autumn 2026" required>
+                    </div>
+                    <div class="col-md-6">
+                        <label class="form-label small fw-semibold">Academic Session *</label>
+                        <select name="academic_session" class="form-select" required>
+                            {% for s in sessions %}
+                                <option value="{{ s.id }}">{{ s.name }}</option>
+                            {% endfor %}
+                        </select>
+                    </div>
+                    <div class="col-md-6">
+                        <label class="form-label small fw-semibold">Examination Type *</label>
+                        <select name="exam_type" class="form-select" required>
+                            {% for code, label in exam_types %}
+                                <option value="{{ code }}">{{ label }}</option>
+                            {% endfor %}
+                        </select>
+                    </div>
+                    <div class="col-md-6">
+                        <label class="form-label small fw-semibold">Start Date *</label>
+                        <input type="date" name="start_date" class="form-control" required>
+                    </div>
+                    <div class="col-md-6">
+                        <label class="form-label small fw-semibold">End Date *</label>
+                        <input type="date" name="end_date" class="form-control" required>
+                    </div>
+                    <div class="col-12">
+                        <div class="form-check form-switch mt-2">
+                            <input class="form-check-input" type="checkbox" name="is_published" id="id_is_published">
+                            <label class="form-check-label small fw-semibold" for="id_is_published">Publish Results to Student Portal immediately upon completion</label>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="mt-4 d-flex gap-2">
+                    <button type="submit" class="btn btn-primary px-4">Create Examination</button>
+                    <a href="{% url 'examination_list' %}" class="btn btn-light">Cancel</a>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+{% endblock %}

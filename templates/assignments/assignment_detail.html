@@ -1,0 +1,200 @@
+{% extends 'base.html' %}
+
+{% block title %}{{ assignment.title }} | Assignment{% endblock %}
+{% block page_heading %}Assignment Details & Submissions{% endblock %}
+
+{% block content %}
+<div class="row g-4">
+    <!-- Left Column: Assignment Details -->
+    <div class="col-lg-5">
+        <div class="card p-4">
+            <div class="d-flex justify-content-between align-items-start mb-2">
+                <span class="badge bg-primary fs-6">{{ assignment.subject.code }}</span>
+                {% if assignment.is_expired %}
+                    <span class="badge bg-danger">Deadline Passed</span>
+                {% else %}
+                    <span class="badge bg-success">Open for Submission</span>
+                {% endif %}
+            </div>
+
+            <h5 class="fw-bold text-dark mb-2">{{ assignment.title }}</h5>
+            <p class="text-secondary small mb-3">{{ assignment.description|linebreaksbr }}</p>
+
+            {% if assignment.attachment %}
+                <div class="mb-3 p-3 bg-light rounded border">
+                    <small class="fw-bold d-block text-secondary mb-1">Attached Task File:</small>
+                    <a href="{{ assignment.attachment.url }}" download class="btn btn-sm btn-outline-primary">
+                        <i class="fa-solid fa-paperclip me-1"></i> Download Reference Material
+                    </a>
+                </div>
+            {% endif %}
+
+            <div class="border-top pt-3 text-secondary small">
+                <p class="mb-1"><b>Subject:</b> {{ assignment.subject.name }}</p>
+                <p class="mb-1"><b>Faculty:</b> {{ assignment.faculty.full_name }}</p>
+                <p class="mb-1"><b>Semester:</b> Semester {{ assignment.semester.semester_number }}</p>
+                <p class="mb-1"><b>Due Date:</b> <span class="text-danger fw-semibold">{{ assignment.due_date|date:"F d, Y - H:i" }}</span></p>
+                <p class="mb-0"><b>Maximum Score:</b> {{ assignment.max_score }} Points</p>
+            </div>
+        </div>
+
+        <!-- Student Submission Section (if Student logged in) -->
+        {% if is_student %}
+            <div class="card p-4 mt-4">
+                <h5 class="fw-bold mb-3"><i class="fa-solid fa-cloud-arrow-up text-primary me-2"></i> Your Submission</h5>
+                {% if my_submission %}
+                    <div class="p-3 bg-light rounded border mb-3">
+                        <div class="d-flex justify-content-between align-items-center mb-2">
+                            <span class="badge {% if my_submission.status == 'GRADED' %}bg-success{% else %}bg-warning text-dark{% endif %}">
+                                {{ my_submission.get_status_display }}
+                            </span>
+                            {% if my_submission.is_late %}
+                                <span class="badge bg-danger">Submitted Late</span>
+                            {% else %}
+                                <span class="badge bg-success">Submitted On Time</span>
+                            {% endif %}
+                        </div>
+
+                        <p class="small text-secondary mb-1"><b>Submitted at:</b> {{ my_submission.submitted_at|date:"M d, Y H:i" }}</p>
+                        <p class="small text-secondary mb-2"><b>My Notes:</b> {{ my_submission.student_notes|default:"None" }}</p>
+
+                        <a href="{{ my_submission.submission_file.url }}" download class="btn btn-sm btn-outline-secondary mb-2">
+                            <i class="fa-solid fa-download me-1"></i> View Submitted File
+                        </a>
+
+                        {% if my_submission.status == 'GRADED' %}
+                            <div class="pt-2 border-top mt-2">
+                                <h6 class="fw-bold text-success mb-1">Score: {{ my_submission.marks_obtained }} / {{ assignment.max_score }}</h6>
+                                <p class="small text-muted mb-0"><b>Faculty Feedback:</b> {{ my_submission.faculty_feedback|default:"Well done." }}</p>
+                            </div>
+                        {% endif %}
+                    </div>
+                {% endif %}
+
+                <!-- Submit / Re-submit Form -->
+                {% if not assignment.is_expired or not my_submission %}
+                    <form method="post" action="{% url 'submit_assignment' assignment.id %}" enctype="multipart/form-data">
+                        {% csrf_token %}
+                        <div class="mb-3">
+                            <label class="form-label small fw-semibold">Upload Solution File *</label>
+                            <input type="file" name="submission_file" class="form-control form-control-sm" required>
+                        </div>
+                        <div class="mb-3">
+                            <label class="form-label small fw-semibold">Student Notes / Comments</label>
+                            <textarea name="student_notes" class="form-control form-control-sm" rows="2" placeholder="Brief notes for instructor..."></textarea>
+                        </div>
+                        <button type="submit" class="btn btn-primary w-100 btn-sm">
+                            <i class="fa-solid fa-upload me-1"></i> {% if my_submission %}Update Submission{% else %}Turn In Assignment{% endif %}
+                        </button>
+                    </form>
+                {% else %}
+                    <div class="alert alert-danger py-2 small mb-0">The deadline for this assignment has expired.</div>
+                {% endif %}
+            </div>
+        {% endif %}
+    </div>
+
+    <!-- Right Column: Submissions to Grade (for Faculty & Admin) -->
+    <div class="col-lg-7">
+        {% if is_faculty or is_admin %}
+            <div class="card p-4">
+                <div class="d-flex justify-content-between align-items-center mb-3">
+                    <h5 class="fw-bold mb-0"><i class="fa-solid fa-file-circle-check text-success me-2"></i> Student Submissions</h5>
+                    <span class="badge bg-light text-secondary border">{{ submissions.count }} Turned In</span>
+                </div>
+
+                <div class="table-responsive">
+                    <table class="table table-hover align-middle">
+                        <thead>
+                            <tr>
+                                <th>Student</th>
+                                <th>Submitted On</th>
+                                <th>Timing</th>
+                                <th>Score</th>
+                                <th class="text-end">Grade & Feedback</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {% for sub in submissions %}
+                                <tr>
+                                    <td>
+                                        <div class="fw-semibold text-dark">{{ sub.student.full_name }}</div>
+                                        <small class="badge bg-light text-dark border">{{ sub.student.roll_number }}</small>
+                                    </td>
+                                    <td>
+                                        <small class="text-secondary d-block">{{ sub.submitted_at|date:"M d, H:i" }}</small>
+                                        <a href="{{ sub.submission_file.url }}" download class="btn btn-sm btn-link p-0 text-decoration-none">
+                                            <i class="fa-solid fa-download me-1"></i> File
+                                        </a>
+                                    </td>
+                                    <td>
+                                        {% if sub.is_late %}
+                                            <span class="badge bg-danger-subtle text-danger border border-danger">Late</span>
+                                        {% else %}
+                                            <span class="badge bg-success-subtle text-success border border-success">On Time</span>
+                                        {% endif %}
+                                    </td>
+                                    <td>
+                                        {% if sub.marks_obtained is not None %}
+                                            <span class="fw-bold text-success">{{ sub.marks_obtained }}</span> / {{ assignment.max_score }}
+                                        {% else %}
+                                            <span class="text-warning small">Ungraded</span>
+                                        {% endif %}
+                                    </td>
+                                    <td class="text-end">
+                                        <!-- Inline Grade Dropdown / Modal Trigger -->
+                                        <button type="button" class="btn btn-sm btn-outline-primary" data-bs-toggle="modal" data-bs-target="#gradeModal{{ sub.id }}">
+                                            <i class="fa-solid fa-marker me-1"></i> Grade
+                                        </button>
+
+                                        <!-- Grading Modal -->
+                                        <div class="modal fade" id="gradeModal{{ sub.id }}" tabindex="-1">
+                                            <div class="modal-dialog text-start">
+                                                <div class="modal-content p-3">
+                                                    <div class="modal-header">
+                                                        <h6 class="modal-title fw-bold">Grade: {{ sub.student.full_name }} ({{ sub.student.roll_number }})</h6>
+                                                        <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+                                                    </div>
+                                                    <form method="post" action="{% url 'grade_submission' sub.id %}">
+                                                        {% csrf_token %}
+                                                        <div class="modal-body">
+                                                            <div class="mb-3">
+                                                                <label class="form-label small fw-semibold">Marks Awarded (Max: {{ assignment.max_score }}) *</label>
+                                                                <input type="number" step="0.5" name="marks_obtained" class="form-control" value="{{ sub.marks_obtained|default:'' }}" max="{{ assignment.max_score }}" required>
+                                                            </div>
+                                                            <div class="mb-3">
+                                                                <label class="form-label small fw-semibold">Faculty Feedback</label>
+                                                                <textarea name="faculty_feedback" class="form-control" rows="3" placeholder="Constructive feedback for student...">{{ sub.faculty_feedback|default:'' }}</textarea>
+                                                            </div>
+                                                        </div>
+                                                        <div class="modal-footer">
+                                                            <button type="button" class="btn btn-light" data-bs-dismiss="modal">Cancel</button>
+                                                            <button type="submit" class="btn btn-primary">Save Score</button>
+                                                        </div>
+                                                    </form>
+                                                </div>
+                                            </div>
+                                        </div>
+                                    </td>
+                                </tr>
+                            {% empty %}
+                                <tr><td colspan="5" class="text-center py-4 text-muted">No students have submitted this assignment yet.</td></tr>
+                            {% endfor %}
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        {% else %}
+            <!-- General guidelines card for students -->
+            <div class="card p-4">
+                <h6 class="fw-bold mb-2"><i class="fa-solid fa-circle-info text-info me-2"></i> Submission Guidelines</h6>
+                <ul class="text-secondary small mb-0 ps-3">
+                    <li class="mb-1">Ensure your solution file contains your name and roll number in the header comments.</li>
+                    <li class="mb-1">Late submissions after {{ assignment.due_date|date:"F d, Y H:i" }} are automatically tagged as late.</li>
+                    <li class="mb-0">You can update your submission file at any point before the deadline expires.</li>
+                </ul>
+            </div>
+        {% endif %}
+    </div>
+</div>
+{% endblock %}

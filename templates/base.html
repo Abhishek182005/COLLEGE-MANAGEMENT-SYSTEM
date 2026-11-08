@@ -1,0 +1,374 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>{% block title %}CampusConnect ERP{% endblock %} | {{ COLLEGE_NAME }}</title>
+    <!-- Bootstrap 5 CSS -->
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet">
+    <!-- FontAwesome 6 -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
+    <!-- Google Fonts: Inter -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
+    <style>
+        :root {
+            --brand-primary: #1e3a8a;
+            --brand-secondary: #3b82f6;
+            --brand-accent: #0ea5e9;
+            --bg-canvas: #f8fafc;
+            --sidebar-bg: #0f172a;
+            --sidebar-hover: #1e293b;
+            --card-border: #e2e8f0;
+        }
+        body {
+            font-family: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif;
+            background-color: var(--bg-canvas);
+            color: #1e293b;
+            min-height: 100vh;
+        }
+        /* Sidebar Styling */
+        .sidebar {
+            width: 270px;
+            background-color: var(--sidebar-bg);
+            color: #94a3b8;
+            min-height: 100vh;
+            position: fixed;
+            top: 0;
+            left: 0;
+            z-index: 1030;
+            transition: all 0.3s ease;
+            box-shadow: 4px 0 16px rgba(0,0,0,0.06);
+            overflow-y: auto;
+        }
+        .sidebar-brand {
+            padding: 1.4rem 1.5rem;
+            border-bottom: 1px solid rgba(255,255,255,0.08);
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            color: #fff;
+            text-decoration: none;
+            font-weight: 700;
+            font-size: 1.15rem;
+        }
+        .sidebar-brand i {
+            color: #38bdf8;
+            font-size: 1.5rem;
+        }
+        .nav-section-title {
+            font-size: 0.72rem;
+            text-transform: uppercase;
+            letter-spacing: 0.08em;
+            color: #64748b;
+            padding: 1.2rem 1.5rem 0.4rem;
+            font-weight: 700;
+        }
+        .sidebar .nav-link {
+            color: #cbd5e1;
+            padding: 0.65rem 1.5rem;
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            font-size: 0.92rem;
+            font-weight: 500;
+            transition: all 0.15s ease;
+            text-decoration: none;
+        }
+        .sidebar .nav-link:hover, .sidebar .nav-link.active {
+            color: #fff;
+            background-color: var(--sidebar-hover);
+            border-left: 4px solid var(--brand-accent);
+        }
+        .sidebar .nav-link i {
+            width: 20px;
+            text-align: center;
+            font-size: 1rem;
+            color: #94a3b8;
+        }
+        .sidebar .nav-link:hover i, .sidebar .nav-link.active i {
+            color: #38bdf8;
+        }
+        /* Main Layout */
+        .main-content {
+            margin-left: 270px;
+            min-height: 100vh;
+            display: flex;
+            flex-direction: column;
+        }
+        .topbar {
+            background: #fff;
+            border-bottom: 1px solid var(--card-border);
+            padding: 0.85rem 2rem;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            position: sticky;
+            top: 0;
+            z-index: 1020;
+        }
+        .content-body {
+            padding: 2rem;
+            flex: 1;
+        }
+        /* Modern Cards */
+        .card {
+            border: 1px solid var(--card-border);
+            border-radius: 12px;
+            box-shadow: 0 1px 3px rgba(0,0,0,0.04);
+            background-color: #fff;
+        }
+        .card-header {
+            background-color: transparent;
+            border-bottom: 1px solid var(--card-border);
+            padding: 1rem 1.3rem;
+            font-weight: 600;
+        }
+        .stat-card {
+            border-radius: 12px;
+            padding: 1.4rem;
+            background: #fff;
+            border: 1px solid var(--card-border);
+            box-shadow: 0 1px 4px rgba(0,0,0,0.03);
+            display: flex;
+            align-items: center;
+            gap: 18px;
+        }
+        .stat-icon {
+            width: 52px;
+            height: 52px;
+            border-radius: 12px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 1.4rem;
+        }
+        .badge-role-admin { background-color: #fee2e2; color: #991b1b; }
+        .badge-role-faculty { background-color: #e0e7ff; color: #3730a3; }
+        .badge-role-student { background-color: #dcfce7; color: #166534; }
+        .table thead th {
+            font-size: 0.8rem;
+            text-transform: uppercase;
+            letter-spacing: 0.05em;
+            color: #64748b;
+            background-color: #f8fafc;
+            border-bottom: 1px solid var(--card-border);
+        }
+        @media (max-width: 992px) {
+            .sidebar { transform: translateX(-100%); }
+            .sidebar.show { transform: translateX(0); }
+            .main-content { margin-left: 0; }
+        }
+    </style>
+    {% block extra_css %}{% endblock %}
+</head>
+<body>
+
+    <!-- Sidebar -->
+    <aside class="sidebar">
+        <a href="{% url 'dashboard_redirect' %}" class="sidebar-brand">
+            <i class="fa-solid fa-graduation-cap"></i>
+            <div>
+                <span class="d-block" style="line-height: 1.2;">CampusConnect</span>
+                <small class="text-secondary fw-normal" style="font-size: 0.72rem;">{{ COLLEGE_CODE }}</small>
+            </div>
+        </a>
+
+        <div class="nav flex-column py-2">
+            <span class="nav-section-title">Navigation</span>
+            <a href="{% url 'dashboard_redirect' %}" class="nav-link">
+                <i class="fa-solid fa-gauge-high"></i> Dashboard
+            </a>
+
+            {% if is_admin %}
+                <!-- Admin specific navigation -->
+                <span class="nav-section-title">College Administration</span>
+                <a href="{% url 'student_list' %}" class="nav-link">
+                    <i class="fa-solid fa-user-graduate"></i> Students Directory
+                </a>
+                <a href="{% url 'faculty_list' %}" class="nav-link">
+                    <i class="fa-solid fa-chalkboard-user"></i> Faculty Members
+                </a>
+                <a href="{% url 'department_list' %}" class="nav-link">
+                    <i class="fa-solid fa-building-columns"></i> Departments
+                </a>
+                <a href="{% url 'course_list' %}" class="nav-link">
+                    <i class="fa-solid fa-book-open"></i> Courses & Semesters
+                </a>
+                <a href="{% url 'subject_list' %}" class="nav-link">
+                    <i class="fa-solid fa-book"></i> Subjects & Allocations
+                </a>
+                <a href="{% url 'attendance_session_list' %}" class="nav-link">
+                    <i class="fa-solid fa-clipboard-check"></i> Attendance Hub
+                </a>
+                <a href="{% url 'attendance_shortage_report' %}" class="nav-link">
+                    <i class="fa-solid fa-triangle-exclamation text-warning"></i> Shortage Alerts (<75%)
+                </a>
+                <a href="{% url 'timetable_master' %}" class="nav-link">
+                    <i class="fa-solid fa-calendar-days"></i> Master Timetable
+                </a>
+                <a href="{% url 'examination_list' %}" class="nav-link">
+                    <i class="fa-solid fa-file-signature"></i> Examinations & Marks
+                </a>
+                <a href="{% url 'assignment_list' %}" class="nav-link">
+                    <i class="fa-solid fa-tasks"></i> Assignments
+                </a>
+                <a href="{% url 'notice_list' %}" class="nav-link">
+                    <i class="fa-solid fa-bullhorn"></i> Notice Board
+                </a>
+
+                <span class="nav-section-title">Reports & System</span>
+                <a href="{% url 'reports_analytics' %}" class="nav-link">
+                    <i class="fa-solid fa-chart-pie"></i> Visual Analytics
+                </a>
+                <a href="{% url 'audit_log_list' %}" class="nav-link">
+                    <i class="fa-solid fa-shield-halved"></i> Security & Audit Trail
+                </a>
+                <a href="{% url 'user_management' %}" class="nav-link">
+                    <i class="fa-solid fa-users-gear"></i> User Accounts
+                </a>
+            {% elif is_faculty %}
+                <!-- Faculty specific navigation -->
+                <span class="nav-section-title">Teaching Portal</span>
+                <a href="{% url 'quick_mark_attendance' %}" class="nav-link">
+                    <i class="fa-solid fa-user-check text-info"></i> Quick Attendance
+                </a>
+                <a href="{% url 'attendance_session_list' %}" class="nav-link">
+                    <i class="fa-solid fa-clipboard-list"></i> Attendance Logs
+                </a>
+                <a href="{% url 'attendance_shortage_report' %}" class="nav-link">
+                    <i class="fa-solid fa-triangle-exclamation text-warning"></i> Attendance Shortages
+                </a>
+                <a href="{% url 'my_timetable' %}" class="nav-link">
+                    <i class="fa-solid fa-calendar-week"></i> My Schedule
+                </a>
+                <a href="{% url 'student_list' %}" class="nav-link">
+                    <i class="fa-solid fa-user-graduate"></i> Enrolled Students
+                </a>
+                <a href="{% url 'assignment_list' %}" class="nav-link">
+                    <i class="fa-solid fa-folder-open"></i> Assignments & Grading
+                </a>
+                <a href="{% url 'examination_list' %}" class="nav-link">
+                    <i class="fa-solid fa-marker"></i> Assessment Marks
+                </a>
+                <a href="{% url 'notice_list' %}" class="nav-link">
+                    <i class="fa-solid fa-bullhorn"></i> Campus Notices
+                </a>
+            {% elif is_student %}
+                <!-- Student specific navigation -->
+                <span class="nav-section-title">Student Portal</span>
+                <a href="{% url 'student_qr_scanner' %}" class="nav-link">
+                    <i class="fa-solid fa-qrcode text-primary"></i> Scan QR Attendance
+                </a>
+                <a href="{% url 'my_timetable' %}" class="nav-link">
+                    <i class="fa-solid fa-calendar-day"></i> Class Timetable
+                </a>
+                <a href="{% url 'student_results' %}" class="nav-link">
+                    <i class="fa-solid fa-award text-success"></i> Exam Results & Marks
+                </a>
+                <a href="{% url 'assignment_list' %}" class="nav-link">
+                    <i class="fa-solid fa-file-arrow-up"></i> My Assignments
+                </a>
+                <a href="{% url 'notice_list' %}" class="nav-link">
+                    <i class="fa-solid fa-bullhorn"></i> Notice Board
+                </a>
+            {% endif %}
+
+            <span class="nav-section-title">Account</span>
+            <a href="{% url 'profile' %}" class="nav-link">
+                <i class="fa-solid fa-id-badge"></i> My Profile
+            </a>
+            <a href="{% url 'logout' %}" class="nav-link text-danger">
+                <i class="fa-solid fa-arrow-right-from-bracket"></i> Sign Out
+            </a>
+        </div>
+    </aside>
+
+    <!-- Main Content Area -->
+    <div class="main-content">
+        <!-- Topbar -->
+        <header class="topbar">
+            <div class="d-flex align-items-center gap-3">
+                <button class="btn btn-sm btn-outline-secondary d-lg-none" id="sidebarToggle">
+                    <i class="fa-solid fa-bars"></i>
+                </button>
+                <h5 class="mb-0 fw-semibold text-secondary d-none d-md-block">
+                    {% block page_heading %}{{ COLLEGE_NAME }}{% endblock %}
+                </h5>
+            </div>
+
+            <div class="d-flex align-items-center gap-3">
+                <!-- Notices Bell -->
+                <a href="{% url 'notice_list' %}" class="btn btn-light position-relative rounded-pill px-3 py-1">
+                    <i class="fa-regular fa-bell text-secondary"></i>
+                    {% if unread_notices_count > 0 %}
+                        <span class="position-absolute top-0 start-100 translate-middle badge rounded-pill bg-danger">
+                            {{ unread_notices_count }}
+                        </span>
+                    {% endif %}
+                </a>
+
+                <!-- User Role Badge -->
+                {% if is_admin %}
+                    <span class="badge badge-role-admin px-3 py-2 rounded-pill"><i class="fa-solid fa-user-shield me-1"></i> Admin</span>
+                {% elif is_faculty %}
+                    <span class="badge badge-role-faculty px-3 py-2 rounded-pill"><i class="fa-solid fa-chalkboard-user me-1"></i> Faculty</span>
+                {% elif is_student %}
+                    <span class="badge badge-role-student px-3 py-2 rounded-pill"><i class="fa-solid fa-user-graduate me-1"></i> Student</span>
+                {% endif %}
+
+                <!-- Profile Dropdown -->
+                <div class="dropdown">
+                    <button class="btn btn-white d-flex align-items-center gap-2 border-0" data-bs-toggle="dropdown">
+                        <img src="{{ request.user.avatar_url }}" alt="User" class="rounded-circle" width="36" height="36">
+                        <span class="fw-medium text-dark d-none d-sm-inline">{{ request.user.get_full_name|default:request.user.username }}</span>
+                        <i class="fa-solid fa-chevron-down text-secondary" style="font-size: 0.75rem;"></i>
+                    </button>
+                    <ul class="dropdown-menu dropdown-menu-end shadow-sm border-0">
+                        <li><a class="dropdown-item" href="{% url 'profile' %}"><i class="fa-solid fa-user me-2 text-secondary"></i> View Profile</a></li>
+                        <li><a class="dropdown-item" href="{% url 'change_password' %}"><i class="fa-solid fa-key me-2 text-secondary"></i> Change Password</a></li>
+                        <li><hr class="dropdown-divider"></li>
+                        <li><a class="dropdown-item text-danger" href="{% url 'logout' %}"><i class="fa-solid fa-right-from-bracket me-2"></i> Sign Out</a></li>
+                    </ul>
+                </div>
+            </div>
+        </header>
+
+        <!-- Body Content -->
+        <main class="content-body">
+            <!-- Flash Messages -->
+            {% if messages %}
+                <div class="messages-container mb-4">
+                    {% for message in messages %}
+                        <div class="alert alert-{{ message.tags|default:'info' }} alert-dismissible fade show shadow-sm" role="alert">
+                            {% if message.tags == 'error' %}
+                                <i class="fa-solid fa-triangle-exclamation me-2 text-danger"></i>
+                            {% elif message.tags == 'success' %}
+                                <i class="fa-solid fa-circle-check me-2 text-success"></i>
+                            {% else %}
+                                <i class="fa-solid fa-circle-info me-2 text-primary"></i>
+                            {% endif %}
+                            {{ message }}
+                            <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+                        </div>
+                    {% endfor %}
+                </div>
+            {% endif %}
+
+            {% block content %}{% endblock %}
+        </main>
+    </div>
+
+    <!-- Bootstrap Bundle JS -->
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
+    <script>
+        const toggleBtn = document.getElementById('sidebarToggle');
+        if (toggleBtn) {
+            toggleBtn.addEventListener('click', () => {
+                document.querySelector('.sidebar').classList.toggle('show');
+            });
+        }
+    </script>
+    {% block extra_js %}{% endblock %}
+</body>
+</html>

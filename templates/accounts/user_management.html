@@ -1,0 +1,107 @@
+{% extends 'base.html' %}
+
+{% block title %}User Account Management{% endblock %}
+{% block page_heading %}User Accounts & Roles{% endblock %}
+
+{% block content %}
+<div class="card p-4">
+    <div class="d-flex flex-wrap justify-content-between align-items-center gap-3 mb-4">
+        <div>
+            <h5 class="fw-bold mb-1">Registered System Users</h5>
+            <p class="text-secondary small mb-0">Control account activation, roles, and administrative statuses.</p>
+        </div>
+        <div class="d-flex gap-2">
+            <a href="{% url 'student_create' %}" class="btn btn-sm btn-outline-primary"><i class="fa-solid fa-user-plus me-1"></i> Add Student</a>
+            <a href="{% url 'faculty_create' %}" class="btn btn-sm btn-outline-primary"><i class="fa-solid fa-chalkboard-user me-1"></i> Add Faculty</a>
+        </div>
+    </div>
+
+    <!-- Filters -->
+    <form method="get" class="row g-2 mb-4">
+        <div class="col-md-4">
+            <input type="text" name="q" class="form-control form-control-sm" placeholder="Search by username, name, email..." value="{{ search_query }}">
+        </div>
+        <div class="col-md-3">
+            <select name="role" class="form-select form-select-sm">
+                <option value="">All Roles</option>
+                <option value="ADMIN" {% if current_role == 'ADMIN' %}selected{% endif %}>Administrator</option>
+                <option value="FACULTY" {% if current_role == 'FACULTY' %}selected{% endif %}>Faculty</option>
+                <option value="STUDENT" {% if current_role == 'STUDENT' %}selected{% endif %}>Student</option>
+            </select>
+        </div>
+        <div class="col-md-2">
+            <button type="submit" class="btn btn-sm btn-primary w-100"><i class="fa-solid fa-filter me-1"></i> Filter</button>
+        </div>
+        <div class="col-md-2">
+            <a href="{% url 'user_management' %}" class="btn btn-sm btn-light w-100">Reset</a>
+        </div>
+    </form>
+
+    <div class="table-responsive">
+        <table class="table table-hover align-middle">
+            <thead>
+                <tr>
+                    <th>User</th>
+                    <th>Role</th>
+                    <th>Email</th>
+                    <th>Phone</th>
+                    <th>Status</th>
+                    <th>Joined</th>
+                    <th class="text-end">Actions</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for u in users_list %}
+                    <tr>
+                        <td>
+                            <div class="d-flex align-items-center gap-2">
+                                <img src="{{ u.avatar_url }}" class="rounded-circle" width="32" height="32" alt="Avatar">
+                                <div>
+                                    <div class="fw-semibold text-dark">{{ u.get_full_name|default:u.username }}</div>
+                                    <small class="text-secondary">@{{ u.username }}</small>
+                                </div>
+                            </div>
+                        </td>
+                        <td>
+                            {% if u.role == 'ADMIN' %}
+                                <span class="badge badge-role-admin">Administrator</span>
+                            {% elif u.role == 'FACULTY' %}
+                                <span class="badge badge-role-faculty">Faculty</span>
+                            {% else %}
+                                <span class="badge badge-role-student">Student</span>
+                            {% endif %}
+                        </td>
+                        <td>{{ u.email|default:"-" }}</td>
+                        <td>{{ u.phone|default:"-" }}</td>
+                        <td>
+                            {% if u.is_active %}
+                                <span class="badge bg-success-subtle text-success border border-success"><i class="fa-solid fa-circle-check me-1"></i> Active</span>
+                            {% else %}
+                                <span class="badge bg-danger-subtle text-danger border border-danger"><i class="fa-solid fa-circle-xmark me-1"></i> Deactivated</span>
+                            {% endif %}
+                        </td>
+                        <td>{{ u.date_joined|date:"M d, Y" }}</td>
+                        <td class="text-end">
+                            {% if u != request.user %}
+                                <a href="{% url 'toggle_user_active' u.id %}" class="btn btn-sm {% if u.is_active %}btn-outline-danger{% else %}btn-outline-success{% endif %}">
+                                    {% if u.is_active %}
+                                        <i class="fa-solid fa-ban me-1"></i> Deactivate
+                                    {% else %}
+                                        <i class="fa-solid fa-check me-1"></i> Activate
+                                    {% endif %}
+                                </a>
+                            {% else %}
+                                <span class="badge bg-secondary">Current User</span>
+                            {% endif %}
+                        </td>
+                    </tr>
+                {% empty %}
+                    <tr>
+                        <td colspan="7" class="text-center py-4 text-muted">No user accounts found matching your query.</td>
+                    </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+</div>
+{% endblock %}

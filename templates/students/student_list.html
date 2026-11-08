@@ -1,0 +1,142 @@
+{% extends 'base.html' %}
+
+{% block title %}Students Directory{% endblock %}
+{% block page_heading %}Students Directory{% endblock %}
+
+{% block content %}
+<div class="card p-4">
+    <!-- Header with Action Buttons -->
+    <div class="d-flex flex-wrap justify-content-between align-items-center gap-3 mb-4">
+        <div>
+            <h5 class="fw-bold mb-1">Enrolled Students</h5>
+            <p class="text-secondary small mb-0">Search, manage academic enrollment, safe archival, and generate ID cards.</p>
+        </div>
+        <div class="d-flex flex-wrap gap-2">
+            <a href="{% url 'export_students_excel' %}" class="btn btn-sm btn-outline-success">
+                <i class="fa-solid fa-file-excel me-1"></i> Export Excel
+            </a>
+            {% if is_admin %}
+                <a href="{% url 'import_students_excel' %}" class="btn btn-sm btn-outline-secondary">
+                    <i class="fa-solid fa-file-import me-1"></i> Bulk Excel Import
+                </a>
+                <a href="{% url 'student_create' %}" class="btn btn-sm btn-primary">
+                    <i class="fa-solid fa-user-plus me-1"></i> Add Student
+                </a>
+            {% endif %}
+        </div>
+    </div>
+
+    <!-- Filters -->
+    <form method="get" class="row g-2 mb-4 bg-light p-3 rounded-3 border">
+        <div class="col-md-3">
+            <input type="text" name="q" class="form-control form-control-sm" placeholder="Search Roll, Reg No, Name..." value="{{ search_query }}">
+        </div>
+        <div class="col-md-2">
+            <select name="department" class="form-select form-select-sm">
+                <option value="">All Departments</option>
+                {% for d in departments %}
+                    <option value="{{ d.id }}" {% if selected_dept == d.id|stringformat:"s" %}selected{% endif %}>{{ d.code }}</option>
+                {% endfor %}
+            </select>
+        </div>
+        <div class="col-md-2">
+            <select name="course" class="form-select form-select-sm">
+                <option value="">All Courses</option>
+                {% for c in courses %}
+                    <option value="{{ c.id }}" {% if selected_course == c.id|stringformat:"s" %}selected{% endif %}>{{ c.code }}</option>
+                {% endfor %}
+            </select>
+        </div>
+        <div class="col-md-2">
+            <select name="semester" class="form-select form-select-sm">
+                <option value="">All Semesters</option>
+                {% for s in semesters %}
+                    <option value="{{ s.id }}" {% if selected_sem == s.id|stringformat:"s" %}selected{% endif %}>Sem {{ s.semester_number }}</option>
+                {% endfor %}
+            </select>
+        </div>
+        <div class="col-md-2">
+            <select name="batch" class="form-select form-select-sm">
+                <option value="">All Batches</option>
+                {% for b in batches %}
+                    <option value="{{ b.id }}" {% if selected_batch == b.id|stringformat:"s" %}selected{% endif %}>{{ b.name }} ({{ b.section }})</option>
+                {% endfor %}
+            </select>
+        </div>
+        <div class="col-md-1">
+            <button type="submit" class="btn btn-sm btn-primary w-100"><i class="fa-solid fa-filter"></i></button>
+        </div>
+    </form>
+
+    <!-- Students Table -->
+    <div class="table-responsive">
+        <table class="table table-hover align-middle">
+            <thead>
+                <tr>
+                    <th>Student Name</th>
+                    <th>Roll Number</th>
+                    <th>Registration No</th>
+                    <th>Department & Course</th>
+                    <th>Semester / Batch</th>
+                    <th>Attendance %</th>
+                    <th class="text-end">Actions</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for s in students %}
+                    {% with stats=s.get_attendance_stats %}
+                    <tr>
+                        <td>
+                            <div class="d-flex align-items-center gap-2">
+                                <img src="{{ s.user.avatar_url }}" class="rounded-circle" width="36" height="36" alt="Avatar">
+                                <div>
+                                    <a href="{% url 'student_detail' s.id %}" class="fw-semibold text-dark text-decoration-none">
+                                        {{ s.full_name }}
+                                    </a>
+                                    <small class="text-muted d-block">{{ s.email }}</small>
+                                </div>
+                            </div>
+                        </td>
+                        <td><span class="badge bg-light text-dark border">{{ s.roll_number }}</span></td>
+                        <td><small class="text-secondary">{{ s.registration_number }}</small></td>
+                        <td>
+                            <div class="fw-semibold">{{ s.course.code }}</div>
+                            <small class="text-muted">{{ s.department.code }}</small>
+                        </td>
+                        <td>
+                            <span>Sem {{ s.current_semester.semester_number }}</span>
+                            <small class="text-muted d-block">{{ s.batch.name }} ({{ s.batch.section }})</small>
+                        </td>
+                        <td>
+                            <div class="d-flex align-items-center gap-2" style="width: 130px;">
+                                <div class="progress flex-grow-1" style="height: 6px;">
+                                    <div class="progress-bar {% if stats.shortage %}bg-danger{% else %}bg-success{% endif %}" style="width: {{ stats.percentage }}%;"></div>
+                                </div>
+                                <span class="fw-bold small {% if stats.shortage %}text-danger{% else %}text-success{% endif %}">{{ stats.percentage }}%</span>
+                            </div>
+                        </td>
+                        <td class="text-end">
+                            <a href="{% url 'student_id_card_pdf' s.id %}" target="_blank" class="btn btn-sm btn-outline-secondary" title="Print ID Card">
+                                <i class="fa-solid fa-id-card"></i>
+                            </a>
+                            <a href="{% url 'student_detail' s.id %}" class="btn btn-sm btn-light" title="View Profile">
+                                <i class="fa-solid fa-chevron-right"></i>
+                            </a>
+                            {% if is_admin %}
+                                <a href="{% url 'student_archive' s.id %}" class="btn btn-sm btn-outline-danger" title="{% if s.is_archived %}Restore{% else %}Archive / Soft Delete{% endif %}">
+                                    <i class="fa-solid fa-box-archive"></i>
+                                </a>
+                            {% endif %}
+                        </td>
+                    </tr>
+                    {% endwith %}
+                {% empty %}
+                    <tr>
+                        <td colspan="7" class="text-center py-4 text-muted">No students found matching your filters.</td>
+                    </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+</div>
+{% endblock %}

@@ -1,0 +1,61 @@
+{% extends 'base.html' %}
+
+{% block title %}Create Assignment{% endblock %}
+{% block page_heading %}New Course Assignment{% endblock %}
+
+{% block content %}
+<div class="row justify-content-center">
+    <div class="col-lg-8">
+        <div class="card p-4">
+            <h5 class="fw-bold mb-3"><i class="fa-solid fa-tasks text-primary me-2"></i> Publish Course Assignment</h5>
+            <form method="post" enctype="multipart/form-data">
+                {% csrf_token %}
+                <div class="row g-3">
+                    <div class="col-12">
+                        <label class="form-label small fw-semibold">Assignment Title *</label>
+                        <input type="text" name="title" class="form-control" placeholder="e.g. Lab Exercise 3: Multithreaded Matrix Multiplication" required>
+                    </div>
+                    <div class="col-md-6">
+                        <label class="form-label small fw-semibold">Subject *</label>
+                        <select name="subject" class="form-select" required>
+                            {% for s in subjects %}
+                                <option value="{{ s.id }}">{{ s.code }} - {{ s.name }} (Sem {{ s.semester.semester_number }})</option>
+                            {% endfor %}
+                        </select>
+                    </div>
+                    <div class="col-md-6">
+                        <label class="form-label small fw-semibold">Batch / Section (Optional)</label>
+                        <select name="batch" class="form-select">
+                            <option value="">All Batches</option>
+                            {% for b in batches %}
+                                <option value="{{ b.id }}">{{ b.name }} (Sec {{ b.section }})</option>
+                            {% endfor %}
+                        </select>
+                    </div>
+                    <div class="col-md-6">
+                        <label class="form-label small fw-semibold">Submission Deadline (Due Date) *</label>
+                        <input type="datetime-local" name="due_date" class="form-control" required>
+                    </div>
+                    <div class="col-md-6">
+                        <label class="form-label small fw-semibold">Maximum Points / Score *</label>
+                        <input type="number" step="1" name="max_score" class="form-control" value="100" min="1" required>
+                    </div>
+                    <div class="col-12">
+                        <label class="form-label small fw-semibold">Problem Statement & Instructions *</label>
+                        <textarea name="description" class="form-control" rows="4" placeholder="Detail the requirements, deliverables, and evaluation criteria..." required></textarea>
+                    </div>
+                    <div class="col-12">
+                        <label class="form-label small fw-semibold">Attach Task Document / Reference Code (Optional)</label>
+                        <input type="file" name="attachment" class="form-control">
+                    </div>
+                </div>
+
+                <div class="mt-4 d-flex gap-2">
+                    <button type="submit" class="btn btn-primary px-4">Publish Assignment</button>
+                    <a href="{% url 'assignment_list' %}" class="btn btn-light">Cancel</a>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+{% endblock %}

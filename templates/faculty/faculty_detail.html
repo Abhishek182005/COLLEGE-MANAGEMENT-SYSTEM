@@ -1,0 +1,79 @@
+{% extends 'base.html' %}
+
+{% block title %}{{ faculty.full_name }} | Faculty Profile{% endblock %}
+{% block page_heading %}Faculty Profile & Workload{% endblock %}
+
+{% block content %}
+<div class="row g-4">
+    <div class="col-lg-4">
+        <div class="card p-4 text-center">
+            <img src="{{ faculty.user.avatar_url }}" alt="Faculty" class="rounded-circle border shadow-sm mx-auto mb-3" width="110" height="110">
+            <h5 class="fw-bold mb-1">{{ faculty.full_name }}</h5>
+            <p class="text-secondary small mb-2">Emp ID: <b>{{ faculty.employee_id }}</b></p>
+            <span class="badge bg-primary px-3 py-1 rounded-pill mx-auto mb-3">{{ faculty.get_designation_display }}</span>
+
+            <div class="text-start border-top pt-3 small text-secondary">
+                <p class="mb-1"><b>Department:</b> {{ faculty.department.name }}</p>
+                <p class="mb-1"><b>Qualification:</b> {{ faculty.qualification }}</p>
+                <p class="mb-1"><b>Cabin Office:</b> {{ faculty.cabin_number|default:"N/A" }}</p>
+                <p class="mb-1"><b>Official Email:</b> {{ faculty.email }}</p>
+                <p class="mb-1"><b>Contact Phone:</b> {{ faculty.phone|default:"N/A" }}</p>
+                <p class="mb-1"><b>Emergency:</b> {{ faculty.emergency_contact|default:"N/A" }}</p>
+                <p class="mb-0"><b>Weekly Workload:</b> <span class="badge bg-success">{{ workload_hours }} Class Hours / Week</span></p>
+            </div>
+        </div>
+    </div>
+
+    <div class="col-lg-8">
+        <!-- Allocated Subjects -->
+        <div class="card p-4 mb-4">
+            <h5 class="fw-bold mb-3"><i class="fa-solid fa-book text-primary me-2"></i> Allocated Courses</h5>
+            <div class="row g-3">
+                {% for alloc in allocations %}
+                    <div class="col-md-6">
+                        <div class="border rounded p-3 bg-light">
+                            <span class="badge bg-primary mb-1">{{ alloc.subject.code }}</span>
+                            <h6 class="fw-bold text-dark mb-1">{{ alloc.subject.name }}</h6>
+                            <small class="text-muted d-block">Credits: {{ alloc.subject.credits }} • Sem {{ alloc.subject.semester.semester_number }}</small>
+                            <small class="text-secondary">Type: {{ alloc.subject.get_subject_type_display }}</small>
+                        </div>
+                    </div>
+                {% empty %}
+                    <div class="col-12 text-muted">No courses currently allocated.</div>
+                {% endfor %}
+            </div>
+        </div>
+
+        <!-- Weekly Schedule -->
+        <div class="card p-4">
+            <h5 class="fw-bold mb-3"><i class="fa-solid fa-calendar-week text-info me-2"></i> Weekly Teaching Timetable</h5>
+            <div class="table-responsive">
+                <table class="table table-hover align-middle">
+                    <thead>
+                        <tr>
+                            <th>Day</th>
+                            <th>Time Slot</th>
+                            <th>Subject</th>
+                            <th>Room</th>
+                            <th>Class</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for c in weekly_classes %}
+                            <tr>
+                                <td class="fw-semibold">{{ c.get_day_of_week_display }}</td>
+                                <td><span class="badge bg-light text-dark border">{{ c.time_slot }}</span></td>
+                                <td>{{ c.subject.code }} - {{ c.subject.name }}</td>
+                                <td>Room {{ c.classroom.room_number }}</td>
+                                <td>Sem {{ c.semester.semester_number }}{% if c.batch %} (Batch {{ c.batch.name }}){% endif %}</td>
+                            </tr>
+                        {% empty %}
+                            <tr><td colspan="5" class="text-center py-4 text-muted">No timetable slots assigned yet.</td></tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

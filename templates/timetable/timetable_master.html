@@ -1,0 +1,93 @@
+{% extends 'base.html' %}
+{% load custom_filters %}
+
+{% block title %}Master Timetable{% endblock %}
+{% block page_heading %}Master Academic Timetable{% endblock %}
+
+{% block content %}
+<div class="card p-4">
+    <div class="d-flex flex-wrap justify-content-between align-items-center gap-3 mb-4">
+        <div>
+            <h5 class="fw-bold mb-1"><i class="fa-solid fa-calendar-days text-primary me-2"></i> Weekly Schedule Grid</h5>
+            <p class="text-secondary small mb-0">Multi-classroom and faculty schedule matrix with automated conflict prevention.</p>
+        </div>
+        {% if is_admin %}
+            <a href="{% url 'timetable_create' %}" class="btn btn-sm btn-primary">
+                <i class="fa-solid fa-plus me-1"></i> Schedule Class
+            </a>
+        {% endif %}
+    </div>
+
+    <!-- Filters -->
+    <form method="get" class="row g-2 mb-4 bg-light p-3 rounded-3 border">
+        <div class="col-md-4">
+            <select name="semester" class="form-select form-select-sm" onchange="this.form.submit()">
+                <option value="">All Semesters</option>
+                {% for s in semesters %}
+                    <option value="{{ s.id }}" {% if selected_sem == s.id %}selected{% endif %}>{{ s.course.code }} - Sem {{ s.semester_number }}</option>
+                {% endfor %}
+            </select>
+        </div>
+        <div class="col-md-3">
+            <select name="batch" class="form-select form-select-sm" onchange="this.form.submit()">
+                <option value="">All Batches</option>
+                {% for b in batches %}
+                    <option value="{{ b.id }}" {% if selected_batch == b.id %}selected{% endif %}>{{ b.name }} ({{ b.section }})</option>
+                {% endfor %}
+            </select>
+        </div>
+        <div class="col-md-3">
+            <select name="faculty" class="form-select form-select-sm" onchange="this.form.submit()">
+                <option value="">All Faculty</option>
+                {% for f in faculty_list %}
+                    <option value="{{ f.id }}" {% if selected_faculty == f.id %}selected{% endif %}>{{ f.full_name }}</option>
+                {% endfor %}
+            </select>
+        </div>
+        <div class="col-md-2">
+            <a href="{% url 'timetable_master' %}" class="btn btn-sm btn-light w-100">Reset</a>
+        </div>
+    </form>
+
+    <!-- Master Grid Table -->
+    <div class="table-responsive">
+        <table class="table table-bordered align-middle text-center" style="min-width: 900px;">
+            <thead class="table-light">
+                <tr>
+                    <th style="width: 120px;">Day</th>
+                    {% for slot in slots %}
+                        <th>{{ slot }}</th>
+                    {% endfor %}
+                </tr>
+            </thead>
+            <tbody>
+                {% for day_num, day_name in days %}
+                    <tr>
+                        <td class="fw-bold bg-light text-start ps-3">{{ day_name }}</td>
+                        {% for slot in slots %}
+                            <td class="p-2" style="vertical-align: top; min-width: 130px; height: 95px;">
+                                {% with entries=grid|dict_key:day_num|dict_key:slot %}
+                                    {% for entry in entries %}
+                                        <div class="p-2 mb-1 rounded text-start shadow-sm" style="background-color: #eff6ff; border-left: 3px solid #2563eb;">
+                                            <div class="fw-bold text-primary small" style="font-size: 0.78rem;">{{ entry.subject.code }}</div>
+                                            <div class="text-dark small fw-semibold" style="font-size: 0.72rem;">{{ entry.subject.name|truncatechars:18 }}</div>
+                                            <small class="text-secondary d-block" style="font-size: 0.68rem;">
+                                                <i class="fa-solid fa-door-open me-1"></i>{{ entry.classroom.room_number }}
+                                            </small>
+                                            <small class="text-muted d-block" style="font-size: 0.68rem;">
+                                                <i class="fa-solid fa-user me-1"></i>{{ entry.faculty.full_name|truncatechars:14 }}
+                                            </small>
+                                        </div>
+                                    {% empty %}
+                                        <span class="text-muted" style="font-size: 0.7rem;">-</span>
+                                    {% endfor %}
+                                {% endwith %}
+                            </td>
+                        {% endfor %}
+                    </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+</div>
+{% endblock %}

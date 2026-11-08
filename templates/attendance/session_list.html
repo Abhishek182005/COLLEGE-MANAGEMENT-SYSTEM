@@ -1,0 +1,97 @@
+{% extends 'base.html' %}
+
+{% block title %}Attendance Sessions{% endblock %}
+{% block page_heading %}Attendance Hub & Session Logs{% endblock %}
+
+{% block content %}
+<div class="card p-4">
+    <div class="d-flex flex-wrap justify-content-between align-items-center gap-3 mb-4">
+        <div>
+            <h5 class="fw-bold mb-1">Lecture Attendance Sessions</h5>
+            <p class="text-secondary small mb-0">Review daily attendance logs, percentages, and export session reports.</p>
+        </div>
+        <div class="d-flex gap-2">
+            <a href="{% url 'attendance_shortage_report' %}" class="btn btn-sm btn-outline-danger">
+                <i class="fa-solid fa-triangle-exclamation me-1"></i> Shortage Alerts (<75%)
+            </a>
+            {% if is_faculty or is_admin %}
+                <a href="{% url 'quick_mark_attendance' %}" class="btn btn-sm btn-primary">
+                    <i class="fa-solid fa-check-double me-1"></i> Mark Quick Attendance
+                </a>
+            {% endif %}
+        </div>
+    </div>
+
+    <!-- Filters -->
+    <form method="get" class="row g-2 mb-4 bg-light p-3 rounded-3 border">
+        <div class="col-md-4">
+            <select name="subject" class="form-select form-select-sm">
+                <option value="">All Subjects</option>
+                {% for s in my_subjects %}
+                    <option value="{{ s.id }}" {% if selected_subject == s.id|stringformat:"s" %}selected{% endif %}>{{ s.code }} - {{ s.name }}</option>
+                {% endfor %}
+            </select>
+        </div>
+        <div class="col-md-3">
+            <input type="date" name="date" class="form-control form-control-sm" value="{{ selected_date }}">
+        </div>
+        <div class="col-md-2">
+            <button type="submit" class="btn btn-sm btn-primary w-100"><i class="fa-solid fa-filter me-1"></i> Filter</button>
+        </div>
+        <div class="col-md-2">
+            <a href="{% url 'attendance_session_list' %}" class="btn btn-sm btn-light w-100">Reset</a>
+        </div>
+    </form>
+
+    <div class="table-responsive">
+        <table class="table table-hover align-middle">
+            <thead>
+                <tr>
+                    <th>Date & Time Slot</th>
+                    <th>Subject</th>
+                    <th>Faculty</th>
+                    <th>Topic Covered</th>
+                    <th>Batch / Class</th>
+                    <th>Turnout %</th>
+                    <th class="text-end">Actions</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for sess in sessions %}
+                    <tr>
+                        <td>
+                            <div class="fw-semibold text-dark">{{ sess.date }}</div>
+                            <small class="badge bg-light text-dark border">{{ sess.lecture_slot }}</small>
+                        </td>
+                        <td>
+                            <div class="fw-semibold">{{ sess.subject.code }}</div>
+                            <small class="text-muted">{{ sess.subject.name }}</small>
+                        </td>
+                        <td><small class="text-secondary"><i class="fa-solid fa-user-tie me-1"></i> {{ sess.faculty.full_name }}</small></td>
+                        <td><small class="text-secondary">{{ sess.topic_covered|default:"Regular Lecture"|truncatechars:30 }}</small></td>
+                        <td>Sem {{ sess.semester.semester_number }}{% if sess.batch %} - {{ sess.batch.name }}{% endif %}</td>
+                        <td>
+                            <span class="badge {% if sess.attendance_percentage >= 75 %}bg-success{% else %}bg-warning text-dark{% endif %} px-2 py-1">
+                                {{ sess.attendance_percentage }}% ({{ sess.present_count }}/{{ sess.total_students }})
+                            </span>
+                        </td>
+                        <td class="text-end">
+                            <a href="{% url 'export_attendance_excel' sess.id %}" class="btn btn-sm btn-outline-success" title="Download Excel">
+                                <i class="fa-solid fa-file-excel"></i>
+                            </a>
+                            <a href="{% url 'attendance_session_detail' sess.id %}" class="btn btn-sm btn-light" title="View Records & QR">
+                                <i class="fa-solid fa-eye"></i>
+                            </a>
+                            <a href="{% url 'quick_mark_attendance' %}?session_id={{ sess.id }}" class="btn btn-sm btn-outline-secondary" title="Edit Session (Audit Logged)">
+                                <i class="fa-solid fa-pen-to-square"></i>
+                            </a>
+                        </td>
+                    </tr>
+                {% empty %}
+                    <tr><td colspan="7" class="text-center py-4 text-muted">No attendance sessions found.</td></tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+</div>
+{% endblock %}

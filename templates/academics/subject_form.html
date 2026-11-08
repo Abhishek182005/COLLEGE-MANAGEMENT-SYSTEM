@@ -1,0 +1,61 @@
+{% extends 'base.html' %}
+
+{% block title %}Add Subject{% endblock %}
+{% block page_heading %}New Academic Subject{% endblock %}
+
+{% block content %}
+<div class="row justify-content-center">
+    <div class="col-md-7">
+        <div class="card p-4">
+            <h5 class="fw-bold mb-3"><i class="fa-solid fa-book text-primary me-2"></i> Register New Subject</h5>
+            <form method="post">
+                {% csrf_token %}
+                <div class="row g-3">
+                    <div class="col-md-6">
+                        <label class="form-label small fw-semibold">Subject Code *</label>
+                        <input type="text" name="code" class="form-control" placeholder="e.g. CS501" required>
+                    </div>
+                    <div class="col-md-6">
+                        <label class="form-label small fw-semibold">Subject Name *</label>
+                        <input type="text" name="name" class="form-control" placeholder="e.g. Operating Systems" required>
+                    </div>
+                    <div class="col-md-6">
+                        <label class="form-label small fw-semibold">Target Semester *</label>
+                        <select name="semester" class="form-select" required>
+                            {% for sem in semesters %}
+                                <option value="{{ sem.id }}">{{ sem.course.code }} - Sem {{ sem.semester_number }} ({{ sem.academic_session.name }})</option>
+                            {% endfor %}
+                        </select>
+                    </div>
+                    <div class="col-md-6">
+                        <label class="form-label small fw-semibold">Subject Type *</label>
+                        <select name="subject_type" class="form-select" required>
+                            {% for val, label in subject_types %}
+                                <option value="{{ val }}">{{ label }}</option>
+                            {% endfor %}
+                        </select>
+                    </div>
+                    <div class="col-md-6">
+                        <label class="form-label small fw-semibold">Credits</label>
+                        <input type="number" name="credits" class="form-control" value="4" min="1" max="10">
+                    </div>
+                    <div class="col-md-6">
+                        <label class="form-label small fw-semibold">Allocate Teaching Faculty</label>
+                        <select name="faculty" class="form-select">
+                            <option value="">-- Choose Faculty (Optional) --</option>
+                            {% for f in faculty_members %}
+                                <option value="{{ f.id }}">{{ f.full_name }} ({{ f.department.code }})</option>
+                            {% endfor %}
+                        </select>
+                    </div>
+                </div>
+
+                <div class="mt-4 d-flex gap-2">
+                    <button type="submit" class="btn btn-primary px-4">Register Subject</button>
+                    <a href="{% url 'subject_list' %}" class="btn btn-light">Cancel</a>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+{% endblock %}

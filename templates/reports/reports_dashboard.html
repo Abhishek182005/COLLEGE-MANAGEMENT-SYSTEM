@@ -1,0 +1,149 @@
+{% extends 'base.html' %}
+
+{% block title %}Analytics & Reports{% endblock %}
+{% block page_heading %}Visual Analytics & Academic Intelligence{% endblock %}
+
+{% block content %}
+<!-- Metric Summary Cards -->
+<div class="row g-3 mb-4">
+    <div class="col-sm-4">
+        <div class="stat-card">
+            <div class="stat-icon bg-primary-subtle text-primary">
+                <i class="fa-solid fa-clipboard-user"></i>
+            </div>
+            <div>
+                <span class="text-secondary small fw-semibold d-block">Total Attendance Records</span>
+                <h3 class="fw-bold mb-0 text-dark">{{ total_records }}</h3>
+            </div>
+        </div>
+    </div>
+    <div class="col-sm-4">
+        <div class="stat-card">
+            <div class="stat-icon bg-success-subtle text-success">
+                <i class="fa-solid fa-award"></i>
+            </div>
+            <div>
+                <span class="text-secondary small fw-semibold d-block">Graded Marks Entries</span>
+                <h3 class="fw-bold mb-0 text-dark">{{ total_marks }}</h3>
+            </div>
+        </div>
+    </div>
+    <div class="col-sm-4">
+        <div class="stat-card">
+            <div class="stat-icon bg-info-subtle text-info">
+                <i class="fa-solid fa-shield-halved"></i>
+            </div>
+            <div>
+                <span class="text-secondary small fw-semibold d-block">Audit Trail Events</span>
+                <h3 class="fw-bold mb-0 text-dark">{{ total_audits }}</h3>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Visual Charts Section -->
+<div class="row g-4 mb-4">
+    <!-- Attendance Distribution Doughnut Chart -->
+    <div class="col-lg-5">
+        <div class="card p-4 h-100">
+            <h6 class="fw-bold mb-3"><i class="fa-solid fa-chart-pie text-primary me-2"></i> Attendance Turnout Breakdown</h6>
+            <div style="height: 280px; position: relative;">
+                <canvas id="attendanceChart"></canvas>
+            </div>
+        </div>
+    </div>
+
+    <!-- Department Enrollment Bar Chart -->
+    <div class="col-lg-7">
+        <div class="card p-4 h-100">
+            <h6 class="fw-bold mb-3"><i class="fa-solid fa-chart-column text-success me-2"></i> Student Enrollment by Department</h6>
+            <div style="height: 280px; position: relative;">
+                <canvas id="deptChart"></canvas>
+            </div>
+        </div>
+    </div>
+</div>
+
+<div class="row g-4">
+    <!-- Grade Distribution Bar Chart -->
+    <div class="col-lg-12">
+        <div class="card p-4">
+            <h6 class="fw-bold mb-3"><i class="fa-solid fa-chart-line text-warning me-2"></i> Examination Grade Distribution (A+ to F)</h6>
+            <div style="height: 280px; position: relative;">
+                <canvas id="gradeChart"></canvas>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<!-- Chart.js CDN -->
+<script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.1/dist/chart.umd.min.js"></script>
+<script>
+    // 1. Attendance Donut Chart
+    const attCtx = document.getElementById('attendanceChart').getContext('2d');
+    new Chart(attCtx, {
+        type: 'doughnut',
+        data: {
+            labels: JSON.parse('{{ att_labels|escapejs }}'),
+            datasets: [{
+                data: JSON.parse('{{ att_counts|escapejs }}'),
+                backgroundColor: ['#16a34a', '#dc2626', '#eab308', '#0ea5e9'],
+                borderWidth: 2
+            }]
+        },
+        options: {
+            responsive: true,
+            maintainAspectRatio: false,
+            plugins: {
+                legend: { position: 'bottom' }
+            }
+        }
+    });
+
+    // 2. Department Enrollment Bar Chart
+    const deptCtx = document.getElementById('deptChart').getContext('2d');
+    new Chart(deptCtx, {
+        type: 'bar',
+        data: {
+            labels: JSON.parse('{{ dept_labels|escapejs }}'),
+            datasets: [{
+                label: 'Enrolled Students',
+                data: JSON.parse('{{ dept_counts|escapejs }}'),
+                backgroundColor: '#3b82f6',
+                borderRadius: 6
+            }]
+        },
+        options: {
+            responsive: true,
+            maintainAspectRatio: false,
+            scales: {
+                y: { beginAtZero: true }
+            }
+        }
+    });
+
+    // 3. Grade Distribution
+    const gradeCtx = document.getElementById('gradeChart').getContext('2d');
+    new Chart(gradeCtx, {
+        type: 'bar',
+        data: {
+            labels: JSON.parse('{{ grade_labels|escapejs }}'),
+            datasets: [{
+                label: 'Student Count',
+                data: JSON.parse('{{ grade_counts|escapejs }}'),
+                backgroundColor: ['#22c55e', '#16a34a', '#3b82f6', '#0ea5e9', '#eab308', '#f97316', '#ef4444'],
+                borderRadius: 6
+            }]
+        },
+        options: {
+            responsive: true,
+            maintainAspectRatio: false,
+            scales: {
+                y: { beginAtZero: true }
+            }
+        }
+    });
+</script>
+{% endblock %}

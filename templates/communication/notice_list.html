@@ -1,0 +1,77 @@
+{% extends 'base.html' %}
+
+{% block title %}Notice Board{% endblock %}
+{% block page_heading %}Campus Notice Board & Communication{% endblock %}
+
+{% block content %}
+<div class="card p-4">
+    <div class="d-flex flex-wrap justify-content-between align-items-center gap-3 mb-4">
+        <div>
+            <h5 class="fw-bold mb-1">Campus Circulars & Announcements</h5>
+            <p class="text-secondary small mb-0">Official administrative notices, exam circulars, and departmental announcements.</p>
+        </div>
+        {% if is_admin or is_faculty %}
+            <a href="{% url 'notice_create' %}" class="btn btn-sm btn-primary">
+                <i class="fa-solid fa-bullhorn me-1"></i> Post Announcement
+            </a>
+        {% endif %}
+    </div>
+
+    <!-- Priority Filter -->
+    <div class="d-flex gap-2 mb-4">
+        <a href="{% url 'notice_list' %}" class="btn btn-sm {% if not selected_priority %}btn-dark{% else %}btn-light{% endif %}">All Circulars</a>
+        <a href="{% url 'notice_list' %}?priority=URGENT" class="btn btn-sm {% if selected_priority == 'URGENT' %}btn-danger{% else %}btn-outline-danger{% endif %}">
+            <i class="fa-solid fa-triangle-exclamation me-1"></i> Urgent Only
+        </a>
+        <a href="{% url 'notice_list' %}?priority=HIGH" class="btn btn-sm {% if selected_priority == 'HIGH' %}btn-warning text-dark{% else %}btn-outline-warning text-dark{% endif %}">
+            High Priority
+        </a>
+        <a href="{% url 'notice_list' %}?priority=NORMAL" class="btn btn-sm {% if selected_priority == 'NORMAL' %}btn-secondary{% else %}btn-light{% endif %}">
+            Normal
+        </a>
+    </div>
+
+    <div class="row g-3">
+        {% for n in notices %}
+            <div class="col-12">
+                <div class="border rounded-3 p-3 bg-light shadow-sm d-flex flex-wrap justify-content-between align-items-center gap-3 {% if n.priority == 'URGENT' %}border-danger bg-danger-subtle{% endif %}">
+                    <div class="d-flex align-items-start gap-3">
+                        <div class="stat-icon {% if n.priority == 'URGENT' %}bg-danger text-white{% elif n.priority == 'HIGH' %}bg-warning text-dark{% else %}bg-primary text-white{% endif %} rounded-circle" style="width: 44px; height: 44px; font-size: 1.1rem;">
+                            <i class="fa-solid fa-bullhorn"></i>
+                        </div>
+                        <div>
+                            <div class="d-flex align-items-center gap-2 mb-1">
+                                <a href="{% url 'notice_detail' n.id %}" class="fw-bold text-dark text-decoration-none fs-6">
+                                    {{ n.title }}
+                                </a>
+                                {% if n.id not in read_notice_ids %}
+                                    <span class="badge bg-danger rounded-pill" style="font-size: 0.65rem;">NEW</span>
+                                {% endif %}
+                                <span class="badge bg-light text-secondary border">{{ n.get_audience_type_display }}</span>
+                            </div>
+                            <p class="text-secondary small mb-1">{{ n.content|truncatewords:25 }}</p>
+                            <small class="text-muted">
+                                <i class="fa-regular fa-user me-1"></i> {{ n.published_by.get_full_name|default:n.published_by.username }} •
+                                <i class="fa-regular fa-clock ms-2 me-1"></i> {{ n.created_at|date:"F d, Y - H:i" }}
+                            </small>
+                        </div>
+                    </div>
+
+                    <div class="d-flex align-items-center gap-2">
+                        {% if n.attachment %}
+                            <a href="{{ n.attachment.url }}" download class="btn btn-sm btn-outline-secondary" title="Attached File">
+                                <i class="fa-solid fa-paperclip"></i>
+                            </a>
+                        {% endif %}
+                        <a href="{% url 'notice_detail' n.id %}" class="btn btn-sm btn-primary">
+                            Read Full <i class="fa-solid fa-chevron-right ms-1"></i>
+                        </a>
+                    </div>
+                </div>
+            </div>
+        {% empty %}
+            <div class="col-12 text-center py-5 text-muted">No notices found matching this filter.</div>
+        {% endfor %}
+    </div>
+</div>
+{% endblock %}

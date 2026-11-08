@@ -1,0 +1,65 @@
+{% extends 'base.html' %}
+
+{% block title %}Publish Notice{% endblock %}
+{% block page_heading %}New Campus Announcement{% endblock %}
+
+{% block content %}
+<div class="row justify-content-center">
+    <div class="col-lg-8">
+        <div class="card p-4">
+            <h5 class="fw-bold mb-3"><i class="fa-solid fa-bullhorn text-primary me-2"></i> Post Notice or Circular</h5>
+            <form method="post" enctype="multipart/form-data">
+                {% csrf_token %}
+                <div class="row g-3">
+                    <div class="col-12">
+                        <label class="form-label small fw-semibold">Notice Subject / Title *</label>
+                        <input type="text" name="title" class="form-control" placeholder="e.g. Schedule of Autumn Semester End-Term Examinations" required>
+                    </div>
+                    <div class="col-md-6">
+                        <label class="form-label small fw-semibold">Priority Level *</label>
+                        <select name="priority" class="form-select" required>
+                            {% for code, label in priorities %}
+                                <option value="{{ code }}">{{ label }}</option>
+                            {% endfor %}
+                        </select>
+                    </div>
+                    <div class="col-md-6">
+                        <label class="form-label small fw-semibold">Audience Scope *</label>
+                        <select name="audience_type" class="form-select" required>
+                            {% for code, label in audience_choices %}
+                                <option value="{{ code }}">{{ label }}</option>
+                            {% endfor %}
+                        </select>
+                    </div>
+                    <div class="col-md-6">
+                        <label class="form-label small fw-semibold">Target Department (Optional)</label>
+                        <select name="department" class="form-select">
+                            <option value="">-- All Departments --</option>
+                            {% for d in departments %}
+                                <option value="{{ d.id }}">{{ d.name }}</option>
+                            {% endfor %}
+                        </select>
+                    </div>
+                    <div class="col-md-6">
+                        <label class="form-label small fw-semibold">Expiry Date (Optional)</label>
+                        <input type="date" name="expiry_date" class="form-control">
+                    </div>
+                    <div class="col-12">
+                        <label class="form-label small fw-semibold">Notice Announcement Body *</label>
+                        <textarea name="content" class="form-control" rows="5" placeholder="Enter the official details, instructions, dates, and guidelines..." required></textarea>
+                    </div>
+                    <div class="col-12">
+                        <label class="form-label small fw-semibold">Attach Document / PDF Flyer (Optional)</label>
+                        <input type="file" name="attachment" class="form-control">
+                    </div>
+                </div>
+
+                <div class="mt-4 d-flex gap-2">
+                    <button type="submit" class="btn btn-primary px-4">Publish Announcement</button>
+                    <a href="{% url 'notice_list' %}" class="btn btn-light">Cancel</a>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+{% endblock %}

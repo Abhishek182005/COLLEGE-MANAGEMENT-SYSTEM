@@ -1,0 +1,96 @@
+{% extends 'base.html' %}
+
+{% block title %}Add New Student{% endblock %}
+{% block page_heading %}Student Enrollment{% endblock %}
+
+{% block content %}
+<div class="row justify-content-center">
+    <div class="col-lg-9">
+        <div class="card p-4">
+            <h5 class="fw-bold mb-3"><i class="fa-solid fa-user-plus text-primary me-2"></i> Enroll New Student</h5>
+            <form method="post">
+                {% csrf_token %}
+                <div class="row g-3">
+                    <div class="col-md-6">
+                        <label class="form-label small fw-semibold">Roll Number *</label>
+                        <input type="text" name="roll_number" class="form-control" placeholder="e.g. 2026CS110" required>
+                    </div>
+                    <div class="col-md-6">
+                        <label class="form-label small fw-semibold">Registration Number *</label>
+                        <input type="text" name="registration_number" class="form-control" placeholder="e.g. REG2026010" required>
+                    </div>
+                    <div class="col-md-6">
+                        <label class="form-label small fw-semibold">First Name *</label>
+                        <input type="text" name="first_name" class="form-control" placeholder="First Name" required>
+                    </div>
+                    <div class="col-md-6">
+                        <label class="form-label small fw-semibold">Last Name *</label>
+                        <input type="text" name="last_name" class="form-control" placeholder="Last Name" required>
+                    </div>
+                    <div class="col-md-6">
+                        <label class="form-label small fw-semibold">Email Address *</label>
+                        <input type="email" name="email" class="form-control" placeholder="student@campusconnect.edu" required>
+                    </div>
+                    <div class="col-md-6">
+                        <label class="form-label small fw-semibold">Phone Number</label>
+                        <input type="text" name="phone" class="form-control" placeholder="+91 9876543210">
+                    </div>
+                    <div class="col-md-6">
+                        <label class="form-label small fw-semibold">Department *</label>
+                        <select name="department" class="form-select" required>
+                            {% for d in departments %}
+                                <option value="{{ d.id }}">{{ d.name }} ({{ d.code }})</option>
+                            {% endfor %}
+                        </select>
+                    </div>
+                    <div class="col-md-6">
+                        <label class="form-label small fw-semibold">Course *</label>
+                        <select name="course" class="form-select" required>
+                            {% for c in courses %}
+                                <option value="{{ c.id }}">{{ c.name }} ({{ c.code }})</option>
+                            {% endfor %}
+                        </select>
+                    </div>
+                    <div class="col-md-4">
+                        <label class="form-label small fw-semibold">Current Semester *</label>
+                        <select name="semester" class="form-select" required>
+                            {% for s in semesters %}
+                                <option value="{{ s.id }}">{{ s.course.code }} - Sem {{ s.semester_number }}</option>
+                            {% endfor %}
+                        </select>
+                    </div>
+                    <div class="col-md-4">
+                        <label class="form-label small fw-semibold">Batch & Section *</label>
+                        <select name="batch" class="form-select" required>
+                            {% for b in batches %}
+                                <option value="{{ b.id }}">{{ b.name }} (Sec {{ b.section }})</option>
+                            {% endfor %}
+                        </select>
+                    </div>
+                    <div class="col-md-4">
+                        <label class="form-label small fw-semibold">Blood Group</label>
+                        <select name="blood_group" class="form-select">
+                            <option value="">Select</option>
+                            {% for bg, label in blood_groups %}
+                                <option value="{{ bg }}">{{ label }}</option>
+                            {% endfor %}
+                        </select>
+                    </div>
+                    <div class="col-md-6">
+                        <label class="form-label small fw-semibold">Guardian Name</label>
+                        <input type="text" name="guardian_name" class="form-control" placeholder="Parent or Guardian Name">
+                    </div>
+                    <div class="col-md-6">
+                        <label class="form-label small fw-semibold">Guardian Contact</label>
+                        <input type="text" name="guardian_phone" class="form-control" placeholder="Guardian Phone Number">
+                    </div>
+                </div>
+                <div class="mt-4 d-flex gap-2">
+                    <button type="submit" class="btn btn-primary px-4"><i class="fa-solid fa-check me-2"></i> Create Student Account</button>
+                    <a href="{% url 'student_list' %}" class="btn btn-light">Cancel</a>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+{% endblock %}

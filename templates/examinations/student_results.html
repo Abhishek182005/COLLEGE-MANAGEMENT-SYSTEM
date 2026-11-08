@@ -1,0 +1,94 @@
+{% extends 'base.html' %}
+
+{% block title %}Academic Results{% endblock %}
+{% block page_heading %}Examinations & Grade Reports{% endblock %}
+
+{% block content %}
+<div class="card p-4">
+    <!-- Header with Exam Selector and PDF Download Button -->
+    <div class="d-flex flex-wrap justify-content-between align-items-center gap-3 mb-4">
+        <div>
+            <h5 class="fw-bold mb-1">Published Examination Results</h5>
+            <p class="text-secondary small mb-0">Official grade cards, internal assessment evaluations, and downloadable marksheet PDFs.</p>
+        </div>
+        {% if selected_exam %}
+            <a href="{% url 'download_marksheet_pdf' selected_exam.id %}?student_id={{ student.id }}" target="_blank" class="btn btn-outline-danger">
+                <i class="fa-solid fa-file-pdf me-2"></i> Download Official Marksheet (PDF)
+            </a>
+        {% endif %}
+    </div>
+
+    <!-- Exam Filter -->
+    <form method="get" class="row g-2 mb-4 bg-light p-3 rounded-3 border">
+        {% if request.user.is_admin_role or request.user.is_faculty_role %}
+            <input type="hidden" name="student_id" value="{{ student.id }}">
+        {% endif %}
+        <div class="col-md-6">
+            <select name="exam_id" class="form-select form-select-sm" onchange="this.form.submit()">
+                {% for ex in exams %}
+                    <option value="{{ ex.id }}" {% if selected_exam.id == ex.id %}selected{% endif %}>{{ ex.name }} ({{ ex.academic_session.name }})</option>
+                {% empty %}
+                    <option value="">No published exams available</option>
+                {% endfor %}
+            </select>
+        </div>
+        <div class="col-md-6 text-md-end">
+            <span class="text-secondary small">Viewing: <b>{{ student.full_name }}</b> ({{ student.roll_number }}) • Sem {{ student.current_semester.semester_number }}</span>
+        </div>
+    </form>
+
+    {% if selected_exam and results %}
+        <div class="table-responsive">
+            <table class="table table-hover align-middle border">
+                <thead class="table-light">
+                    <tr>
+                        <th>Subject Code</th>
+                        <th>Subject Name</th>
+                        <th>Assessment Component</th>
+                        <th>Max Marks</th>
+                        <th>Pass Marks</th>
+                        <th>Marks Obtained</th>
+                        <th>Grade</th>
+                        <th class="text-end">Result</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for r in results %}
+                        <tr>
+                            <td><span class="badge bg-primary fs-6">{{ r.component.subject.code }}</span></td>
+                            <td class="fw-semibold text-dark">{{ r.component.subject.name }}</td>
+                            <td>{{ r.component.title }}</td>
+                            <td>{{ r.component.max_marks }}</td>
+                            <td>{{ r.component.pass_marks }}</td>
+                            <td>
+                                {% if r.marks is not None %}
+                                    <span class="fw-bold text-dark fs-6">{{ r.marks }}</span>
+                                {% else %}
+                                    <span class="text-muted">Pending</span>
+                                {% endif %}
+                            </td>
+                            <td>
+                                <span class="badge {% if r.grade in 'A+,A,B+' %}bg-success{% elif r.grade in 'B,C,D' %}bg-info{% else %}bg-danger{% endif %} px-2 py-1">
+                                    {{ r.grade }}
+                                </span>
+                            </td>
+                            <td class="text-end">
+                                {% if r.is_pass %}
+                                    <span class="badge bg-success-subtle text-success border border-success"><i class="fa-solid fa-check me-1"></i> PASS</span>
+                                {% else %}
+                                    <span class="badge bg-danger-subtle text-danger border border-danger"><i class="fa-solid fa-xmark me-1"></i> FAIL</span>
+                                {% endif %}
+                            </td>
+                        </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+    {% else %}
+        <div class="text-center py-5 text-muted">
+            <i class="fa-solid fa-file-circle-question fs-2 d-block mb-2"></i>
+            No results published for the selected examination.
+        </div>
+    {% endif %}
+</div>
+{% endblock %}

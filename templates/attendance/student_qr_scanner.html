@@ -1,0 +1,88 @@
+{% extends 'base.html' %}
+
+{% block title %}QR Attendance Scanner{% endblock %}
+{% block page_heading %}QR Code Attendance Verification{% endblock %}
+
+{% block content %}
+<div class="row justify-content-center">
+    <div class="col-lg-6 col-md-8">
+        <div class="card p-4 text-center">
+            <div class="mb-3">
+                <div class="stat-icon bg-primary-subtle text-primary mx-auto">
+                    <i class="fa-solid fa-qrcode fs-2"></i>
+                </div>
+            </div>
+            <h5 class="fw-bold mb-1">Verify Lecture Attendance</h5>
+            <p class="text-secondary small mb-4">Point your camera at the screen projected by your professor or type the dynamic code below.</p>
+
+            <!-- Video Camera QR Reader Container -->
+            <div id="qr-reader" class="rounded-3 border mb-3 mx-auto" style="width: 100%; max-width: 380px; min-height: 250px; background: #000;"></div>
+
+            <div id="scanResult" class="d-none alert alert-success py-2 px-3 small mb-3"></div>
+
+            <div class="d-flex align-items-center gap-2 my-3">
+                <hr class="flex-grow-1">
+                <span class="text-muted small fw-semibold">OR ENTER CODE DIRECTLY</span>
+                <hr class="flex-grow-1">
+            </div>
+
+            <!-- Manual Token Form -->
+            <form method="post" id="tokenForm">
+                {% csrf_token %}
+                <div class="input-group mb-3">
+                    <input type="text" name="qr_token" id="qrTokenInput" class="form-control" placeholder="Enter session token / UUID" required>
+                    <button type="submit" class="btn btn-primary px-3">
+                        <i class="fa-solid fa-check me-1"></i> Verify Code
+                    </button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<!-- HTML5-QRCode Scanner Library -->
+<script src="https://unpkg.com/html5-qrcode" type="text/javascript"></script>
+<script>
+    function onScanSuccess(decodedText, decodedResult) {
+        console.log(`Code matched = ${decodedText}`, decodedResult);
+        document.getElementById('qrTokenInput').value = decodedText;
+
+        // Auto submit via API
+        fetch('/api/attendance/qr-mark/', {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+                'X-CSRFToken': '{{ csrf_token }}'
+            },
+            body: JSON.stringify({ token: decodedText })
+        })
+        .then(res => res.json())
+        .then(data => {
+            const resDiv = document.getElementById('scanResult');
+            resDiv.classList.remove('d-none');
+            if (data.success) {
+                resDiv.className = 'alert alert-success py-2 px-3 small mb-3';
+                resDiv.innerHTML = `<i class="fa-solid fa-circle-check me-1"></i> ${data.message}`;
+                setTimeout(() => window.location.href = "{% url 'student_dashboard' %}", 2000);
+            } else {
+                resDiv.className = 'alert alert-danger py-2 px-3 small mb-3';
+                resDiv.innerHTML = `<i class="fa-solid fa-triangle-exclamation me-1"></i> ${data.error || 'Failed to verify attendance'}`;
+            }
+        })
+        .catch(err => {
+            alert("Network error: " + err);
+        });
+
+        html5QrcodeScanner.clear();
+    }
+
+    let html5QrcodeScanner = new Html5QrcodeScanner(
+        "qr-reader",
+        { fps: 10, qrbox: { width: 250, height: 250 } },
+        /* verbose= */ false
+    );
+    html5QrcodeScanner.render(onScanSuccess);
+</script>
+{% endblock %}

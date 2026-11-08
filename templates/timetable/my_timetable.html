@@ -1,0 +1,59 @@
+{% extends 'base.html' %}
+{% load custom_filters %}
+
+{% block title %}My Timetable{% endblock %}
+{% block page_heading %}{{ page_title }}{% endblock %}
+
+{% block content %}
+<div class="card p-4">
+    <div class="d-flex justify-content-between align-items-center mb-4">
+        <div>
+            <h5 class="fw-bold mb-1">{{ page_title }}</h5>
+            <p class="text-secondary small mb-0">Weekly schedule of class lectures and classroom locations.</p>
+        </div>
+        <a href="{% url 'timetable_master' %}" class="btn btn-sm btn-outline-primary">
+            <i class="fa-solid fa-calendar-days me-1"></i> View College Timetable
+        </a>
+    </div>
+
+    <div class="table-responsive">
+        <table class="table table-bordered align-middle text-center" style="min-width: 900px;">
+            <thead class="table-light">
+                <tr>
+                    <th style="width: 120px;">Day</th>
+                    {% for slot in slots %}
+                        <th>{{ slot }}</th>
+                    {% endfor %}
+                </tr>
+            </thead>
+            <tbody>
+                {% for day_num, day_name in days %}
+                    <tr>
+                        <td class="fw-bold bg-light text-start ps-3">{{ day_name }}</td>
+                        {% for slot in slots %}
+                            <td class="p-2" style="vertical-align: top; min-width: 130px; height: 95px;">
+                                {% with entries=grid|dict_key:day_num|dict_key:slot %}
+                                    {% for entry in entries %}
+                                        <div class="p-2 mb-1 rounded text-start shadow-sm" style="background-color: #f0fdf4; border-left: 3px solid #16a34a;">
+                                            <div class="fw-bold text-success small" style="font-size: 0.78rem;">{{ entry.subject.code }}</div>
+                                            <div class="text-dark small fw-semibold" style="font-size: 0.72rem;">{{ entry.subject.name|truncatechars:18 }}</div>
+                                            <small class="text-secondary d-block" style="font-size: 0.68rem;">
+                                                <i class="fa-solid fa-door-open me-1"></i>Room {{ entry.classroom.room_number }}
+                                            </small>
+                                            <small class="text-muted d-block" style="font-size: 0.68rem;">
+                                                <i class="fa-solid fa-user me-1"></i>{{ entry.faculty.full_name|truncatechars:14 }}
+                                            </small>
+                                        </div>
+                                    {% empty %}
+                                        <span class="text-muted" style="font-size: 0.7rem;">-</span>
+                                    {% endfor %}
+                                {% endwith %}
+                            </td>
+                        {% endfor %}
+                    </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+</div>
+{% endblock %}

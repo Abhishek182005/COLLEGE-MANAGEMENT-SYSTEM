@@ -1,0 +1,249 @@
+{% extends 'base.html' %}
+
+{% block title %}Quick Attendance Marking{% endblock %}
+{% block page_heading %}Quick Attendance Interface (SmartProf Inspired){% endblock %}
+
+{% block content %}
+<div class="card p-4 mb-4">
+    <div class="d-flex flex-wrap justify-content-between align-items-center gap-3 mb-3">
+        <div>
+            <h5 class="fw-bold mb-1"><i class="fa-solid fa-check-double text-primary me-2"></i> Quick Attendance Marking</h5>
+            <p class="text-secondary small mb-0">Select subject and batch to load enrolled students in a single rapid marking interface.</p>
+        </div>
+        <div class="d-flex gap-2">
+            <button type="button" class="btn btn-sm btn-outline-secondary" onclick="saveToOfflineStorage()">
+                <i class="fa-solid fa-hard-drive me-1"></i> Save to Offline Cache
+            </button>
+            <button type="button" class="btn btn-sm btn-outline-primary" onclick="syncOfflineCache()">
+                <i class="fa-solid fa-cloud-arrow-up me-1"></i> Sync Cached (<span id="offlineCount">0</span>)
+            </button>
+        </div>
+    </div>
+
+    <!-- Selection Bar -->
+    <form method="get" class="row g-2 bg-light p-3 rounded-3 border mb-3">
+        {% if existing_session %}
+            <input type="hidden" name="session_id" value="{{ existing_session.id }}">
+        {% endif %}
+        <div class="col-md-4">
+            <label class="form-label small fw-semibold text-secondary mb-1">Subject *</label>
+            <select name="subject_id" class="form-select form-select-sm" required onchange="this.form.submit()">
+                <option value="">-- Choose Subject --</option>
+                {% for s in my_subjects %}
+                    <option value="{{ s.id }}" {% if selected_subject_id == s.id %}selected{% endif %}>{{ s.code }} - {{ s.name }} (Sem {{ s.semester.semester_number }})</option>
+                {% endfor %}
+            </select>
+        </div>
+        <div class="col-md-2">
+            <label class="form-label small fw-semibold text-secondary mb-1">Lecture Date *</label>
+            <input type="date" name="date" class="form-control form-control-sm" value="{{ selected_date }}" onchange="this.form.submit()">
+        </div>
+        <div class="col-md-3">
+            <label class="form-label small fw-semibold text-secondary mb-1">Time Slot *</label>
+            <select name="lecture_slot" class="form-select form-select-sm" onchange="this.form.submit()">
+                {% for slot_code, slot_label in slots %}
+                    <option value="{{ slot_code }}" {% if selected_slot == slot_code %}selected{% endif %}>{{ slot_label }}</option>
+                {% endfor %}
+            </select>
+        </div>
+        <div class="col-md-2">
+            <label class="form-label small fw-semibold text-secondary mb-1">Batch / Section</label>
+            <select name="batch_id" class="form-select form-select-sm" onchange="this.form.submit()">
+                <option value="">All Batches</option>
+                {% for b in batches %}
+                    <option value="{{ b.id }}" {% if selected_batch_id == b.id %}selected{% endif %}>{{ b.name }} (Sec {{ b.section }})</option>
+                {% endfor %}
+            </select>
+        </div>
+        <div class="col-md-1 d-flex align-items-end">
+            <button type="submit" class="btn btn-sm btn-primary w-100">Load</button>
+        </div>
+    </form>
+
+    {% if is_backdated %}
+        <div class="alert alert-warning py-2 px-3 small d-flex align-items-center gap-2 mb-3" role="alert">
+            <i class="fa-solid fa-clock-rotate-left fs-5"></i>
+            <div>
+                <b>Backdated Attendance Editing Mode:</b> You are modifying records for a past date or existing session. Any changes will be recorded in the security audit trail.
+            </div>
+        </div>
+    {% endif %}
+
+    <!-- Student Attendance Marking Form -->
+    {% if subject and students_list %}
+        <form method="post" id="attendanceForm">
+            {% csrf_token %}
+            <input type="hidden" name="subject_id" value="{{ subject.id }}">
+            <input type="hidden" name="semester_id" value="{{ subject.semester.id }}">
+            <input type="hidden" name="batch_id" value="{{ selected_batch_id }}">
+            <input type="hidden" name="date" value="{{ selected_date }}">
+            <input type="hidden" name="lecture_slot" value="{{ selected_slot }}">
+
+            <div class="row g-3 mb-3">
+                <div class="col-md-7">
+                    <label class="form-label small fw-semibold">Lecture Topic / Syllabus Unit Covered</label>
+                    <input type="text" name="topic_covered" class="form-control form-control-sm" placeholder="e.g. Memory management and virtual pagination" value="{{ existing_session.topic_covered|default:'' }}">
+                </div>
+                {% if is_backdated %}
+                    <div class="col-md-5">
+                        <label class="form-label small fw-semibold text-danger">Amendment Reason (Required for Audit Log) *</label>
+                        <input type="text" name="amendment_reason" class="form-control form-control-sm border-warning" placeholder="e.g. Corrected marked absence after medical slip submission" required>
+                    </div>
+                {% endif %}
+            </div>
+
+            <!-- Fast Action Buttons -->
+            <div class="d-flex justify-content-between align-items-center mb-3 pt-2 border-top">
+                <div class="fw-bold text-dark">
+                    <span>Enrolled Students ({{ students_list|length }})</span>
+                </div>
+                <div class="d-flex gap-2">
+                    <button type="button" class="btn btn-sm btn-outline-success" onclick="markAll('PRESENT')">
+                        <i class="fa-solid fa-check me-1"></i> Mark All Present
+                    </button>
+                    <button type="button" class="btn btn-sm btn-outline-danger" onclick="markAll('ABSENT')">
+                        <i class="fa-solid fa-xmark me-1"></i> Mark All Absent
+                    </button>
+                </div>
+            </div>
+
+            <!-- Table of Students -->
+            <div class="table-responsive">
+                <table class="table table-hover align-middle border">
+                    <thead class="table-light">
+                        <tr>
+                            <th style="width: 50px;">#</th>
+                            <th style="width: 130px;">Roll Number</th>
+                            <th>Student Name</th>
+                            <th>Batch / Section</th>
+                            <th style="width: 280px;" class="text-center">Attendance Status</th>
+                            <th>Remarks</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for row in students_list %}
+                            <tr>
+                                <td>{{ forloop.counter }}</td>
+                                <td><span class="badge bg-light text-dark border">{{ row.student.roll_number }}</span></td>
+                                <td>
+                                    <div class="fw-semibold text-dark">{{ row.student.full_name }}</div>
+                                </td>
+                                <td><small class="text-secondary">{{ row.student.batch.name }} ({{ row.student.batch.section }})</small></td>
+                                <td>
+                                    <div class="btn-group w-100" role="group">
+                                        <input type="radio" class="btn-check" name="status_{{ row.student.id }}" id="pres_{{ row.student.id }}" value="PRESENT" {% if row.status == 'PRESENT' %}checked{% endif %}>
+                                        <label class="btn btn-outline-success btn-sm" for="pres_{{ row.student.id }}">Present</label>
+
+                                        <input type="radio" class="btn-check" name="status_{{ row.student.id }}" id="abs_{{ row.student.id }}" value="ABSENT" {% if row.status == 'ABSENT' %}checked{% endif %}>
+                                        <label class="btn btn-outline-danger btn-sm" for="abs_{{ row.student.id }}">Absent</label>
+
+                                        <input type="radio" class="btn-check" name="status_{{ row.student.id }}" id="late_{{ row.student.id }}" value="LATE" {% if row.status == 'LATE' %}checked{% endif %}>
+                                        <label class="btn btn-outline-warning btn-sm" for="late_{{ row.student.id }}">Late</label>
+                                    </div>
+                                </td>
+                                <td>
+                                    <input type="text" name="remarks_{{ row.student.id }}" class="form-control form-control-sm" placeholder="Optional notes" value="{{ row.remarks }}">
+                                </td>
+                            </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+
+            <div class="mt-4 d-flex justify-content-end gap-2">
+                <a href="{% url 'attendance_session_list' %}" class="btn btn-light px-3">Cancel</a>
+                <button type="submit" class="btn btn-primary px-4 fw-semibold shadow-sm">
+                    <i class="fa-solid fa-floppy-disk me-2"></i> Submit & Finalize Attendance
+                </button>
+            </div>
+        </form>
+    {% elif selected_subject_id %}
+        <div class="text-center py-5 text-muted">
+            <i class="fa-solid fa-users-slash fs-2 d-block mb-2"></i>
+            No students enrolled in this semester/batch.
+        </div>
+    {% else %}
+        <div class="text-center py-5 text-muted">
+            <i class="fa-solid fa-arrow-up-long fs-2 d-block mb-2 text-primary"></i>
+            Please select a subject from the dropdown above to load the student list.
+        </div>
+    {% endif %}
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+    function markAll(status) {
+        document.querySelectorAll('input[type="radio"]').forEach(radio => {
+            if (radio.value === status) {
+                radio.checked = true;
+            }
+        });
+    }
+
+    // Offline storage support (SmartProf inspired)
+    function saveToOfflineStorage() {
+        const form = document.getElementById('attendanceForm');
+        if (!form) {
+            alert("Please load a subject first.");
+            return;
+        }
+        const formData = new FormData(form);
+        const records = [];
+        for (let [key, val] of formData.entries()) {
+            if (key.startsWith('status_')) {
+                const stId = key.replace('status_', '');
+                const remarks = formData.get('remarks_' + stId) || '';
+                records.push({ student_id: stId, status: val, remarks: remarks });
+            }
+        }
+        const sessionMeta = {
+            subject_id: formData.get('subject_id'),
+            semester_id: formData.get('semester_id'),
+            batch_id: formData.get('batch_id'),
+            date: formData.get('date'),
+            lecture_slot: formData.get('lecture_slot'),
+            records: records
+        };
+
+        let cached = JSON.parse(localStorage.getItem('campusconnect_offline_attendance') || '[]');
+        cached.push(sessionMeta);
+        localStorage.setItem('campusconnect_offline_attendance', JSON.stringify(cached));
+        updateOfflineCount();
+        alert("Attendance session saved in browser offline cache successfully!");
+    }
+
+    function updateOfflineCount() {
+        const cached = JSON.parse(localStorage.getItem('campusconnect_offline_attendance') || '[]');
+        const countSpan = document.getElementById('offlineCount');
+        if (countSpan) countSpan.textContent = cached.length;
+    }
+
+    function syncOfflineCache() {
+        const cached = JSON.parse(localStorage.getItem('campusconnect_offline_attendance') || '[]');
+        if (cached.length === 0) {
+            alert("No offline attendance sessions cached.");
+            return;
+        }
+
+        fetch('/api/attendance/offline-sync/', {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+                'X-CSRFToken': '{{ csrf_token }}'
+            },
+            body: JSON.stringify({ sessions: cached })
+        })
+        .then(res => res.json())
+        .then(data => {
+            localStorage.removeItem('campusconnect_offline_attendance');
+            updateOfflineCount();
+            alert(data.message || "Offline sessions synced successfully!");
+            window.location.reload();
+        })
+        .catch(err => alert("Sync failed: " + err));
+    }
+
+    document.addEventListener('DOMContentLoaded', updateOfflineCount);
+</script>
+{% endblock %}

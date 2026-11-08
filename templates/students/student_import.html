@@ -1,0 +1,65 @@
+{% extends 'base.html' %}
+
+{% block title %}Bulk Excel Import{% endblock %}
+{% block page_heading %}Student Bulk Import{% endblock %}
+
+{% block content %}
+<div class="row justify-content-center">
+    <div class="col-lg-7">
+        <div class="card p-4">
+            <h5 class="fw-bold mb-2"><i class="fa-solid fa-file-excel text-success me-2"></i> Import Students from Excel</h5>
+            <p class="text-secondary small mb-4">
+                Upload a standard spreadsheet (.xlsx) with student rows. Columns expected:
+                <code>RollNo, RegNo, Username, Email, FirstName, LastName, Phone, BloodGroup</code>.
+            </p>
+
+            <form method="post" enctype="multipart/form-data">
+                {% csrf_token %}
+                <div class="row g-3">
+                    <div class="col-md-6">
+                        <label class="form-label small fw-semibold">Default Department *</label>
+                        <select name="department" class="form-select" required>
+                            {% for d in departments %}
+                                <option value="{{ d.id }}">{{ d.name }} ({{ d.code }})</option>
+                            {% endfor %}
+                        </select>
+                    </div>
+                    <div class="col-md-6">
+                        <label class="form-label small fw-semibold">Default Course *</label>
+                        <select name="course" class="form-select" required>
+                            {% for c in courses %}
+                                <option value="{{ c.id }}">{{ c.name }} ({{ c.code }})</option>
+                            {% endfor %}
+                        </select>
+                    </div>
+                    <div class="col-md-6">
+                        <label class="form-label small fw-semibold">Default Semester *</label>
+                        <select name="semester" class="form-select" required>
+                            {% for s in semesters %}
+                                <option value="{{ s.id }}">{{ s.course.code }} - Sem {{ s.semester_number }}</option>
+                            {% endfor %}
+                        </select>
+                    </div>
+                    <div class="col-md-6">
+                        <label class="form-label small fw-semibold">Default Batch *</label>
+                        <select name="batch" class="form-select" required>
+                            {% for b in batches %}
+                                <option value="{{ b.id }}">{{ b.name }} (Sec {{ b.section }})</option>
+                            {% endfor %}
+                        </select>
+                    </div>
+                    <div class="col-12">
+                        <label class="form-label small fw-semibold">Choose Excel File (.xlsx) *</label>
+                        <input type="file" name="excel_file" class="form-control" accept=".xlsx" required>
+                    </div>
+                </div>
+
+                <div class="mt-4 d-flex gap-2">
+                    <button type="submit" class="btn btn-success px-4"><i class="fa-solid fa-upload me-2"></i> Upload & Process</button>
+                    <a href="{% url 'student_list' %}" class="btn btn-light">Back to Directory</a>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+{% endblock %}

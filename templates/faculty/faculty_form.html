@@ -1,0 +1,72 @@
+{% extends 'base.html' %}
+
+{% block title %}Add Faculty Member{% endblock %}
+{% block page_heading %}Faculty Appointment{% endblock %}
+
+{% block content %}
+<div class="row justify-content-center">
+    <div class="col-lg-8">
+        <div class="card p-4">
+            <h5 class="fw-bold mb-3"><i class="fa-solid fa-user-tie text-primary me-2"></i> Register Faculty Member</h5>
+            <form method="post">
+                {% csrf_token %}
+                <div class="row g-3">
+                    <div class="col-md-6">
+                        <label class="form-label small fw-semibold">Employee ID *</label>
+                        <input type="text" name="employee_id" class="form-control" placeholder="e.g. FAC-CS-009" required>
+                    </div>
+                    <div class="col-md-6">
+                        <label class="form-label small fw-semibold">Department *</label>
+                        <select name="department" class="form-select" required>
+                            {% for d in departments %}
+                                <option value="{{ d.id }}">{{ d.name }} ({{ d.code }})</option>
+                            {% endfor %}
+                        </select>
+                    </div>
+                    <div class="col-md-6">
+                        <label class="form-label small fw-semibold">First Name *</label>
+                        <input type="text" name="first_name" class="form-control" placeholder="Dr. / Prof." required>
+                    </div>
+                    <div class="col-md-6">
+                        <label class="form-label small fw-semibold">Last Name *</label>
+                        <input type="text" name="last_name" class="form-control" placeholder="Last Name" required>
+                    </div>
+                    <div class="col-md-6">
+                        <label class="form-label small fw-semibold">Designation *</label>
+                        <select name="designation" class="form-select" required>
+                            {% for code, label in designations %}
+                                <option value="{{ code }}">{{ label }}</option>
+                            {% endfor %}
+                        </select>
+                    </div>
+                    <div class="col-md-6">
+                        <label class="form-label small fw-semibold">Highest Qualification *</label>
+                        <input type="text" name="qualification" class="form-control" placeholder="e.g. Ph.D. in Computer Science" required>
+                    </div>
+                    <div class="col-md-6">
+                        <label class="form-label small fw-semibold">Official Email Address *</label>
+                        <input type="email" name="email" class="form-control" placeholder="faculty@campusconnect.edu" required>
+                    </div>
+                    <div class="col-md-6">
+                        <label class="form-label small fw-semibold">Phone Number</label>
+                        <input type="text" name="phone" class="form-control" placeholder="+91 9876543210">
+                    </div>
+                    <div class="col-md-6">
+                        <label class="form-label small fw-semibold">Cabin / Office Room</label>
+                        <input type="text" name="cabin_number" class="form-control" placeholder="Block C - Room 301">
+                    </div>
+                    <div class="col-md-6">
+                        <label class="form-label small fw-semibold">Emergency Contact Number</label>
+                        <input type="text" name="emergency_contact" class="form-control" placeholder="+91 9876500000">
+                    </div>
+                </div>
+
+                <div class="mt-4 d-flex gap-2">
+                    <button type="submit" class="btn btn-primary px-4"><i class="fa-solid fa-check me-2"></i> Register Faculty</button>
+                    <a href="{% url 'faculty_list' %}" class="btn btn-light">Cancel</a>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+{% endblock %}

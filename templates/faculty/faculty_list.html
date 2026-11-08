@@ -1,0 +1,91 @@
+{% extends 'base.html' %}
+
+{% block title %}Faculty Directory{% endblock %}
+{% block page_heading %}Faculty Directory{% endblock %}
+
+{% block content %}
+<div class="card p-4">
+    <div class="d-flex flex-wrap justify-content-between align-items-center gap-3 mb-4">
+        <div>
+            <h5 class="fw-bold mb-1">Faculty & Teaching Staff</h5>
+            <p class="text-secondary small mb-0">View professor workloads, departments, designations, and contact profiles.</p>
+        </div>
+        {% if is_admin %}
+            <a href="{% url 'faculty_create' %}" class="btn btn-sm btn-primary">
+                <i class="fa-solid fa-user-tie me-1"></i> Add Faculty
+            </a>
+        {% endif %}
+    </div>
+
+    <!-- Filters -->
+    <form method="get" class="row g-2 mb-4 bg-light p-3 rounded-3 border">
+        <div class="col-md-5">
+            <input type="text" name="q" class="form-control form-control-sm" placeholder="Search by name, employee ID, designation..." value="{{ search_query }}">
+        </div>
+        <div class="col-md-4">
+            <select name="department" class="form-select form-select-sm">
+                <option value="">All Departments</option>
+                {% for d in departments %}
+                    <option value="{{ d.id }}" {% if selected_dept == d.id|stringformat:"s" %}selected{% endif %}>{{ d.name }} ({{ d.code }})</option>
+                {% endfor %}
+            </select>
+        </div>
+        <div class="col-md-2">
+            <button type="submit" class="btn btn-sm btn-primary w-100"><i class="fa-solid fa-filter me-1"></i> Filter</button>
+        </div>
+        <div class="col-md-1">
+            <a href="{% url 'faculty_list' %}" class="btn btn-sm btn-light w-100">Reset</a>
+        </div>
+    </form>
+
+    <div class="table-responsive">
+        <table class="table table-hover align-middle">
+            <thead>
+                <tr>
+                    <th>Faculty Member</th>
+                    <th>Employee ID</th>
+                    <th>Department</th>
+                    <th>Designation</th>
+                    <th>Cabin / Office</th>
+                    <th>Contact</th>
+                    <th class="text-end">Actions</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for fac in faculty_list %}
+                    <tr>
+                        <td>
+                            <div class="d-flex align-items-center gap-2">
+                                <img src="{{ fac.user.avatar_url }}" class="rounded-circle" width="38" height="38" alt="Avatar">
+                                <div>
+                                    <a href="{% url 'faculty_detail' fac.id %}" class="fw-semibold text-dark text-decoration-none">
+                                        {{ fac.full_name }}
+                                    </a>
+                                    <small class="text-muted d-block">{{ fac.qualification }}</small>
+                                </div>
+                            </div>
+                        </td>
+                        <td><span class="badge bg-light text-dark border">{{ fac.employee_id }}</span></td>
+                        <td><span class="badge bg-primary-subtle text-primary border border-primary">{{ fac.department.code }}</span></td>
+                        <td>{{ fac.get_designation_display }}</td>
+                        <td><small class="text-secondary">{{ fac.cabin_number|default:"-" }}</small></td>
+                        <td>
+                            <div class="small">{{ fac.email }}</div>
+                            <small class="text-muted">{{ fac.phone|default:"-" }}</small>
+                        </td>
+                        <td class="text-end">
+                            <a href="{% url 'faculty_detail' fac.id %}" class="btn btn-sm btn-light" title="View details & workload">
+                                <i class="fa-solid fa-chevron-right"></i>
+                            </a>
+                        </td>
+                    </tr>
+                {% empty %}
+                    <tr>
+                        <td colspan="7" class="text-center py-4 text-muted">No faculty members found matching your search.</td>
+                    </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+</div>
+{% endblock %}
