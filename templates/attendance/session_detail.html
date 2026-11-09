@@ -13,7 +13,7 @@
                     <span class="badge bg-primary mb-1">{{ session.subject.code }}</span>
                     <h5 class="fw-bold mb-0 text-dark">{{ session.subject.name }}</h5>
                 </div>
-                <div class="d-flex gap-2">
+                <div class="d-flex flex-wrap gap-2">
                     <button type="button" class="btn btn-outline-primary" id="btnLaunchQR">
                         <i class="fa-solid fa-qrcode me-1"></i> Display Live QR Code
                     </button>
@@ -79,6 +79,9 @@
 <!-- Attendance Records Table -->
 <div class="card p-4">
     <h5 class="fw-bold mb-3">Enrolled Student Roll Call</h5>
+    <div class="table-swipe-hint">
+        <i class="fa-solid fa-arrows-left-right me-1"></i> Swipe horizontally to view full student roll call
+    </div>
     <div class="table-responsive">
         <table class="table table-hover align-middle">
             <thead>

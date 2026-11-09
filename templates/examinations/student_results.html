@@ -23,7 +23,7 @@
         {% if request.user.is_admin_role or request.user.is_faculty_role %}
             <input type="hidden" name="student_id" value="{{ student.id }}">
         {% endif %}
-        <div class="col-md-6">
+        <div class="col-12 col-md-6">
             <select name="exam_id" class="form-select form-select-sm" onchange="this.form.submit()">
                 {% for ex in exams %}
                     <option value="{{ ex.id }}" {% if selected_exam.id == ex.id %}selected{% endif %}>{{ ex.name }} ({{ ex.academic_session.name }})</option>
@@ -32,12 +32,15 @@
                 {% endfor %}
             </select>
         </div>
-        <div class="col-md-6 text-md-end">
+        <div class="col-12 col-md-6 text-md-end">
             <span class="text-secondary small">Viewing: <b>{{ student.full_name }}</b> ({{ student.roll_number }}) • Sem {{ student.current_semester.semester_number }}</span>
         </div>
     </form>
 
     {% if selected_exam and results %}
+        <div class="table-swipe-hint">
+            <i class="fa-solid fa-arrows-left-right me-1"></i> Swipe horizontally to view component marks & grades
+        </div>
         <div class="table-responsive">
             <table class="table table-hover align-middle border">
                 <thead class="table-light">

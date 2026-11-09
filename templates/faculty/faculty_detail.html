@@ -50,7 +50,7 @@
             <h5 class="fw-bold mb-3"><i class="fa-solid fa-book text-primary me-2"></i> Allocated Courses</h5>
             <div class="row g-3">
                 {% for alloc in allocations %}
-                    <div class="col-md-6">
+                    <div class="col-12 col-md-6">
                         <div class="border rounded p-3 bg-light position-relative">
                             <div class="d-flex justify-content-between align-items-center mb-1">
                                 <span class="badge bg-primary">{{ alloc.subject.code }}</span>
@@ -76,6 +76,9 @@
         <!-- Weekly Schedule -->
         <div class="card p-4">
             <h5 class="fw-bold mb-3"><i class="fa-solid fa-calendar-week text-info me-2"></i> Weekly Teaching Timetable</h5>
+            <div class="table-swipe-hint">
+                <i class="fa-solid fa-arrows-left-right me-1"></i> Swipe horizontally to view timetable schedule
+            </div>
             <div class="table-responsive">
                 <table class="table table-hover align-middle">
                     <thead>

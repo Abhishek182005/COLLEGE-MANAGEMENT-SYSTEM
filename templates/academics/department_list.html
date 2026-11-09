@@ -33,7 +33,7 @@
 
     <div class="row g-4">
         {% for d in departments %}
-            <div class="col-md-6 col-lg-4">
+            <div class="col-12 col-md-6 col-lg-4">
                 <div class="card card-interactive border rounded-3 p-3 bg-white h-100 shadow-sm d-flex flex-column justify-content-between" onclick="if(!event.target.closest('a') && !event.target.closest('button')) window.location.href='{% url 'department_detail' d.id %}';">
                     <div>
                         <div class="d-flex justify-content-between align-items-start mb-2">
@@ -51,7 +51,7 @@
                     </div>
 
                     <div class="pt-3 border-top mt-auto">
-                        <div class="d-flex justify-content-between align-items-center small text-secondary mb-3">
+                        <div class="d-flex flex-wrap justify-content-between align-items-center small text-secondary mb-3 gap-1">
                             <span><i class="fa-solid fa-graduation-cap text-primary me-1"></i> <b>{{ d.courses.count }}</b> Courses</span>
                             <span><i class="fa-solid fa-chalkboard-user text-success me-1"></i> <b>{{ d.faculty_members.count }}</b> Faculty</span>
                             <span><i class="fa-solid fa-user-graduate text-info me-1"></i> <b>{{ d.students.count }}</b> Students</span>

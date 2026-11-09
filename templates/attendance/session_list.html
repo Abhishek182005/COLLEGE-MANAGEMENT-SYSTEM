@@ -24,7 +24,7 @@
 
     <!-- Filters -->
     <form method="get" class="row g-2 mb-4 bg-light p-3 rounded-3 border">
-        <div class="col-md-4">
+        <div class="col-12 col-md-4">
             <select name="subject" class="form-select form-select-sm">
                 <option value="">All Subjects</option>
                 {% for s in my_subjects %}
@@ -32,17 +32,20 @@
                 {% endfor %}
             </select>
         </div>
-        <div class="col-md-3">
+        <div class="col-12 col-md-3">
             <input type="date" name="date" class="form-control form-control-sm" value="{{ selected_date }}">
         </div>
-        <div class="col-md-2">
+        <div class="col-6 col-md-2">
             <button type="submit" class="btn btn-sm btn-primary w-100"><i class="fa-solid fa-filter me-1"></i> Filter</button>
         </div>
-        <div class="col-md-2">
+        <div class="col-6 col-md-2">
             <a href="{% url 'attendance_session_list' %}" class="btn btn-sm btn-light w-100">Reset</a>
         </div>
     </form>
 
+    <div class="table-swipe-hint">
+        <i class="fa-solid fa-arrows-left-right me-1"></i> Swipe horizontally to view session records & reports
+    </div>
     <div class="table-responsive">
         <table class="table table-hover align-middle">
             <thead>
