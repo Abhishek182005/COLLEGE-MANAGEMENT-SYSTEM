@@ -28,6 +28,15 @@ class Classroom(models.Model):
 
 
 class Timetable(models.Model):
+    CLASS_THEORY = 'TE'
+    CLASS_PRACTICAL = 'PR'
+    CLASS_TUTORIAL = 'TU'
+    CLASS_TYPE_CHOICES = [
+        (CLASS_THEORY, 'Theory (TE)'),
+        (CLASS_PRACTICAL, 'Practical (PR)'),
+        (CLASS_TUTORIAL, 'Tutorial (TU)'),
+    ]
+
     DAYS_OF_WEEK = [
         (0, 'Monday'),
         (1, 'Tuesday'),
@@ -49,6 +58,12 @@ class Timetable(models.Model):
 
     day_of_week = models.PositiveSmallIntegerField(choices=DAYS_OF_WEEK)
     time_slot = models.CharField(max_length=30, choices=SLOT_CHOICES)
+    class_type = models.CharField(
+        max_length=10,
+        choices=CLASS_TYPE_CHOICES,
+        default=CLASS_THEORY,
+        help_text="Lecture category: Theory (TE), Practical (PR), or Tutorial (TU)"
+    )
     subject = models.ForeignKey(Subject, on_delete=models.CASCADE, related_name='timetable_entries')
     faculty = models.ForeignKey(Faculty, on_delete=models.CASCADE, related_name='timetable_entries')
     classroom = models.ForeignKey(Classroom, on_delete=models.CASCADE, related_name='timetable_entries')
@@ -59,7 +74,7 @@ class Timetable(models.Model):
         ordering = ['day_of_week', 'time_slot']
 
     def __str__(self):
-        return f"{self.get_day_of_week_display()} {self.time_slot}: {self.subject.code} in {self.classroom.room_number}"
+        return f"{self.get_day_of_week_display()} {self.time_slot} [{self.class_type}]: {self.subject.code} in {self.classroom.room_number}"
 
     def clean(self):
         # 1. Faculty Conflict Detection

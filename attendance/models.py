@@ -7,6 +7,15 @@ from students.models import Student, Batch
 
 
 class AttendanceSession(models.Model):
+    SESSION_THEORY = 'TE'
+    SESSION_PRACTICAL = 'PR'
+    SESSION_TUTORIAL = 'TU'
+    SESSION_TYPE_CHOICES = [
+        (SESSION_THEORY, 'Theory (TE)'),
+        (SESSION_PRACTICAL, 'Practical (PR)'),
+        (SESSION_TUTORIAL, 'Tutorial (TU)'),
+    ]
+
     SLOT_CHOICES = [
         ('09:00 - 10:00', '09:00 AM - 10:00 AM'),
         ('10:00 - 11:00', '10:00 AM - 11:00 AM'),
@@ -21,6 +30,12 @@ class AttendanceSession(models.Model):
     faculty = models.ForeignKey(Faculty, on_delete=models.CASCADE, related_name='conducted_sessions')
     semester = models.ForeignKey(Semester, on_delete=models.CASCADE, related_name='attendance_sessions')
     batch = models.ForeignKey(Batch, on_delete=models.SET_NULL, null=True, blank=True, related_name='attendance_sessions')
+    session_type = models.CharField(
+        max_length=10,
+        choices=SESSION_TYPE_CHOICES,
+        default=SESSION_THEORY,
+        help_text="Demarcation of lecture type: Theory (TE), Practical (PR), or Tutorial (TU)"
+    )
     date = models.DateField(default=timezone.now)
     lecture_slot = models.CharField(max_length=30, choices=SLOT_CHOICES, default='09:00 - 10:00')
     topic_covered = models.CharField(max_length=255, blank=True, null=True)
@@ -35,7 +50,13 @@ class AttendanceSession(models.Model):
 
     def __str__(self):
         batch_name = f" [{self.batch.name}]" if self.batch else ""
-        return f"{self.subject.code} - {self.date} ({self.lecture_slot}){batch_name} by {self.faculty.full_name}"
+        return f"{self.subject.code} [{self.session_type}] - {self.date} ({self.lecture_slot}){batch_name} by {self.faculty.full_name}"
+
+    def save(self, *args, **kwargs):
+        # Auto-set session_type from subject paper_type_code if default
+        if not self.session_type and self.subject:
+            self.session_type = self.subject.paper_type_code
+        super().save(*args, **kwargs)
 
     @property
     def total_students(self):
@@ -70,6 +91,22 @@ class AttendanceRecord(models.Model):
         ('EXCUSED', 'Excused / On Duty'),
     ]
 
+    BENEFIT_NONE = 'NONE'
+    BENEFIT_MED = 'MED'        # Bft. Med
+    BENEFIT_ECA = 'ECA'        # Bft. ECA
+    BENEFIT_SPORTS = 'SPORTS'  # Bft. Sports
+    BENEFIT_NCC = 'NCC'        # Bft. NCC
+    BENEFIT_NSS = 'NSS'        # Bft. NSS
+
+    BENEFIT_CHOICES = [
+        (BENEFIT_NONE, 'None'),
+        (BENEFIT_MED, 'Medical (Bft. Med)'),
+        (BENEFIT_ECA, 'ECA (Bft. ECA)'),
+        (BENEFIT_SPORTS, 'Sports (Bft. Sports)'),
+        (BENEFIT_NCC, 'NCC (Bft. NCC)'),
+        (BENEFIT_NSS, 'NSS (Bft. NSS)'),
+    ]
+
     METHOD_CHOICES = [
         ('MANUAL', 'Manual'),
         ('QR_CODE', 'QR Code Scan'),
@@ -79,6 +116,12 @@ class AttendanceRecord(models.Model):
     session = models.ForeignKey(AttendanceSession, on_delete=models.CASCADE, related_name='records')
     student = models.ForeignKey(Student, on_delete=models.CASCADE, related_name='attendance_records')
     status = models.CharField(max_length=15, choices=STATUS_CHOICES, default='PRESENT')
+    benefit_type = models.CharField(
+        max_length=10,
+        choices=BENEFIT_CHOICES,
+        default=BENEFIT_NONE,
+        help_text="Official attendance benefit/waiver (Medical, ECA, Sports, NCC, NSS)"
+    )
     marked_via = models.CharField(max_length=20, choices=METHOD_CHOICES, default='MANUAL')
     remarks = models.CharField(max_length=200, blank=True, null=True)
     marked_at = models.DateTimeField(auto_now=True)
@@ -88,4 +131,9 @@ class AttendanceRecord(models.Model):
         ordering = ['student__roll_number']
 
     def __str__(self):
-        return f"{self.student.roll_number} - {self.session.subject.code}: {self.status}"
+        bft_label = f" [{self.get_benefit_type_display()}]" if self.benefit_type != 'NONE' else ""
+        return f"{self.student.roll_number} - {self.session.subject.code}: {self.status}{bft_label}"
+
+    @property
+    def is_attended(self):
+        return self.status in ['PRESENT', 'LATE']

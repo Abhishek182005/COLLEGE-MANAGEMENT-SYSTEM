@@ -228,15 +228,15 @@ class Command(BaseCommand):
         cslab1, _ = Classroom.objects.get_or_create(room_number="CS-LAB-1", defaults={'building': "Computing Annex", 'capacity': 40, 'room_type': 'COMPUTER_LAB'})
 
         timetable_data = [
-            (0, '09:00 - 10:00', os_subj, fac_sharma, lh101, sem5_cse, batch_a),
-            (0, '10:00 - 11:00', cn_subj, fac_verma, lh101, sem5_cse, batch_a),
-            (1, '09:00 - 10:00', db_subj, fac_sharma, lh101, sem5_cse, batch_a),
-            (1, '11:15 - 12:15', lab_subj, fac_verma, cslab1, sem5_cse, batch_a),
-            (2, '10:00 - 11:00', os_subj, fac_sharma, lh101, sem5_cse, batch_a),
-            (3, '09:00 - 10:00', cn_subj, fac_verma, lh101, sem5_cse, batch_a),
-            (4, '02:00 - 03:00', db_subj, fac_sharma, lh102, sem5_cse, batch_a),
+            (0, '09:00 - 10:00', os_subj, fac_sharma, lh101, sem5_cse, batch_a, 'TE'),
+            (0, '10:00 - 11:00', cn_subj, fac_verma, lh101, sem5_cse, batch_a, 'TE'),
+            (1, '09:00 - 10:00', db_subj, fac_sharma, lh101, sem5_cse, batch_a, 'TE'),
+            (1, '11:15 - 12:15', lab_subj, fac_verma, cslab1, sem5_cse, batch_a, 'PR'),
+            (2, '10:00 - 11:00', os_subj, fac_sharma, lh101, sem5_cse, batch_a, 'TU'),
+            (3, '09:00 - 10:00', cn_subj, fac_verma, lh101, sem5_cse, batch_a, 'TE'),
+            (4, '02:00 - 03:00', db_subj, fac_sharma, lh102, sem5_cse, batch_a, 'TE'),
         ]
-        for day, slot, subj, fac, room, sem, batch in timetable_data:
+        for day, slot, subj, fac, room, sem, batch, ctype in timetable_data:
             Timetable.objects.get_or_create(
                 day_of_week=day,
                 time_slot=slot,
@@ -244,37 +244,87 @@ class Command(BaseCommand):
                 faculty=fac,
                 classroom=room,
                 semester=sem,
-                batch=batch
+                batch=batch,
+                defaults={'class_type': ctype}
             )
 
-        # 9. Attendance Sessions & Records
-        # Create 5 historical sessions across past 2 weeks
-        base_date = timezone.now().date()
-        for day_offset in range(5, 0, -1):
-            sess_date = base_date - timedelta(days=day_offset * 2)
+        # 9. Attendance Sessions & Records Across Months (July, August, September, October, November)
+        # Demonstrating realistic university attendance register with TE, PR, TU and Benefits (Medical, Sports, ECA)
+        sample_sessions_spec = [
+            # July Sessions (Compiler/OS Design, CN)
+            (date(2026, 7, 18), os_subj, fac_sharma, 'TE', "09:00 - 10:00", "Course Introduction & OS Kernel Architecture"),
+            (date(2026, 7, 22), os_subj, fac_sharma, 'TE', "09:00 - 10:00", "Process Creation & PCB Structures"),
+            (date(2026, 7, 29), os_subj, fac_sharma, 'TE', "09:00 - 10:00", "CPU Scheduling & FCFS/SJF Algorithms"),
+            (date(2026, 7, 20), cn_subj, fac_verma, 'TE', "10:00 - 11:00", "OSI vs TCP/IP Reference Architectures"),
+            (date(2026, 7, 27), cn_subj, fac_verma, 'TE', "10:00 - 11:00", "Physical Layer & Transmission Media"),
+
+            # August Sessions
+            (date(2026, 8, 3), os_subj, fac_sharma, 'TE', "09:00 - 10:00", "Process Synchronization & Critical Section"),
+            (date(2026, 8, 5), os_subj, fac_sharma, 'TU', "10:00 - 11:00", "Semaphores & Classical IPC Problems Tutorial"),
+            (date(2026, 8, 10), os_subj, fac_sharma, 'TE', "09:00 - 10:00", "Deadlock Prevention & Banker's Algorithm"),
+            (date(2026, 8, 12), lab_subj, fac_verma, 'PR', "11:15 - 12:15", "Linux Shell Scripting & POSIX Fork Lab"),
+            (date(2026, 8, 17), cn_subj, fac_verma, 'TE', "10:00 - 11:00", "Data Link Layer Framing & Error Correction"),
+            (date(2026, 8, 19), lab_subj, fac_verma, 'PR', "11:15 - 12:15", "Socket Programming in Python & C Lab"),
+            (date(2026, 8, 24), os_subj, fac_sharma, 'TE', "09:00 - 10:00", "Virtual Memory, Paging & Segmentation"),
+            (date(2026, 8, 26), db_subj, fac_sharma, 'TE', "09:00 - 10:00", "Relational Algebra & Normalization 1NF to BCNF"),
+
+            # September Sessions
+            (date(2026, 9, 2), os_subj, fac_sharma, 'TE', "09:00 - 10:00", "Page Replacement: FIFO, LRU & Optimal"),
+            (date(2026, 9, 7), os_subj, fac_sharma, 'TU', "10:00 - 11:00", "Page Fault Calculation Numerical Tutorial"),
+            (date(2026, 9, 9), lab_subj, fac_verma, 'PR', "11:15 - 12:15", "Shared Memory & Message Queues Lab"),
+            (date(2026, 9, 14), cn_subj, fac_verma, 'TE', "10:00 - 11:00", "IP Addressing, CIDR Subnetting & Supernetting"),
+            (date(2026, 9, 16), db_subj, fac_sharma, 'TE', "09:00 - 10:00", "Transaction Processing & ACID Properties"),
+            (date(2026, 9, 21), cn_subj, fac_verma, 'TE', "09:00 - 10:00", "Routing Algorithms: Distance Vector & Link State"),
+
+            # October Sessions
+            (date(2026, 10, 5), os_subj, fac_sharma, 'TE', "09:00 - 10:00", "File System Hierarchy & Disk Scheduling"),
+            (date(2026, 10, 7), lab_subj, fac_verma, 'PR', "11:15 - 12:15", "Packet Sniffing with Wireshark Lab"),
+            (date(2026, 10, 12), cn_subj, fac_verma, 'TE', "10:00 - 11:00", "TCP Congestion Control & Flow Control"),
+            (date(2026, 10, 14), db_subj, fac_sharma, 'TE', "09:00 - 10:00", "Concurrency Control & Two-Phase Locking (2PL)"),
+        ]
+
+        for s_date, subj, fac, stype, slot, topic in sample_sessions_spec:
             sess, _ = AttendanceSession.objects.get_or_create(
-                subject=os_subj,
-                faculty=fac_sharma,
+                subject=subj,
+                faculty=fac,
                 semester=sem5_cse,
                 batch=batch_a,
-                date=sess_date,
-                lecture_slot="09:00 - 10:00",
-                defaults={'topic_covered': f"Lecture {6 - day_offset}: Virtual Memory & Paging Algorithms"}
+                date=s_date,
+                lecture_slot=slot,
+                defaults={'session_type': stype, 'topic_covered': topic}
             )
-            # Create records: Arjun is frequently absent to show shortage
-            for i, st in enumerate(created_students):
+            # Create records for all students
+            for st in created_students:
                 status = 'PRESENT'
-                if st.roll_number == '2026CS103' and day_offset in [1, 2, 3]:  # Arjun absent
+                bft = 'NONE'
+
+                # Arjun has some absences
+                if st.roll_number == '2026CS103' and s_date.day % 4 == 0:
                     status = 'ABSENT'
-                elif st.roll_number == '2026CS105' and day_offset == 2:  # Rahul late
+                # Rohit has approved medical leave on Aug 10
+                elif st.roll_number == '2026CS101' and s_date == date(2026, 8, 10):
+                    status = 'EXCUSED'
+                    bft = 'MED'
+                # Priya has Sports benefit on Sep 14
+                elif st.roll_number == '2026CS102' and s_date == date(2026, 9, 14):
+                    status = 'EXCUSED'
+                    bft = 'SPORTS'
+                # Sneha has ECA benefit on Oct 5
+                elif st.roll_number == '2026CS104' and s_date == date(2026, 10, 5):
+                    status = 'EXCUSED'
+                    bft = 'ECA'
+                # Rahul late on Aug 24
+                elif st.roll_number == '2026CS105' and s_date == date(2026, 8, 24):
                     status = 'LATE'
+
                 AttendanceRecord.objects.get_or_create(
                     session=sess,
                     student=st,
-                    defaults={'status': status, 'marked_via': 'MANUAL'}
+                    defaults={'status': status, 'benefit_type': bft, 'marked_via': 'MANUAL'}
                 )
 
-        # Active Session for QR code demonstration
+        # Active Session for Today (QR Code demo)
+        base_date = timezone.now().date()
         active_qr_sess, _ = AttendanceSession.objects.get_or_create(
             subject=cn_subj,
             faculty=fac_verma,
@@ -283,6 +333,7 @@ class Command(BaseCommand):
             date=base_date,
             lecture_slot="10:00 - 11:00",
             defaults={
+                'session_type': 'TE',
                 'topic_covered': "Transport Layer Protocols & TCP Congestion Control",
                 'qr_expires_at': timezone.now() + timedelta(hours=2)
             }

@@ -118,15 +118,71 @@ class FacultyDashboardView(FacultyRequiredMixin, TemplateView):
         ctx['faculty'] = faculty
 
         if faculty:
-            # Allocated subjects
-            ctx['allocated_subjects'] = faculty.allocated_subjects.filter(is_active=True).select_related('subject', 'subject__semester')
+            today = timezone.now().date()
+            today_weekday = today.weekday()  # 0=Monday
 
-            # Today's Timetable
-            today_weekday = timezone.now().weekday()  # 0=Monday
-            ctx['today_schedule'] = Timetable.objects.filter(
+            # Allocated subjects with schedule & today's attendance status
+            allocations = list(faculty.allocated_subjects.filter(is_active=True).select_related('subject', 'subject__semester'))
+            day_dict = dict(Timetable.DAYS_OF_WEEK)
+
+            for alloc in allocations:
+                today_classes = Timetable.objects.filter(
+                    faculty=faculty,
+                    subject=alloc.subject,
+                    day_of_week=today_weekday
+                )
+                alloc.has_class_today = today_classes.exists()
+                alloc.today_classes_count = today_classes.count()
+
+                if alloc.has_class_today:
+                    first_tc = today_classes.first()
+                    alloc.first_slot = first_tc.time_slot
+                    alloc.first_class_type = first_tc.class_type
+                    # Check if session exists for today
+                    today_session = AttendanceSession.objects.filter(
+                        faculty=faculty,
+                        subject=alloc.subject,
+                        date=today
+                    ).first()
+                    alloc.today_marked = today_session is not None
+                    alloc.today_session = today_session
+                else:
+                    alloc.today_marked = False
+                    alloc.today_session = None
+
+                # Summary of days when this subject meets
+                sched_entries = Timetable.objects.filter(faculty=faculty, subject=alloc.subject).order_by('day_of_week', 'time_slot')
+                day_summaries = []
+                for sc in sched_entries:
+                    day_summaries.append(f"{day_dict.get(sc.day_of_week, '')[:3]} {sc.time_slot} [{sc.class_type}]")
+                alloc.schedule_summary = ", ".join(day_summaries) if day_summaries else "Not in master timetable"
+
+            ctx['allocated_subjects'] = allocations
+
+            # Today's Timetable with attendance status demarcation
+            today_schedule_entries = list(Timetable.objects.filter(
                 faculty=faculty,
                 day_of_week=today_weekday
-            ).select_related('subject', 'classroom', 'semester', 'batch').order_by('time_slot')
+            ).select_related('subject', 'classroom', 'semester', 'batch').order_by('time_slot'))
+
+            for c in today_schedule_entries:
+                session = AttendanceSession.objects.filter(
+                    faculty=faculty,
+                    subject=c.subject,
+                    date=today,
+                    lecture_slot=c.time_slot
+                ).first()
+                if session:
+                    c.attendance_done = True
+                    c.session_obj = session
+                    c.attendance_percentage = session.attendance_percentage
+                    c.present_count = session.present_count
+                    c.total_count = session.total_students
+                else:
+                    c.attendance_done = False
+                    c.session_obj = None
+
+            ctx['today_schedule'] = today_schedule_entries
 
             # Recent attendance sessions taken
             ctx['recent_sessions'] = AttendanceSession.objects.filter(

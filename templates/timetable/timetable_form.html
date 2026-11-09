@@ -38,6 +38,14 @@
                         </select>
                     </div>
                     <div class="col-md-6">
+                        <label class="form-label small fw-semibold">Lecture Demarcation Type *</label>
+                        <select name="class_type" id="id_class_type" class="form-select" required>
+                            <option value="TE">Theory (TE)</option>
+                            <option value="PR">Practical / Lab (PR)</option>
+                            <option value="TU">Tutorial (TU)</option>
+                        </select>
+                    </div>
+                    <div class="col-md-6">
                         <label class="form-label small fw-semibold">Subject *</label>
                         <select name="subject" id="id_subject" class="form-select check-conflict" required>
                             {% for s in subjects %}

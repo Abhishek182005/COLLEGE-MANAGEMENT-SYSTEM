@@ -25,7 +25,7 @@
         {% if existing_session %}
             <input type="hidden" name="session_id" value="{{ existing_session.id }}">
         {% endif %}
-        <div class="col-md-4">
+        <div class="col-md-3">
             <label class="form-label small fw-semibold text-secondary mb-1">Subject *</label>
             <select name="subject_id" class="form-select form-select-sm" required onchange="this.form.submit()">
                 <option value="">-- Choose Subject --</option>
@@ -38,11 +38,19 @@
             <label class="form-label small fw-semibold text-secondary mb-1">Lecture Date *</label>
             <input type="date" name="date" class="form-control form-control-sm" value="{{ selected_date }}" onchange="this.form.submit()">
         </div>
-        <div class="col-md-3">
+        <div class="col-md-2">
             <label class="form-label small fw-semibold text-secondary mb-1">Time Slot *</label>
             <select name="lecture_slot" class="form-select form-select-sm" onchange="this.form.submit()">
                 {% for slot_code, slot_label in slots %}
                     <option value="{{ slot_code }}" {% if selected_slot == slot_code %}selected{% endif %}>{{ slot_label }}</option>
+                {% endfor %}
+            </select>
+        </div>
+        <div class="col-md-2">
+            <label class="form-label small fw-semibold text-secondary mb-1">Session Type *</label>
+            <select name="session_type" class="form-select form-select-sm" onchange="this.form.submit()">
+                {% for stype_code, stype_label in session_type_choices %}
+                    <option value="{{ stype_code }}" {% if selected_session_type == stype_code %}selected{% endif %}>{{ stype_label }}</option>
                 {% endfor %}
             </select>
         </div>
@@ -60,11 +68,35 @@
         </div>
     </form>
 
-    {% if is_backdated %}
+    {% if is_already_marked %}
+        <div class="alert alert-success d-flex align-items-center justify-content-between p-3 mb-3 border-success" role="alert">
+            <div>
+                <h6 class="fw-bold mb-1 text-success"><i class="fa-solid fa-circle-check me-2"></i> Attendance Already Recorded For This Class</h6>
+                <p class="mb-0 small text-dark">
+                    Attendance for <b>{{ subject.code }} [{{ existing_session.get_session_type_display }}]</b> on <b>{{ selected_date }} ({{ selected_slot }})</b> was recorded by <b>{{ existing_session.faculty.full_name }}</b> ({{ existing_session.present_count }}/{{ existing_session.total_students }} Present - {{ existing_session.attendance_percentage }}%).
+                    <br><span class="text-secondary">You are in review / amendment mode. Submitting below will update the existing record with an audit entry.</span>
+                </p>
+            </div>
+            <div class="text-end">
+                <span class="badge bg-success fs-6 px-3 py-2">Status: Completed</span>
+            </div>
+        </div>
+    {% endif %}
+
+    {% if not is_scheduled_on_date and selected_subject_id %}
+        <div class="alert alert-info py-2 px-3 small d-flex align-items-center gap-2 mb-3" role="alert">
+            <i class="fa-solid fa-calendar-plus fs-5"></i>
+            <div>
+                <b>Extra / Rescheduled Lecture Notice:</b> This slot is not scheduled on this weekday in the timetable. Recording this session will log an extra lecture.
+            </div>
+        </div>
+    {% endif %}
+
+    {% if is_backdated and not is_already_marked %}
         <div class="alert alert-warning py-2 px-3 small d-flex align-items-center gap-2 mb-3" role="alert">
             <i class="fa-solid fa-clock-rotate-left fs-5"></i>
             <div>
-                <b>Backdated Attendance Editing Mode:</b> You are modifying records for a past date or existing session. Any changes will be recorded in the security audit trail.
+                <b>Backdated Attendance Mode:</b> You are recording attendance for a past date. An audit log will track this entry.
             </div>
         </div>
     {% endif %}
@@ -78,16 +110,17 @@
             <input type="hidden" name="batch_id" value="{{ selected_batch_id }}">
             <input type="hidden" name="date" value="{{ selected_date }}">
             <input type="hidden" name="lecture_slot" value="{{ selected_slot }}">
+            <input type="hidden" name="session_type" value="{{ selected_session_type }}">
 
             <div class="row g-3 mb-3">
                 <div class="col-md-7">
                     <label class="form-label small fw-semibold">Lecture Topic / Syllabus Unit Covered</label>
                     <input type="text" name="topic_covered" class="form-control form-control-sm" placeholder="e.g. Memory management and virtual pagination" value="{{ existing_session.topic_covered|default:'' }}">
                 </div>
-                {% if is_backdated %}
+                {% if is_backdated or is_already_marked %}
                     <div class="col-md-5">
                         <label class="form-label small fw-semibold text-danger">Amendment Reason (Required for Audit Log) *</label>
-                        <input type="text" name="amendment_reason" class="form-control form-control-sm border-warning" placeholder="e.g. Corrected marked absence after medical slip submission" required>
+                        <input type="text" name="amendment_reason" class="form-control form-control-sm border-warning" placeholder="e.g. Updating medical leave or correcting attendance" required>
                     </div>
                 {% endif %}
             </div>
@@ -96,6 +129,7 @@
             <div class="d-flex justify-content-between align-items-center mb-3 pt-2 border-top">
                 <div class="fw-bold text-dark">
                     <span>Enrolled Students ({{ students_list|length }})</span>
+                    <span class="badge bg-secondary ms-2">{{ selected_session_type }}</span>
                 </div>
                 <div class="d-flex gap-2">
                     <button type="button" class="btn btn-sm btn-outline-success" onclick="markAll('PRESENT')">
@@ -112,11 +146,12 @@
                 <table class="table table-hover align-middle border">
                     <thead class="table-light">
                         <tr>
-                            <th style="width: 50px;">#</th>
-                            <th style="width: 130px;">Roll Number</th>
+                            <th style="width: 40px;">#</th>
+                            <th style="width: 120px;">Roll Number</th>
                             <th>Student Name</th>
-                            <th>Batch / Section</th>
-                            <th style="width: 280px;" class="text-center">Attendance Status</th>
+                            <th>Batch</th>
+                            <th style="width: 320px;" class="text-center">Attendance Status</th>
+                            <th style="width: 170px;">Benefit / Waiver</th>
                             <th>Remarks</th>
                         </tr>
                     </thead>
@@ -139,7 +174,17 @@
 
                                         <input type="radio" class="btn-check" name="status_{{ row.student.id }}" id="late_{{ row.student.id }}" value="LATE" {% if row.status == 'LATE' %}checked{% endif %}>
                                         <label class="btn btn-outline-warning btn-sm" for="late_{{ row.student.id }}">Late</label>
+
+                                        <input type="radio" class="btn-check" name="status_{{ row.student.id }}" id="exc_{{ row.student.id }}" value="EXCUSED" {% if row.status == 'EXCUSED' %}checked{% endif %}>
+                                        <label class="btn btn-outline-info btn-sm" for="exc_{{ row.student.id }}">Excused</label>
                                     </div>
+                                </td>
+                                <td>
+                                    <select name="benefit_{{ row.student.id }}" class="form-select form-select-sm">
+                                        {% for b_code, b_label in benefit_choices %}
+                                            <option value="{{ b_code }}" {% if row.benefit_type == b_code %}selected{% endif %}>{{ b_label }}</option>
+                                        {% endfor %}
+                                    </select>
                                 </td>
                                 <td>
                                     <input type="text" name="remarks_{{ row.student.id }}" class="form-control form-control-sm" placeholder="Optional notes" value="{{ row.remarks }}">
