@@ -1,17 +1,55 @@
 """
 Django settings for CampusConnect - College Management System.
+Configured for production cloud platforms (Render, Railway, Heroku, etc.)
+and seamless local execution.
 """
 
 from pathlib import Path
 import os
+import dj_database_url
 
 BASE_DIR = Path(__file__).resolve().parent.parent
 
-SECRET_KEY = "django-insecure-campusconnect-key-smartprof-college-erp-secure-secret-2026"
+# SECURITY WARNING: keep the secret key used in production secret!
+SECRET_KEY = os.environ.get(
+    "SECRET_KEY",
+    "django-insecure-campusconnect-key-smartprof-college-erp-secure-secret-2026"
+)
 
-DEBUG = True
+# SECURITY WARNING: don't run with debug turned on in production!
+IS_CLOUD_DEPLOYMENT = any(k in os.environ for k in ("RENDER", "PORT", "DYNO", "RAILWAY_ENVIRONMENT", "FLY_APP_NAME"))
+if "DEBUG" in os.environ:
+    DEBUG = os.environ.get("DEBUG", "False").lower() in ("true", "1", "t", "yes")
+else:
+    DEBUG = not IS_CLOUD_DEPLOYMENT
 
-ALLOWED_HOSTS = ["*"]
+# Allowed Hosts & CSRF Origins
+allowed_hosts_env = os.environ.get("ALLOWED_HOSTS")
+if allowed_hosts_env:
+    ALLOWED_HOSTS = [h.strip() for h in allowed_hosts_env.split(",") if h.strip()]
+else:
+    ALLOWED_HOSTS = [
+        "*",
+        "localhost",
+        "127.0.0.1",
+        ".onrender.com",
+        ".railway.app",
+        ".vercel.app",
+        ".pythonanywhere.com",
+    ]
+
+csrf_origins_env = os.environ.get("CSRF_TRUSTED_ORIGINS")
+if csrf_origins_env:
+    CSRF_TRUSTED_ORIGINS = [o.strip() for o in csrf_origins_env.split(",") if o.strip()]
+else:
+    CSRF_TRUSTED_ORIGINS = [
+        "https://*.onrender.com",
+        "https://*.railway.app",
+        "https://*.vercel.app",
+        "https://*.pythonanywhere.com",
+        "http://localhost:8000",
+        "http://127.0.0.1:8000",
+    ]
 
 INSTALLED_APPS = [
     "django.contrib.admin",
@@ -39,6 +77,7 @@ INSTALLED_APPS = [
 
 MIDDLEWARE = [
     "django.middleware.security.SecurityMiddleware",
+    "whitenoise.middleware.WhiteNoiseMiddleware",  # Serve static files in production
     "django.contrib.sessions.middleware.SessionMiddleware",
     "django.middleware.common.CommonMiddleware",
     "django.middleware.csrf.CsrfViewMiddleware",
@@ -67,12 +106,24 @@ TEMPLATES = [
 
 WSGI_APPLICATION = "campusconnect_core.wsgi.application"
 
-DATABASES = {
-    "default": {
-        "ENGINE": "django.db.backends.sqlite3",
-        "NAME": BASE_DIR / "db.sqlite3",
+# Database configuration: Uses DATABASE_URL (PostgreSQL) if provided by cloud platform,
+# otherwise falls back seamlessly to SQLite.
+DATABASE_URL = os.environ.get("DATABASE_URL")
+if DATABASE_URL:
+    DATABASES = {
+        "default": dj_database_url.config(
+            default=DATABASE_URL,
+            conn_max_age=600,
+            conn_health_checks=True,
+        )
     }
-}
+else:
+    DATABASES = {
+        "default": {
+            "ENGINE": "django.db.backends.sqlite3",
+            "NAME": BASE_DIR / "db.sqlite3",
+        }
+    }
 
 AUTH_USER_MODEL = "accounts.CustomUser"
 
@@ -91,6 +142,9 @@ USE_TZ = True
 STATIC_URL = "/static/"
 STATICFILES_DIRS = [BASE_DIR / "static"]
 STATIC_ROOT = BASE_DIR / "staticfiles"
+
+# WhiteNoise production compression & caching storage
+STATICFILES_STORAGE = "whitenoise.storage.CompressedStaticFilesStorage"
 
 MEDIA_URL = "/media/"
 MEDIA_ROOT = BASE_DIR / "media"
@@ -119,3 +173,9 @@ REST_FRAMEWORK = {
 COLLEGE_NAME = "CampusConnect Institute of Technology"
 COLLEGE_CODE = "CCIT-092"
 ATTENDANCE_SHORTAGE_THRESHOLD = 75.0  # Alert threshold percentage
+
+# Production Security Headers (when running in cloud on HTTPS)
+if not DEBUG and IS_CLOUD_DEPLOYMENT:
+    SECURE_PROXY_SSL_HEADER = ("HTTP_X_FORWARDED_PROTO", "https")
+    SESSION_COOKIE_SECURE = True
+    CSRF_COOKIE_SECURE = True
