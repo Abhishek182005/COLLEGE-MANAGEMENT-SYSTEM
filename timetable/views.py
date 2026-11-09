@@ -94,6 +94,7 @@ def timetable_create_view(request):
     if request.method == 'POST':
         day = request.POST.get('day_of_week')
         slot = request.POST.get('time_slot')
+        class_type = request.POST.get('class_type', 'TE')
         subj_id = request.POST.get('subject')
         fac_id = request.POST.get('faculty')
         room_id = request.POST.get('classroom')
@@ -103,6 +104,7 @@ def timetable_create_view(request):
         entry = Timetable(
             day_of_week=int(day),
             time_slot=slot,
+            class_type=class_type,
             subject_id=subj_id,
             faculty_id=fac_id,
             classroom_id=room_id,

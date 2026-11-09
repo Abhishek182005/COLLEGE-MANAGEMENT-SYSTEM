@@ -63,10 +63,12 @@ class Semester(models.Model):
 class Subject(models.Model):
     TYPE_THEORY = 'THEORY'
     TYPE_PRACTICAL = 'PRACTICAL'
+    TYPE_TUTORIAL = 'TUTORIAL'
     TYPE_HYBRID = 'HYBRID'
     TYPE_CHOICES = [
-        (TYPE_THEORY, 'Theory'),
-        (TYPE_PRACTICAL, 'Practical / Lab'),
+        (TYPE_THEORY, 'Theory (TE)'),
+        (TYPE_PRACTICAL, 'Practical / Lab (PR)'),
+        (TYPE_TUTORIAL, 'Tutorial (TU)'),
         (TYPE_HYBRID, 'Hybrid'),
     ]
 
@@ -81,6 +83,15 @@ class Subject(models.Model):
 
     def __str__(self):
         return f"{self.code} - {self.name}"
+
+    @property
+    def paper_type_code(self):
+        """Standard university demarcation code: TE (Theory), PR (Practical), TU (Tutorial)."""
+        if self.subject_type == self.TYPE_PRACTICAL:
+            return 'PR'
+        elif self.subject_type == self.TYPE_TUTORIAL:
+            return 'TU'
+        return 'TE'
 
 
 class SubjectAllocation(models.Model):

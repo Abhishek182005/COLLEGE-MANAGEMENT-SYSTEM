@@ -1,0 +1,339 @@
+{% extends 'base.html' %}
+
+{% block title %}My Attendance Register - {{ student.full_name }}{% endblock %}
+{% block page_heading %}Official Academic Attendance Register{% endblock %}
+
+{% block content %}
+<div class="row g-4 mb-4">
+    <!-- Student Information Banner -->
+    <div class="col-12">
+        <div class="card p-4 text-white" style="background: linear-gradient(135deg, #0f172a 0%, #1e3a8a 50%, #2563eb 100%);">
+            <div class="d-flex flex-wrap justify-content-between align-items-center gap-3">
+                <div class="d-flex align-items-center gap-3">
+                    <img src="{{ student.user.avatar_url }}" alt="Student" class="rounded-circle border border-2 border-white" width="70" height="70">
+                    <div>
+                        <h4 class="fw-bold mb-1">{{ student.full_name }}</h4>
+                        <div class="small text-white-50">
+                            Roll No: <span class="badge bg-light text-dark fw-bold me-2">{{ student.roll_number }}</span>
+                            Reg No: <span class="text-white">{{ student.registration_number }}</span>
+                        </div>
+                        <div class="small text-white-50 mt-1">
+                            {{ student.course.name }} (Sem {{ student.current_semester.semester_number }}) • Batch: {{ student.batch.name }} (Sec {{ student.batch.section }})
+                        </div>
+                    </div>
+                </div>
+                <div class="d-flex gap-2">
+                    <button type="button" class="btn btn-light text-primary fw-semibold shadow-sm" onclick="window.print()">
+                        <i class="fa-solid fa-print me-1"></i> Print / Download Register
+                    </button>
+                    {% if is_student_viewer %}
+                        <a href="{% url 'student_dashboard' %}" class="btn btn-outline-light">
+                            <i class="fa-solid fa-arrow-left me-1"></i> Dashboard
+                        </a>
+                    {% else %}
+                        <a href="{% url 'student_detail' student.id %}" class="btn btn-outline-light">
+                            <i class="fa-solid fa-user me-1"></i> Student Profile
+                        </a>
+                    {% endif %}
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Attendance Performance KPI Cards -->
+    <div class="col-md-3">
+        <div class="card p-3 border-0 shadow-sm text-center bg-primary text-white">
+            <small class="text-white-50 text-uppercase fw-bold">Aggregate Attendance</small>
+            <div class="display-6 fw-bold my-1">{{ overall_percentage }}%</div>
+            <small class="text-white-50">
+                {% if overall_percentage >= 75.0 %}
+                    <i class="fa-solid fa-circle-check text-light me-1"></i> Exam Eligible (&ge; 75%)
+                {% else %}
+                    <i class="fa-solid fa-triangle-exclamation text-warning me-1"></i> Shortage Warning (&lt; 75%)
+                {% endif %}
+            </small>
+        </div>
+    </div>
+    <div class="col-md-3">
+        <div class="card p-3 border shadow-sm text-center">
+            <small class="text-secondary text-uppercase fw-bold">Lectures Delivered</small>
+            <div class="display-6 fw-bold text-dark my-1">{{ total_lect_held }}</div>
+            <small class="text-muted">Total sessions conducted</small>
+        </div>
+    </div>
+    <div class="col-md-3">
+        <div class="card p-3 border shadow-sm text-center">
+            <small class="text-secondary text-uppercase fw-bold">Lectures Attended</small>
+            <div class="display-6 fw-bold text-success my-1">{{ total_lect_attd }}</div>
+            <small class="text-muted">Physically present / on duty</small>
+        </div>
+    </div>
+    <div class="col-md-3">
+        <div class="card p-3 border shadow-sm text-center">
+            <small class="text-secondary text-uppercase fw-bold">Attendance Benefits</small>
+            <div class="display-6 fw-bold text-info my-1">+{{ total_bft_all }}</div>
+            <small class="text-muted">Sports, ECA, NCC &amp; NSS waivers</small>
+        </div>
+    </div>
+</div>
+
+<!-- SECTION 1: University Monthly Aggregate Register (Official Format) -->
+<div class="card shadow-sm mb-4">
+    <div class="card-header bg-white py-3 d-flex flex-wrap justify-content-between align-items-center gap-2">
+        <div>
+            <h5 class="fw-bold mb-0 text-dark">
+                <i class="fa-solid fa-table-list text-primary me-2"></i> Monthly Academic Attendance Register (Paper-Wise Demarcation)
+            </h5>
+            <small class="text-muted">Breakdown by Course Paper, Demarcation Type (Theory / Practical / Tutorial), and Month</small>
+        </div>
+        <div class="d-flex align-items-center gap-2">
+            <span class="badge bg-secondary-subtle text-secondary border">TE: Theory</span>
+            <span class="badge bg-primary-subtle text-primary border border-primary">PR: Practical</span>
+            <span class="badge bg-warning-subtle text-warning border border-warning">TU: Tutorial</span>
+        </div>
+    </div>
+    <div class="card-body p-0">
+        <div class="table-responsive">
+            <table class="table table-bordered table-hover align-middle text-center mb-0" style="font-size: 0.88rem;">
+                <thead class="table-light">
+                    <tr class="align-middle">
+                        <th style="width: 45px;">Sr.<br>No.</th>
+                        <th>Paper Code</th>
+                        <th class="text-start" style="min-width: 170px;">PAPER_NAME</th>
+                        <th>PAPER_<br>TYPE</th>
+                        <th>MONTH</th>
+                        <th class="bg-light">LECT_<br>HELD</th>
+                        <th class="bg-light">LECT_<br>ATTD</th>
+                        <th>Bft.<br>Med.</th>
+                        <th>Bft.<br>ECA</th>
+                        <th>Bft.<br>Sports</th>
+                        <th>Bft.<br>NCC</th>
+                        <th>Bft.<br>NSS</th>
+                        <th class="bg-info-subtle">Total<br>Attd.<br>Bft.</th>
+                        <th class="bg-primary-subtle fw-bold">Final<br>Lect.<br>Held</th>
+                        <th class="bg-success-subtle fw-bold">Final Lect.<br>Attended</th>
+                        <th>Faculty<br>Code</th>
+                        <th class="text-start">Faculty Name</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for row in monthly_rows %}
+                        <tr>
+                            <td>{{ row.sr_no }}</td>
+                            <td class="fw-bold text-dark font-monospace">{{ row.paper_code }}</td>
+                            <td class="text-start fw-semibold text-dark">{{ row.paper_name }}</td>
+                            <td>
+                                <span class="badge {% if row.paper_type == 'PR' %}bg-primary{% elif row.paper_type == 'TU' %}bg-warning text-dark{% else %}bg-secondary{% endif %} px-2">
+                                    {{ row.paper_type }}
+                                </span>
+                            </td>
+                            <td class="fw-semibold">{{ row.month }}</td>
+                            <td class="bg-light fw-bold">{{ row.lect_held }}</td>
+                            <td class="bg-light text-success fw-bold">{{ row.lect_attd }}</td>
+                            <td class="text-muted">{{ row.bft_med|default:"-" }}</td>
+                            <td class="text-muted">{{ row.bft_eca|default:"-" }}</td>
+                            <td class="text-muted">{{ row.bft_sports|default:"-" }}</td>
+                            <td class="text-muted">{{ row.bft_ncc|default:"-" }}</td>
+                            <td class="text-muted">{{ row.bft_nss|default:"-" }}</td>
+                            <td class="bg-info-subtle fw-bold text-primary">{{ row.total_attd_bft }}</td>
+                            <td class="bg-primary-subtle fw-bold">{{ row.final_lect_held }}</td>
+                            <td class="bg-success-subtle fw-bold text-success">{{ row.final_lect_attd }}</td>
+                            <td class="font-monospace small">{{ row.faculty_code }}</td>
+                            <td class="text-start small">{{ row.faculty_name }}</td>
+                        </tr>
+                    {% empty %}
+                        <tr>
+                            <td colspan="17" class="py-5 text-center text-muted">
+                                <i class="fa-regular fa-folder-open fs-2 d-block mb-2 text-secondary"></i>
+                                No monthly attendance records recorded for this academic session yet.
+                            </td>
+                        </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+    </div>
+    <!-- Register Footer Notes (Matching Screenshot) -->
+    <div class="card-footer bg-light p-3">
+        <div class="row align-items-center">
+            <div class="col-md-7">
+                <p class="mb-1 fw-bold text-primary small">
+                    <i class="fa-solid fa-circle-info me-1"></i> Note: Medical Benefit (Bft. Med) will not be added into the Attendance Marks.
+                </p>
+                <small class="text-muted">
+                    Total Benefit Granted (ECA, Sports, NCC, NSS): <b>{{ total_bft_all }}</b> lectures • Medical Waivers on record: <b>{{ total_bft_med }}</b>
+                </small>
+            </div>
+            <div class="col-md-5 text-md-end">
+                <div class="fw-bold text-dark">
+                    <span>Total Lect. Delivered: <b>{{ total_lect_held }}</b></span> • 
+                    <span>Total Attended: <b class="text-success">{{ grand_final_attd }}</b></span>
+                </div>
+                <div class="text-muted small">
+                    Overall Percentage: <span class="fw-bold {% if overall_percentage >= 75 %}text-success{% else %}text-danger{% endif %} fs-6">{{ overall_percentage }}%</span>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- SECTION 2: Detailed Date-by-Date Attendance Log -->
+<div class="card shadow-sm">
+    <div class="card-header bg-white py-3">
+        <div class="d-flex flex-wrap justify-content-between align-items-center gap-3">
+            <div>
+                <h5 class="fw-bold mb-0 text-dark">
+                    <i class="fa-solid fa-calendar-check text-success me-2"></i> Detailed Class-by-Class Attendance History
+                </h5>
+                <small class="text-muted">Every lecture attended and missed with exact date, slot, session type, and faculty notes</small>
+            </div>
+            <span class="badge bg-light text-secondary border fs-6">
+                {{ detailed_records.count }} Classes Logged
+            </span>
+        </div>
+    </div>
+
+    <!-- Filter Bar -->
+    <div class="card-body bg-light border-bottom p-3">
+        <form method="get" class="row g-2 align-items-end">
+            <div class="col-md-3">
+                <label class="form-label small fw-semibold text-secondary mb-1">Subject</label>
+                <select name="subject" class="form-select form-select-sm" onchange="this.form.submit()">
+                    <option value="">All Enrolled Subjects</option>
+                    {% for subj in enrolled_subjects %}
+                        <option value="{{ subj.id }}" {% if selected_subject == subj.id %}selected{% endif %}>{{ subj.code }} - {{ subj.name }}</option>
+                    {% endfor %}
+                </select>
+            </div>
+            <div class="col-md-2">
+                <label class="form-label small fw-semibold text-secondary mb-1">Session Type</label>
+                <select name="type" class="form-select form-select-sm" onchange="this.form.submit()">
+                    <option value="">All Types (TE/PR/TU)</option>
+                    <option value="TE" {% if selected_type == 'TE' %}selected{% endif %}>Theory (TE)</option>
+                    <option value="PR" {% if selected_type == 'PR' %}selected{% endif %}>Practical (PR)</option>
+                    <option value="TU" {% if selected_type == 'TU' %}selected{% endif %}>Tutorial (TU)</option>
+                </select>
+            </div>
+            <div class="col-md-2">
+                <label class="form-label small fw-semibold text-secondary mb-1">Month</label>
+                <select name="month" class="form-select form-select-sm" onchange="this.form.submit()">
+                    <option value="">All Months</option>
+                    {% for m_num, m_name in months_list %}
+                        <option value="{{ m_num }}" {% if selected_month == m_num %}selected{% endif %}>{{ m_name }}</option>
+                    {% endfor %}
+                </select>
+            </div>
+            <div class="col-md-2">
+                <label class="form-label small fw-semibold text-secondary mb-1">Status</label>
+                <select name="status" class="form-select form-select-sm" onchange="this.form.submit()">
+                    <option value="">All Statuses</option>
+                    <option value="PRESENT" {% if selected_status == 'PRESENT' %}selected{% endif %}>Present</option>
+                    <option value="ABSENT" {% if selected_status == 'ABSENT' %}selected{% endif %}>Absent</option>
+                    <option value="LATE" {% if selected_status == 'LATE' %}selected{% endif %}>Late</option>
+                    <option value="EXCUSED" {% if selected_status == 'EXCUSED' %}selected{% endif %}>Excused / On Duty</option>
+                </select>
+            </div>
+            <div class="col-md-3 d-flex gap-2">
+                <button type="submit" class="btn btn-sm btn-primary flex-fill">
+                    <i class="fa-solid fa-filter me-1"></i> Apply Filter
+                </button>
+                <a href="{% if is_student_viewer %}{% url 'student_attendance' %}{% else %}{% url 'student_attendance_register' student.id %}{% endif %}" class="btn btn-sm btn-outline-secondary">
+                    Reset
+                </a>
+            </div>
+        </form>
+    </div>
+
+    <!-- Class History Table -->
+    <div class="card-body p-0">
+        <div class="table-responsive">
+            <table class="table table-hover align-middle mb-0">
+                <thead class="table-light">
+                    <tr>
+                        <th style="width: 40px;">#</th>
+                        <th style="width: 130px;">Date &amp; Day</th>
+                        <th style="width: 140px;">Lecture Slot</th>
+                        <th>Subject &amp; Paper Type</th>
+                        <th>Faculty</th>
+                        <th style="width: 140px;" class="text-center">Status</th>
+                        <th>Topic Covered</th>
+                        <th style="width: 120px;">Verification</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for rec in detailed_records %}
+                        <tr>
+                            <td>{{ forloop.counter }}</td>
+                            <td>
+                                <div class="fw-bold text-dark">{{ rec.session.date|date:"d-M-Y" }}</div>
+                                <small class="text-muted">{{ rec.session.date|date:"l" }}</small>
+                            </td>
+                            <td>
+                                <span class="badge bg-light text-dark border">
+                                    <i class="fa-regular fa-clock me-1"></i> {{ rec.session.lecture_slot }}
+                                </span>
+                            </td>
+                            <td>
+                                <div class="fw-semibold text-dark">
+                                    {{ rec.session.subject.code }}: {{ rec.session.subject.name }}
+                                </div>
+                                <span class="badge {% if rec.session.session_type == 'PR' %}bg-primary{% elif rec.session.session_type == 'TU' %}bg-warning text-dark{% else %}bg-secondary{% endif %}">
+                                    {{ rec.session.get_session_type_display }}
+                                </span>
+                                {% if rec.session.batch %}
+                                    <span class="badge bg-light text-secondary border">Batch: {{ rec.session.batch.name }}</span>
+                                {% endif %}
+                            </td>
+                            <td>
+                                <div class="fw-semibold text-dark small">{{ rec.session.faculty.full_name }}</div>
+                                <small class="text-muted font-monospace">{{ rec.session.faculty.employee_id }}</small>
+                            </td>
+                            <td class="text-center">
+                                {% if rec.status == 'PRESENT' %}
+                                    <span class="badge bg-success-subtle text-success border border-success px-3 py-2">
+                                        <i class="fa-solid fa-circle-check me-1"></i> Present
+                                    </span>
+                                {% elif rec.status == 'ABSENT' %}
+                                    <span class="badge bg-danger-subtle text-danger border border-danger px-3 py-2">
+                                        <i class="fa-solid fa-circle-xmark me-1"></i> Absent
+                                    </span>
+                                {% elif rec.status == 'LATE' %}
+                                    <span class="badge bg-warning-subtle text-warning border border-warning px-3 py-2">
+                                        <i class="fa-solid fa-clock me-1"></i> Late
+                                    </span>
+                                {% elif rec.status == 'EXCUSED' %}
+                                    <span class="badge bg-info-subtle text-info border border-info px-3 py-2">
+                                        <i class="fa-solid fa-shield me-1"></i> Excused
+                                    </span>
+                                    {% if rec.benefit_type != 'NONE' %}
+                                        <div class="small fw-bold text-info mt-1">{{ rec.get_benefit_type_display }}</div>
+                                    {% endif %}
+                                {% endif %}
+                            </td>
+                            <td>
+                                <small class="text-dark">{{ rec.session.topic_covered|default:"Regular syllabus lecture" }}</small>
+                                {% if rec.remarks %}
+                                    <div class="text-muted small fst-italic">Note: {{ rec.remarks }}</div>
+                                {% endif %}
+                            </td>
+                            <td>
+                                <span class="badge bg-light text-muted border">
+                                    <i class="fa-solid {% if rec.marked_via == 'QR_CODE' %}fa-qrcode text-primary{% else %}fa-user-pen{% endif %} me-1"></i>
+                                    {{ rec.get_marked_via_display }}
+                                </span>
+                            </td>
+                        </tr>
+                    {% empty %}
+                        <tr>
+                            <td colspan="8" class="text-center py-5 text-muted">
+                                <i class="fa-solid fa-circle-exclamation fs-3 d-block mb-2 text-secondary"></i>
+                                No class logs match your selected filter criteria.
+                            </td>
+                        </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+    </div>
+</div>
+{% endblock %}

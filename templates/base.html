@@ -264,6 +264,9 @@
             {% elif is_student %}
                 <!-- Student specific navigation -->
                 <span class="nav-section-title">Student Portal</span>
+                <a href="{% url 'student_attendance' %}" class="nav-link">
+                    <i class="fa-solid fa-clipboard-user text-success"></i> My Attendance Register
+                </a>
                 <a href="{% url 'student_qr_scanner' %}" class="nav-link">
                     <i class="fa-solid fa-qrcode text-primary"></i> Scan QR Attendance
                 </a>

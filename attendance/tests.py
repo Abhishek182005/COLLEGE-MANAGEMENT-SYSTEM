@@ -139,3 +139,80 @@ class AttendanceManagementTests(TestCase):
         sync_sess = AttendanceSession.objects.filter(subject=self.subj, lecture_slot="11:15 - 12:15").first()
         self.assertIsNotNone(sync_sess)
         self.assertEqual(sync_sess.records.count(), 2)
+
+    def test_student_attendance_view_and_monthly_register(self):
+        """Student can view their official attendance register with monthly demarcation & benefits."""
+        # July session (Theory)
+        sess_july = AttendanceSession.objects.create(
+            subject=self.subj, faculty=self.faculty, semester=self.sem, batch=self.batch,
+            date=date(2026, 7, 20), lecture_slot="09:00 - 10:00", session_type="TE"
+        )
+        AttendanceRecord.objects.create(session=sess_july, student=self.st1, status='PRESENT')
+
+        # August session (Practical with Medical Benefit)
+        sess_aug = AttendanceSession.objects.create(
+            subject=self.subj, faculty=self.faculty, semester=self.sem, batch=self.batch,
+            date=date(2026, 8, 15), lecture_slot="10:00 - 11:00", session_type="PR"
+        )
+        AttendanceRecord.objects.create(session=sess_aug, student=self.st1, status='EXCUSED', benefit_type='MED')
+
+        # September session (Theory with Sports Benefit)
+        sess_sep = AttendanceSession.objects.create(
+            subject=self.subj, faculty=self.faculty, semester=self.sem, batch=self.batch,
+            date=date(2026, 9, 10), lecture_slot="09:00 - 10:00", session_type="TE"
+        )
+        AttendanceRecord.objects.create(session=sess_sep, student=self.st1, status='EXCUSED', benefit_type='SPORTS')
+
+        # Login as student
+        self.client.login(username='st1', password='Password123')
+        res = self.client.get(reverse('student_attendance'))
+        self.assertEqual(res.status_code, 200)
+        self.assertContains(res, "Monthly Academic Attendance Register")
+        self.assertContains(res, "CS501")
+        self.assertContains(res, "July")
+        self.assertContains(res, "August")
+        self.assertContains(res, "September")
+        self.assertContains(res, "Bft. Med")
+        self.assertContains(res, "Bft. Sports")
+        self.assertContains(res, "Note: Medical Benefit (Bft. Med) will not be added into the Attendance Marks.")
+
+    def test_quick_mark_loads_existing_session_and_saves_benefits(self):
+        """Quick mark detects already recorded session and updates without duplicates."""
+        self.client.login(username='prof_test', password='Password123')
+
+        today_str = date.today().isoformat()
+        post_data = {
+            'subject_id': self.subj.id,
+            'semester_id': self.sem.id,
+            'batch_id': self.batch.id,
+            'date': today_str,
+            'lecture_slot': "09:00 - 10:00",
+            'session_type': "PR",
+            'topic_covered': "Unit 2 Practical",
+            f'status_{self.st1.id}': "PRESENT",
+            f'benefit_{self.st1.id}': "NONE",
+            f'remarks_{self.st1.id}': "Active participant",
+            f'status_{self.st2.id}': "EXCUSED",
+            f'benefit_{self.st2.id}': "SPORTS",
+            f'remarks_{self.st2.id}': "College tournament",
+        }
+        res = self.client.post(reverse('quick_mark_attendance'), post_data)
+        self.assertEqual(res.status_code, 302)
+
+        # Check session was created with PR session_type
+        sess = AttendanceSession.objects.get(subject=self.subj, date=date.today(), lecture_slot="09:00 - 10:00")
+        self.assertEqual(sess.session_type, "PR")
+
+        rec2 = AttendanceRecord.objects.get(session=sess, student=self.st2)
+        self.assertEqual(rec2.status, "EXCUSED")
+        self.assertEqual(rec2.benefit_type, "SPORTS")
+
+        # Now GET request for the same slot loads existing session and indicates already marked
+        get_res = self.client.get(reverse('quick_mark_attendance'), {
+            'subject_id': self.subj.id,
+            'date': today_str,
+            'lecture_slot': "09:00 - 10:00",
+        })
+        self.assertEqual(get_res.status_code, 200)
+        self.assertTrue(get_res.context['is_already_marked'])
+        self.assertEqual(get_res.context['existing_session'], sess)
