@@ -357,11 +357,25 @@ def student_attendance_view(request, student_id=None):
     total_bft_all = 0
     total_bft_med = 0
 
+    stats_map = {
+        'ALL': {'label': 'Total Combined (All Types)', 'held': 0, 'attd': 0, 'bft': 0, 'bft_med': 0},
+        'TE': {'label': 'Theory (TE) Attendance', 'held': 0, 'attd': 0, 'bft': 0, 'bft_med': 0},
+        'PR': {'label': 'Practical / Lab (PR) Attendance', 'held': 0, 'attd': 0, 'bft': 0, 'bft_med': 0},
+        'TU': {'label': 'Tutorial (TU) Attendance', 'held': 0, 'attd': 0, 'bft': 0, 'bft_med': 0},
+    }
+
     for key, data in monthly_groups.items():
         bft_sum = data['bft_eca'] + data['bft_sports'] + data['bft_ncc'] + data['bft_nss']
         final_held = data['lect_held']
         final_attd = min(final_held, data['lect_attd'] + bft_sum)
         pct = round((final_attd / final_held * 100), 1) if final_held > 0 else 0.0
+
+        stype = data['paper_type']
+        if stype in stats_map:
+            stats_map[stype]['held'] += data['lect_held']
+            stats_map[stype]['attd'] += data['lect_attd']
+            stats_map[stype]['bft'] += bft_sum
+            stats_map[stype]['bft_med'] += data['bft_med']
 
         monthly_rows.append({
             'sr_no': sr_no,
@@ -392,6 +406,30 @@ def student_attendance_view(request, student_id=None):
 
     grand_final_attd = min(total_held, total_attd + total_bft_all)
     overall_percentage = round((grand_final_attd / total_held * 100), 1) if total_held > 0 else 0.0
+
+    stats_map['ALL']['held'] = total_held
+    stats_map['ALL']['attd'] = total_attd
+    stats_map['ALL']['bft'] = total_bft_all
+    stats_map['ALL']['bft_med'] = total_bft_med
+
+    component_stats = {}
+    for c_key, c_data in stats_map.items():
+        f_attd = min(c_data['held'], c_data['attd'] + c_data['bft'])
+        c_pct = round((f_attd / c_data['held'] * 100), 1) if c_data['held'] > 0 else 0.0
+        component_stats[c_key] = {
+            'label': c_data['label'],
+            'held': c_data['held'],
+            'attd': c_data['attd'],
+            'bft': c_data['bft'],
+            'bft_med': c_data['bft_med'],
+            'final_attd': f_attd,
+            'pct': c_pct,
+            'shortage': c_pct < 75.0 if c_data['held'] > 0 else False,
+        }
+
+    selected_component = request.GET.get('component', 'ALL')
+    if selected_component not in component_stats:
+        selected_component = 'ALL'
 
     # 2. Detailed Date-Wise Log with Filters
     subject_filter = request.GET.get('subject')
@@ -436,6 +474,9 @@ def student_attendance_view(request, student_id=None):
         'selected_status': status_filter or '',
         'selected_type': type_filter or '',
         'is_student_viewer': request.user.is_student_role,
+        'component_stats': component_stats,
+        'component_stats_json': json.dumps(component_stats),
+        'selected_component': selected_component,
     }
     return render(request, 'attendance/student_attendance_view.html', context)
 
