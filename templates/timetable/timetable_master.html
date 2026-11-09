@@ -20,7 +20,7 @@
 
     <!-- Filters -->
     <form method="get" class="row g-2 mb-4 bg-light p-3 rounded-3 border">
-        <div class="col-md-4">
+        <div class="col-12 col-sm-6 col-lg-4">
             <select name="semester" class="form-select form-select-sm" onchange="this.form.submit()">
                 <option value="">All Semesters</option>
                 {% for s in semesters %}
@@ -28,7 +28,7 @@
                 {% endfor %}
             </select>
         </div>
-        <div class="col-md-3">
+        <div class="col-12 col-sm-6 col-lg-3">
             <select name="batch" class="form-select form-select-sm" onchange="this.form.submit()">
                 <option value="">All Batches</option>
                 {% for b in batches %}
@@ -36,7 +36,7 @@
                 {% endfor %}
             </select>
         </div>
-        <div class="col-md-3">
+        <div class="col-12 col-sm-6 col-lg-3">
             <select name="faculty" class="form-select form-select-sm" onchange="this.form.submit()">
                 <option value="">All Faculty</option>
                 {% for f in faculty_list %}
@@ -44,14 +44,17 @@
                 {% endfor %}
             </select>
         </div>
-        <div class="col-md-2">
+        <div class="col-12 col-sm-6 col-lg-2">
             <a href="{% url 'timetable_master' %}" class="btn btn-sm btn-light w-100">Reset</a>
         </div>
     </form>
 
+    <div class="table-swipe-hint">
+        <i class="fa-solid fa-arrows-left-right me-1"></i> Swipe horizontally to view full master timetable
+    </div>
     <!-- Master Grid Table -->
     <div class="table-responsive">
-        <table class="table table-bordered align-middle text-center" style="min-width: 900px;">
+        <table class="table table-bordered table-sticky-day align-middle text-center" style="min-width: 900px;">
             <thead class="table-light">
                 <tr>
                     <th style="width: 120px;">Day</th>

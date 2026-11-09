@@ -29,9 +29,9 @@
             <!-- Manual Token Form -->
             <form method="post" id="tokenForm">
                 {% csrf_token %}
-                <div class="input-group mb-3">
+                <div class="d-flex flex-column flex-sm-row gap-2 mb-3">
                     <input type="text" name="qr_token" id="qrTokenInput" class="form-control" placeholder="Enter session token / UUID" required>
-                    <button type="submit" class="btn btn-primary px-3">
+                    <button type="submit" class="btn btn-primary px-3 text-nowrap">
                         <i class="fa-solid fa-check me-1"></i> Verify Code
                     </button>
                 </div>

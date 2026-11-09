@@ -20,6 +20,9 @@
 
     <form method="post">
         {% csrf_token %}
+        <div class="table-swipe-hint">
+            <i class="fa-solid fa-arrows-left-right me-1"></i> Swipe horizontally to enter marks, grades & feedback
+        </div>
         <div class="table-responsive">
             <table class="table table-hover align-middle border">
                 <thead class="table-light">
@@ -59,8 +62,8 @@
             </table>
         </div>
 
-        <div class="mt-4 d-flex justify-content-end gap-2">
-            <a href="{% url 'examination_list' %}" class="btn btn-light">Cancel</a>
+        <div class="mt-4 d-flex flex-column-reverse flex-sm-row justify-content-end gap-2">
+            <a href="{% url 'examination_list' %}" class="btn btn-light text-center">Cancel</a>
             <button type="submit" class="btn btn-primary px-4 fw-semibold shadow-sm">
                 <i class="fa-solid fa-save me-2"></i> Save & Compute Grades
             </button>

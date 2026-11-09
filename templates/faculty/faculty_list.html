@@ -19,10 +19,10 @@
 
     <!-- Filters -->
     <form method="get" class="row g-2 mb-4 bg-light p-3 rounded-3 border">
-        <div class="col-md-5">
+        <div class="col-12 col-md-5">
             <input type="text" name="q" class="form-control form-control-sm" placeholder="Search by name, employee ID, designation..." value="{{ search_query }}">
         </div>
-        <div class="col-md-4">
+        <div class="col-12 col-md-4">
             <select name="department" class="form-select form-select-sm">
                 <option value="">All Departments</option>
                 {% for d in departments %}
@@ -30,14 +30,17 @@
                 {% endfor %}
             </select>
         </div>
-        <div class="col-md-2">
+        <div class="col-6 col-md-2">
             <button type="submit" class="btn btn-sm btn-primary w-100"><i class="fa-solid fa-filter me-1"></i> Filter</button>
         </div>
-        <div class="col-md-1">
+        <div class="col-6 col-md-1">
             <a href="{% url 'faculty_list' %}" class="btn btn-sm btn-light w-100">Reset</a>
         </div>
     </form>
 
+    <div class="table-swipe-hint">
+        <i class="fa-solid fa-arrows-left-right me-1"></i> Swipe horizontally to view contact details & actions
+    </div>
     <div class="table-responsive">
         <table class="table table-hover align-middle">
             <thead>

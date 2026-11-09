@@ -18,7 +18,7 @@
     </div>
 
     <!-- Priority Filter -->
-    <div class="d-flex gap-2 mb-4">
+    <div class="d-flex flex-wrap gap-2 mb-4">
         <a href="{% url 'notice_list' %}" class="btn btn-sm {% if not selected_priority %}btn-dark{% else %}btn-light{% endif %}">All Circulars</a>
         <a href="{% url 'notice_list' %}?priority=URGENT" class="btn btn-sm {% if selected_priority == 'URGENT' %}btn-danger{% else %}btn-outline-danger{% endif %}">
             <i class="fa-solid fa-triangle-exclamation me-1"></i> Urgent Only
@@ -57,7 +57,7 @@
                         </div>
                     </div>
 
-                    <div class="d-flex align-items-center gap-2">
+                    <div class="d-flex align-items-center gap-2 w-100 w-sm-auto justify-content-end">
                         {% if n.attachment %}
                             <a href="{{ n.attachment.url }}" download class="btn btn-sm btn-outline-secondary" title="Attached File">
                                 <i class="fa-solid fa-paperclip"></i>

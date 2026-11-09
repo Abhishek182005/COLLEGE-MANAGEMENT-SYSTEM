@@ -55,9 +55,9 @@
                         <input type="file" name="profile_picture" class="form-control" accept="image/*">
                     </div>
                 </div>
-                <div class="mt-4 d-flex gap-2">
-                    <button type="submit" class="btn btn-primary px-4"><i class="fa-solid fa-save me-2"></i> Save Changes</button>
-                    <a href="{% url 'change_password' %}" class="btn btn-outline-secondary"><i class="fa-solid fa-key me-2"></i> Change Password</a>
+                <div class="mt-4 d-flex flex-column flex-sm-row gap-2">
+                    <button type="submit" class="btn btn-primary px-4 text-center"><i class="fa-solid fa-save me-2"></i> Save Changes</button>
+                    <a href="{% url 'change_password' %}" class="btn btn-outline-secondary text-center"><i class="fa-solid fa-key me-2"></i> Change Password</a>
                 </div>
             </form>
         </div>

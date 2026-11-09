@@ -41,8 +41,8 @@
     </div>
 
     <!-- Attendance Performance KPI Cards (Dynamic to Active Filter) -->
-    <div class="col-md-3">
-        <div class="card p-3 border-0 shadow-sm text-center bg-primary text-white">
+    <div class="col-6 col-md-3">
+        <div class="card p-3 border-0 shadow-sm text-center bg-primary text-white h-100">
             <small class="text-white-50 text-uppercase fw-bold" id="kpiPctLabel">Total Attendance</small>
             <div class="display-6 fw-bold my-1" id="kpiPctValue">{{ overall_percentage }}%</div>
             <small class="text-white-50" id="kpiComplianceBadge">
@@ -54,22 +54,22 @@
             </small>
         </div>
     </div>
-    <div class="col-md-3">
-        <div class="card p-3 border shadow-sm text-center">
+    <div class="col-6 col-md-3">
+        <div class="card p-3 border shadow-sm text-center h-100">
             <small class="text-secondary text-uppercase fw-bold" id="kpiHeldLabel">Delivered / Held</small>
             <div class="display-6 fw-bold text-dark my-1" id="kpiHeldValue">{{ total_lect_held }}</div>
             <small class="text-muted">Total sessions conducted</small>
         </div>
     </div>
-    <div class="col-md-3">
-        <div class="card p-3 border shadow-sm text-center">
+    <div class="col-6 col-md-3">
+        <div class="card p-3 border shadow-sm text-center h-100">
             <small class="text-secondary text-uppercase fw-bold" id="kpiAttdLabel">Attended Sessions</small>
             <div class="display-6 fw-bold text-success my-1" id="kpiAttdValue">{{ grand_final_attd }}</div>
             <small class="text-muted">Present + Approved Waivers</small>
         </div>
     </div>
-    <div class="col-md-3">
-        <div class="card p-3 border shadow-sm text-center">
+    <div class="col-6 col-md-3">
+        <div class="card p-3 border shadow-sm text-center h-100">
             <small class="text-secondary text-uppercase fw-bold">Attendance Benefits</small>
             <div class="display-6 fw-bold text-info my-1">+{{ total_bft_all }}</div>
             <small class="text-muted">Sports, ECA, NCC &amp; NSS waivers</small>
@@ -89,23 +89,25 @@
             </div>
 
             <!-- IN-TABLE COMPONENT FILTER SECTION -->
-            <div class="d-flex flex-wrap align-items-center gap-2 bg-light p-2 rounded-3 border">
-                <label for="tableComponentFilter" class="form-label mb-0 small fw-bold text-dark text-nowrap">
-                    <i class="fa-solid fa-filter text-primary me-1"></i> Component Filter:
-                </label>
-                <select id="tableComponentFilter" class="form-select form-select-sm fw-bold border-primary shadow-sm" style="min-width: 250px;" onchange="handleComponentFilterChange(this.value)">
-                    <option value="ALL" {% if selected_component == 'ALL' %}selected{% endif %}>📊 Total Attendance (All Types)</option>
-                    <option value="TE" {% if selected_component == 'TE' %}selected{% endif %}>📘 Theory (TE) Attendance</option>
-                    <option value="PR" {% if selected_component == 'PR' %}selected{% endif %}>🔬 Practical / Lab (PR) Attendance</option>
-                    <option value="TU" {% if selected_component == 'TU' %}selected{% endif %}>📝 Tutorial (TU) Attendance</option>
-                </select>
+            <div class="d-flex flex-column flex-sm-row align-items-stretch align-items-sm-center gap-2 bg-light p-2 rounded-3 border w-100 w-lg-auto">
+                <div class="d-flex align-items-center gap-2">
+                    <label for="tableComponentFilter" class="form-label mb-0 small fw-bold text-dark text-nowrap">
+                        <i class="fa-solid fa-filter text-primary me-1"></i> Filter:
+                    </label>
+                    <select id="tableComponentFilter" class="form-select form-select-sm fw-bold border-primary shadow-sm flex-fill" style="min-width: 220px;" onchange="handleComponentFilterChange(this.value)">
+                        <option value="ALL" {% if selected_component == 'ALL' %}selected{% endif %}>📊 Total Attendance (All Types)</option>
+                        <option value="TE" {% if selected_component == 'TE' %}selected{% endif %}>📘 Theory (TE) Attendance</option>
+                        <option value="PR" {% if selected_component == 'PR' %}selected{% endif %}>🔬 Practical / Lab (PR) Attendance</option>
+                        <option value="TU" {% if selected_component == 'TU' %}selected{% endif %}>📝 Tutorial (TU) Attendance</option>
+                    </select>
+                </div>
 
                 <!-- Quick Button Pills Inside Table -->
-                <div class="btn-group btn-group-sm" role="group">
-                    <button type="button" class="btn btn-outline-primary active" id="pill_ALL" onclick="setComponentFilter('ALL')">Total</button>
-                    <button type="button" class="btn btn-outline-secondary" id="pill_TE" onclick="setComponentFilter('TE')">Theory</button>
-                    <button type="button" class="btn btn-outline-success" id="pill_PR" onclick="setComponentFilter('PR')">Practical</button>
-                    <button type="button" class="btn btn-outline-warning text-dark" id="pill_TU" onclick="setComponentFilter('TU')">Tutorial</button>
+                <div class="btn-group btn-group-sm w-100 w-sm-auto" role="group">
+                    <button type="button" class="btn btn-outline-primary active flex-fill flex-sm-grow-0" id="pill_ALL" onclick="setComponentFilter('ALL')">Total</button>
+                    <button type="button" class="btn btn-outline-secondary flex-fill flex-sm-grow-0" id="pill_TE" onclick="setComponentFilter('TE')">Theory</button>
+                    <button type="button" class="btn btn-outline-success flex-fill flex-sm-grow-0" id="pill_PR" onclick="setComponentFilter('PR')">Practical</button>
+                    <button type="button" class="btn btn-outline-warning text-dark flex-fill flex-sm-grow-0" id="pill_TU" onclick="setComponentFilter('TU')">Tutorial</button>
                 </div>
             </div>
         </div>
@@ -153,6 +155,7 @@
 
     <!-- Monthly Register Table -->
     <div class="card-body p-0">
+        <div class="table-swipe-hint"><i class="fa-solid fa-arrows-left-right me-1"></i> Swipe horizontally to view full register</div>
         <div class="table-responsive">
             <table class="table table-bordered table-hover align-middle text-center mb-0" id="monthlyRegisterTable" style="font-size: 0.88rem;">
                 <thead class="table-light">

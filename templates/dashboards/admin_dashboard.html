@@ -6,7 +6,7 @@
 {% block content %}
 <!-- Metric Cards -->
 <div class="row g-3 mb-4">
-    <div class="col-sm-6 col-xl-3">
+    <div class="col-6 col-lg-3">
         <a href="{% url 'student_list' %}" class="text-decoration-none">
             <div class="stat-card">
                 <div class="stat-icon bg-primary-subtle text-primary">
@@ -19,7 +19,7 @@
             </div>
         </a>
     </div>
-    <div class="col-sm-6 col-xl-3">
+    <div class="col-6 col-lg-3">
         <a href="{% url 'faculty_list' %}" class="text-decoration-none">
             <div class="stat-card">
                 <div class="stat-icon bg-success-subtle text-success">
@@ -32,7 +32,7 @@
             </div>
         </a>
     </div>
-    <div class="col-sm-6 col-xl-3">
+    <div class="col-6 col-lg-3">
         <a href="{% url 'department_list' %}" class="text-decoration-none">
             <div class="stat-card">
                 <div class="stat-icon bg-info-subtle text-info">
@@ -45,7 +45,7 @@
             </div>
         </a>
     </div>
-    <div class="col-sm-6 col-xl-3">
+    <div class="col-6 col-lg-3">
         <a href="{% url 'attendance_shortage_report' %}" class="text-decoration-none">
             <div class="stat-card">
                 <div class="stat-icon bg-warning-subtle text-warning">
@@ -180,7 +180,7 @@
             </div>
             <div class="row g-2">
                 {% for dept in dept_distribution %}
-                    <div class="col-6">
+                    <div class="col-12 col-sm-6">
                         <a href="{% if dept.id %}{% url 'department_detail' dept.id %}{% else %}{% url 'department_list' %}{% endif %}" class="text-decoration-none">
                             <div class="border rounded p-3 bg-light text-center h-100 shadow-sm" style="transition: transform 0.2s, box-shadow 0.2s;">
                                 <span class="badge bg-primary mb-1">{{ dept.code }}</span>

@@ -31,10 +31,10 @@
 
     <!-- Filters -->
     <form method="get" class="row g-2 mb-4 bg-light p-3 rounded-3 border">
-        <div class="col-md-3">
+        <div class="col-12 col-md-3">
             <input type="text" name="q" class="form-control form-control-sm" placeholder="Search Roll, Reg No, Name..." value="{{ search_query }}">
         </div>
-        <div class="col-md-2">
+        <div class="col-6 col-sm-6 col-md-2">
             <select name="department" class="form-select form-select-sm">
                 <option value="">All Departments</option>
                 {% for d in departments %}
@@ -42,7 +42,7 @@
                 {% endfor %}
             </select>
         </div>
-        <div class="col-md-2">
+        <div class="col-6 col-sm-6 col-md-2">
             <select name="course" class="form-select form-select-sm">
                 <option value="">All Courses</option>
                 {% for c in courses %}
@@ -50,7 +50,7 @@
                 {% endfor %}
             </select>
         </div>
-        <div class="col-md-2">
+        <div class="col-6 col-sm-6 col-md-2">
             <select name="semester" class="form-select form-select-sm">
                 <option value="">All Semesters</option>
                 {% for s in semesters %}
@@ -58,7 +58,7 @@
                 {% endfor %}
             </select>
         </div>
-        <div class="col-md-2">
+        <div class="col-6 col-sm-6 col-md-2">
             <select name="batch" class="form-select form-select-sm">
                 <option value="">All Batches</option>
                 {% for b in batches %}
@@ -66,11 +66,14 @@
                 {% endfor %}
             </select>
         </div>
-        <div class="col-md-1">
-            <button type="submit" class="btn btn-sm btn-primary w-100"><i class="fa-solid fa-filter"></i></button>
+        <div class="col-12 col-md-1">
+            <button type="submit" class="btn btn-sm btn-primary w-100"><i class="fa-solid fa-filter me-1 d-md-none"></i><span class="d-md-none">Filter</span><i class="fa-solid fa-filter d-none d-md-inline"></i></button>
         </div>
     </form>
 
+    <div class="table-swipe-hint">
+        <i class="fa-solid fa-arrows-left-right me-1"></i> Swipe horizontally to view full student details & actions
+    </div>
     <!-- Students Table -->
     <div class="table-responsive">
         <table class="table table-hover align-middle">

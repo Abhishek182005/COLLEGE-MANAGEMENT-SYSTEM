@@ -70,7 +70,7 @@
     <div class="col-lg-8">
         <div class="card h-100">
             <div class="card-header bg-white border-bottom-0 pb-0">
-                <ul class="nav nav-tabs card-header-tabs" role="tablist">
+                <ul class="nav nav-tabs card-header-tabs flex-nowrap overflow-x-auto text-nowrap" role="tablist">
                     <li class="nav-item">
                         <button class="nav-link active fw-semibold" data-bs-toggle="tab" data-bs-target="#tab-sessions">
                             <i class="fa-solid fa-clipboard-check me-1"></i> Attendance Sessions ({{ attendance_sessions.count }})
@@ -87,6 +87,9 @@
             <div class="card-body p-4 tab-content">
                 <!-- Tab 1: Attendance Sessions -->
                 <div class="tab-pane fade show active" id="tab-sessions">
+                    <div class="table-swipe-hint">
+                        <i class="fa-solid fa-arrows-left-right me-1"></i> Swipe horizontally to view attendance sessions
+                    </div>
                     <div class="table-responsive">
                         <table class="table table-hover align-middle">
                             <thead>
@@ -125,6 +128,9 @@
 
                 <!-- Tab 2: Enrolled Students -->
                 <div class="tab-pane fade" id="tab-students">
+                    <div class="table-swipe-hint">
+                        <i class="fa-solid fa-arrows-left-right me-1"></i> Swipe horizontally to view enrolled students
+                    </div>
                     <div class="table-responsive">
                         <table class="table table-hover align-middle">
                             <thead>

@@ -14,17 +14,20 @@
 
     <!-- Filters -->
     <form method="get" class="row g-2 mb-4 bg-light p-3 rounded-3 border">
-        <div class="col-md-5">
+        <div class="col-12 col-md-5">
             <input type="text" name="action" class="form-control form-control-sm" placeholder="Filter by action (e.g. ATTENDANCE_CORRECTION, MARKS)..." value="{{ selected_action }}">
         </div>
-        <div class="col-md-5">
+        <div class="col-12 col-md-5">
             <input type="text" name="entity" class="form-control form-control-sm" placeholder="Filter by entity (e.g. AttendanceSession, CustomUser)..." value="{{ selected_entity }}">
         </div>
-        <div class="col-md-2">
+        <div class="col-12 col-md-2">
             <button type="submit" class="btn btn-sm btn-primary w-100"><i class="fa-solid fa-filter me-1"></i> Filter</button>
         </div>
     </form>
 
+    <div class="table-swipe-hint">
+        <i class="fa-solid fa-arrows-left-right me-1"></i> Swipe horizontally to view full audit mutations & timestamps
+    </div>
     <div class="table-responsive">
         <table class="table table-hover align-middle small">
             <thead>

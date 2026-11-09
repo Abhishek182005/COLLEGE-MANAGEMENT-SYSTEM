@@ -10,7 +10,7 @@
             <h5 class="fw-bold mb-1"><i class="fa-solid fa-check-double text-primary me-2"></i> Quick Attendance Marking</h5>
             <p class="text-secondary small mb-0">Select subject and batch to load enrolled students in a single rapid marking interface.</p>
         </div>
-        <div class="d-flex gap-2">
+        <div class="d-flex flex-wrap gap-2">
             <button type="button" class="btn btn-sm btn-outline-secondary" onclick="saveToOfflineStorage()">
                 <i class="fa-solid fa-hard-drive me-1"></i> Save to Offline Cache
             </button>
@@ -25,7 +25,7 @@
         {% if existing_session %}
             <input type="hidden" name="session_id" value="{{ existing_session.id }}">
         {% endif %}
-        <div class="col-md-3">
+        <div class="col-12 col-sm-6 col-lg-3">
             <label class="form-label small fw-semibold text-secondary mb-1">Subject *</label>
             <select name="subject_id" class="form-select form-select-sm" required onchange="this.form.submit()">
                 <option value="">-- Choose Subject --</option>
@@ -34,11 +34,11 @@
                 {% endfor %}
             </select>
         </div>
-        <div class="col-md-2">
+        <div class="col-12 col-sm-6 col-lg-2">
             <label class="form-label small fw-semibold text-secondary mb-1">Lecture Date *</label>
             <input type="date" name="date" class="form-control form-control-sm" value="{{ selected_date }}" onchange="this.form.submit()">
         </div>
-        <div class="col-md-2">
+        <div class="col-6 col-sm-4 col-lg-2">
             <label class="form-label small fw-semibold text-secondary mb-1">Time Slot *</label>
             <select name="lecture_slot" class="form-select form-select-sm" onchange="this.form.submit()">
                 {% for slot_code, slot_label in slots %}
@@ -46,7 +46,7 @@
                 {% endfor %}
             </select>
         </div>
-        <div class="col-md-2">
+        <div class="col-6 col-sm-4 col-lg-2">
             <label class="form-label small fw-semibold text-secondary mb-1">Session Type *</label>
             <select name="session_type" class="form-select form-select-sm" onchange="this.form.submit()">
                 {% for stype_code, stype_label in session_type_choices %}
@@ -54,7 +54,7 @@
                 {% endfor %}
             </select>
         </div>
-        <div class="col-md-2">
+        <div class="col-12 col-sm-4 col-lg-2">
             <label class="form-label small fw-semibold text-secondary mb-1">Batch / Section</label>
             <select name="batch_id" class="form-select form-select-sm" onchange="this.form.submit()">
                 <option value="">All Batches</option>
@@ -63,7 +63,7 @@
                 {% endfor %}
             </select>
         </div>
-        <div class="col-md-1 d-flex align-items-end">
+        <div class="col-12 col-lg-1 d-flex align-items-end">
             <button type="submit" class="btn btn-sm btn-primary w-100">Load</button>
         </div>
     </form>
@@ -126,12 +126,12 @@
             </div>
 
             <!-- Fast Action Buttons -->
-            <div class="d-flex justify-content-between align-items-center mb-3 pt-2 border-top">
+            <div class="d-flex flex-column flex-sm-row justify-content-between align-items-start align-items-sm-center gap-2 mb-3 pt-2 border-top">
                 <div class="fw-bold text-dark">
                     <span>Enrolled Students ({{ students_list|length }})</span>
                     <span class="badge bg-secondary ms-2">{{ selected_session_type }}</span>
                 </div>
-                <div class="d-flex gap-2">
+                <div class="d-flex gap-2 w-100 w-sm-auto justify-content-end">
                     <button type="button" class="btn btn-sm btn-outline-success" onclick="markAll('PRESENT')">
                         <i class="fa-solid fa-check me-1"></i> Mark All Present
                     </button>
@@ -141,6 +141,9 @@
                 </div>
             </div>
 
+            <div class="table-swipe-hint">
+                <i class="fa-solid fa-arrows-left-right me-1"></i> Swipe horizontally to view attendance statuses & benefits
+            </div>
             <!-- Table of Students -->
             <div class="table-responsive">
                 <table class="table table-hover align-middle border">
@@ -195,8 +198,8 @@
                 </table>
             </div>
 
-            <div class="mt-4 d-flex justify-content-end gap-2">
-                <a href="{% url 'attendance_session_list' %}" class="btn btn-light px-3">Cancel</a>
+            <div class="mt-4 d-flex flex-column-reverse flex-sm-row justify-content-end gap-2">
+                <a href="{% url 'attendance_session_list' %}" class="btn btn-light px-3 text-center">Cancel</a>
                 <button type="submit" class="btn btn-primary px-4 fw-semibold shadow-sm">
                     <i class="fa-solid fa-floppy-disk me-2"></i> Submit & Finalize Attendance
                 </button>
