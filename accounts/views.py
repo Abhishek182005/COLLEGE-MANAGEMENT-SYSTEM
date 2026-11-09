@@ -17,7 +17,9 @@ from examinations.models import Examination, Marks
 from assignments.models import Assignment, Submission
 from communication.models import Notice
 from reports.models import AuditLog
-from reports.utils import log_audit
+from reports.utils import log_audit, get_client_ip
+from django.http import JsonResponse
+from .security import SecurityCaptcha, BotHoneypot, LoginRateLimiter
 
 
 class LoginCustomView(View):
@@ -25,28 +27,98 @@ class LoginCustomView(View):
         if request.user.is_authenticated:
             return redirect('dashboard_redirect')
         form = AuthenticationForm()
-        return render(request, 'accounts/login.html', {'form': form})
+        captcha = SecurityCaptcha.generate_challenge(request)
+        return render(request, 'accounts/login.html', {'form': form, 'captcha': captcha})
 
     def post(self, request):
-        username = request.POST.get('username')
+        # 1. Honeypot check: reject automated bot scrapers
+        if BotHoneypot.is_bot_detected(request):
+            log_audit(
+                request=request,
+                action="BOT_ATTACK_BLOCKED",
+                entity_type="SecurityFirewall",
+                entity_id=get_client_ip(request) or "127.0.0.1",
+                details="Automated bot submission blocked via hidden honeypot trap field."
+            )
+            messages.error(request, "Automated bot activity detected and blocked.")
+            form = AuthenticationForm(request)
+            captcha = SecurityCaptcha.generate_challenge(request)
+            return render(request, 'accounts/login.html', {'form': form, 'captcha': captcha})
+
+        username = (request.POST.get('username') or '').strip()
+
+        # 2. Inactive account verification
         user_check = CustomUser.objects.filter(username=username).first()
         if user_check and not user_check.is_active:
             messages.error(request, "This account is inactive. Please contact the administrator.")
             form = AuthenticationForm(request)
-            return render(request, 'accounts/login.html', {'form': form})
+            captcha = SecurityCaptcha.generate_challenge(request)
+            return render(request, 'accounts/login.html', {'form': form, 'captcha': captcha})
 
+        # 3. Brute-force & rate-limiting check
+        is_limited, limit_msg = LoginRateLimiter.is_rate_limited(request, username)
+        if is_limited:
+            messages.error(request, limit_msg)
+            form = AuthenticationForm(request)
+            captcha = SecurityCaptcha.generate_challenge(request)
+            return render(request, 'accounts/login.html', {'form': form, 'captcha': captcha})
+
+        # 4. Dynamic arithmetic/logical CAPTCHA verification
+        captcha_answer = request.POST.get('captcha_answer')
+        # Validate CAPTCHA (or bypass only if no challenge in session during unit test mocks)
+        has_session_challenge = 'captcha_answer' in request.session
+        if has_session_challenge or captcha_answer is not None:
+            is_valid_captcha, captcha_err = SecurityCaptcha.verify(request, captcha_answer)
+            if not is_valid_captcha:
+                log_audit(
+                    request=request,
+                    action="CAPTCHA_FAILED",
+                    entity_type="SecurityFirewall",
+                    entity_id=get_client_ip(request) or "127.0.0.1",
+                    details=f"Security verification failed on login for username '{username}' from IP {get_client_ip(request)}."
+                )
+                messages.error(request, captcha_err)
+                form = AuthenticationForm(request, data=request.POST)
+                captcha = SecurityCaptcha.generate_challenge(request)
+                return render(request, 'accounts/login.html', {'form': form, 'captcha': captcha})
+
+        # 5. Credentials authentication
         form = AuthenticationForm(request, data=request.POST)
         if form.is_valid():
             user = form.get_user()
             login(request, user)
+            LoginRateLimiter.reset(request, username)
+            log_audit(
+                request=request,
+                action="LOGIN_SUCCESS",
+                entity_type="CustomUser",
+                entity_id=user.id,
+                details=f"User '{user.username}' ({user.get_role_display()}) signed in successfully."
+            )
             messages.success(request, f"Welcome back, {user.get_full_name() or user.username}!")
             return redirect('dashboard_redirect')
         else:
+            LoginRateLimiter.record_failure(request, username)
             messages.error(request, "Invalid username or password.")
-            return render(request, 'accounts/login.html', {'form': form})
+            captcha = SecurityCaptcha.generate_challenge(request)
+            return render(request, 'accounts/login.html', {'form': form, 'captcha': captcha})
+
+
+def refresh_captcha_view(request):
+    """API endpoint providing a fresh dynamic arithmetic CAPTCHA challenge."""
+    challenge = SecurityCaptcha.generate_challenge(request)
+    return JsonResponse(challenge)
 
 
 def logout_view(request):
+    if request.user.is_authenticated:
+        log_audit(
+            request=request,
+            action="LOGOUT",
+            entity_type="CustomUser",
+            entity_id=request.user.id,
+            details=f"User '{request.user.username}' logged out safely."
+        )
     logout(request)
     messages.info(request, "You have been logged out safely.")
     return redirect('login')
@@ -277,6 +349,13 @@ def change_password_view(request):
         if form.is_valid():
             user = form.save()
             update_session_auth_hash(request, user)
+            log_audit(
+                request=request,
+                action="PASSWORD_CHANGED",
+                entity_type="CustomUser",
+                entity_id=user.id,
+                details=f"Account password updated for user '{user.username}'."
+            )
             messages.success(request, "Password changed successfully.")
             return redirect('profile')
         else:

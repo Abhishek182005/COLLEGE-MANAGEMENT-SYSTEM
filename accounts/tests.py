@@ -12,6 +12,8 @@ User = get_user_model()
 
 class AccountsSecurityAndRoleTests(TestCase):
     def setUp(self):
+        from django.core.cache import cache
+        cache.clear()
         self.client = Client()
         self.session = AcademicSession.objects.create(
             name="2026-2027", start_date=date(2026, 7, 1), end_date=date(2027, 6, 30), is_current=True
@@ -58,6 +60,10 @@ class AccountsSecurityAndRoleTests(TestCase):
             current_semester=self.sem,
             batch=self.batch
         )
+
+    def tearDown(self):
+        from django.core.cache import cache
+        cache.clear()
 
     def test_unauthenticated_redirect(self):
         """Unauthenticated requests must be redirected to login page."""
@@ -146,3 +152,115 @@ class AccountsSecurityAndRoleTests(TestCase):
         self.assertEqual(login_resp.status_code, 200)
         self.assertContains(login_resp, "Excellence in Engineering")
         self.assertContains(login_resp, "St. Xavier&#x27;s Engineering College")
+
+    def test_login_captcha_challenge_generated_on_get(self):
+        """Visiting login page creates dynamic arithmetic puzzle in session."""
+        response = self.client.get(reverse('login'))
+        self.assertEqual(response.status_code, 200)
+        self.assertIn('captcha', response.context)
+        self.assertIn('captcha_answer', self.client.session)
+        self.assertContains(response, "Security Verification:")
+        self.assertContains(response, "Automated bot defense enabled")
+
+    def test_login_blocks_bot_when_honeypot_filled(self):
+        """If invisible honeypot trap field is filled, request is blocked as bot attack."""
+        # Get login page first
+        self.client.get(reverse('login'))
+        valid_answer = self.client.session.get('captcha_answer')
+
+        from reports.models import AuditLog
+        init_bot_logs = AuditLog.objects.filter(action="BOT_ATTACK_BLOCKED").count()
+
+        # Bot posts with honeypot field filled
+        response = self.client.post(reverse('login'), {
+            'username': 'admin_test',
+            'password': 'Password123',
+            'captcha_answer': valid_answer,
+            'portal_auth_trap': 'I am a web scraping bot'
+        })
+        self.assertEqual(response.status_code, 200)
+        self.assertContains(response, "Automated bot activity detected and blocked.")
+
+        # Verify security audit log was written
+        new_bot_logs = AuditLog.objects.filter(action="BOT_ATTACK_BLOCKED").count()
+        self.assertEqual(new_bot_logs, init_bot_logs + 1)
+
+    def test_login_rejects_incorrect_captcha(self):
+        """Incorrect math challenge response rejects authentication and logs audit."""
+        self.client.get(reverse('login'))
+
+        from reports.models import AuditLog
+        init_captcha_logs = AuditLog.objects.filter(action="CAPTCHA_FAILED").count()
+
+        response = self.client.post(reverse('login'), {
+            'username': 'admin_test',
+            'password': 'Password123',
+            'captcha_answer': '999999'  # Deliberately incorrect
+        })
+        self.assertEqual(response.status_code, 200)
+        self.assertContains(response, "Incorrect security verification answer")
+
+        new_captcha_logs = AuditLog.objects.filter(action="CAPTCHA_FAILED").count()
+        self.assertEqual(new_captcha_logs, init_captcha_logs + 1)
+
+    def test_login_succeeds_with_valid_credentials_and_captcha(self):
+        """Valid login + solved challenge logs user in and generates LOGIN_SUCCESS audit."""
+        self.client.get(reverse('login'))
+        answer = self.client.session.get('captcha_answer')
+
+        from reports.models import AuditLog
+        init_success_logs = AuditLog.objects.filter(action="LOGIN_SUCCESS").count()
+
+        response = self.client.post(reverse('login'), {
+            'username': 'admin_test',
+            'password': 'Password123',
+            'captcha_answer': answer
+        })
+        self.assertEqual(response.status_code, 302)
+        self.assertEqual(response.url, reverse('dashboard_redirect'))
+
+        new_success_logs = AuditLog.objects.filter(action="LOGIN_SUCCESS").count()
+        self.assertEqual(new_success_logs, init_success_logs + 1)
+
+    def test_login_rate_limiting_locks_out_after_repeated_failures(self):
+        """Repeated bad logins trigger brute-force lockout and audit event."""
+        from django.core.cache import cache
+        cache.clear()
+
+        from reports.models import AuditLog
+        init_lockouts = AuditLog.objects.filter(action="BRUTE_FORCE_LOCKOUT").count()
+
+        # Submit 5 failed attempts
+        for i in range(5):
+            self.client.get(reverse('login'))
+            ans = self.client.session.get('captcha_answer')
+            self.client.post(reverse('login'), {
+                'username': 'victim_user',
+                'password': 'WrongPassword!',
+                'captcha_answer': ans
+            })
+
+        # 6th attempt must be locked out
+        self.client.get(reverse('login'))
+        ans = self.client.session.get('captcha_answer')
+        res = self.client.post(reverse('login'), {
+            'username': 'victim_user',
+            'password': 'WrongPassword!',
+            'captcha_answer': ans
+        })
+        self.assertEqual(res.status_code, 200)
+        self.assertContains(res, "Too many failed login attempts")
+
+        new_lockouts = AuditLog.objects.filter(action="BRUTE_FORCE_LOCKOUT").count()
+        self.assertTrue(new_lockouts >= init_lockouts + 1)
+
+    def test_refresh_captcha_ajax_endpoint(self):
+        """AJAX endpoint returns new arithmetic challenge as JSON."""
+        response = self.client.get(reverse('refresh_captcha'))
+        self.assertEqual(response.status_code, 200)
+        data = response.json()
+        self.assertIn('question', data)
+        self.assertIn('token', data)
+        self.assertIn('answer', data)
+        # Verify session was updated with this answer
+        self.assertEqual(self.client.session.get('captcha_answer'), data['answer'])
