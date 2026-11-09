@@ -40,12 +40,12 @@
         </div>
     </div>
 
-    <!-- Attendance Performance KPI Cards -->
+    <!-- Attendance Performance KPI Cards (Dynamic to Active Filter) -->
     <div class="col-md-3">
         <div class="card p-3 border-0 shadow-sm text-center bg-primary text-white">
-            <small class="text-white-50 text-uppercase fw-bold">Aggregate Attendance</small>
-            <div class="display-6 fw-bold my-1">{{ overall_percentage }}%</div>
-            <small class="text-white-50">
+            <small class="text-white-50 text-uppercase fw-bold" id="kpiPctLabel">Total Attendance</small>
+            <div class="display-6 fw-bold my-1" id="kpiPctValue">{{ overall_percentage }}%</div>
+            <small class="text-white-50" id="kpiComplianceBadge">
                 {% if overall_percentage >= 75.0 %}
                     <i class="fa-solid fa-circle-check text-light me-1"></i> Exam Eligible (&ge; 75%)
                 {% else %}
@@ -56,16 +56,16 @@
     </div>
     <div class="col-md-3">
         <div class="card p-3 border shadow-sm text-center">
-            <small class="text-secondary text-uppercase fw-bold">Lectures Delivered</small>
-            <div class="display-6 fw-bold text-dark my-1">{{ total_lect_held }}</div>
+            <small class="text-secondary text-uppercase fw-bold" id="kpiHeldLabel">Delivered / Held</small>
+            <div class="display-6 fw-bold text-dark my-1" id="kpiHeldValue">{{ total_lect_held }}</div>
             <small class="text-muted">Total sessions conducted</small>
         </div>
     </div>
     <div class="col-md-3">
         <div class="card p-3 border shadow-sm text-center">
-            <small class="text-secondary text-uppercase fw-bold">Lectures Attended</small>
-            <div class="display-6 fw-bold text-success my-1">{{ total_lect_attd }}</div>
-            <small class="text-muted">Physically present / on duty</small>
+            <small class="text-secondary text-uppercase fw-bold" id="kpiAttdLabel">Attended Sessions</small>
+            <div class="display-6 fw-bold text-success my-1" id="kpiAttdValue">{{ grand_final_attd }}</div>
+            <small class="text-muted">Present + Approved Waivers</small>
         </div>
     </div>
     <div class="col-md-3">
@@ -77,24 +77,84 @@
     </div>
 </div>
 
-<!-- SECTION 1: University Monthly Aggregate Register (Official Format) -->
-<div class="card shadow-sm mb-4">
-    <div class="card-header bg-white py-3 d-flex flex-wrap justify-content-between align-items-center gap-2">
-        <div>
-            <h5 class="fw-bold mb-0 text-dark">
-                <i class="fa-solid fa-table-list text-primary me-2"></i> Monthly Academic Attendance Register (Paper-Wise Demarcation)
-            </h5>
-            <small class="text-muted">Breakdown by Course Paper, Demarcation Type (Theory / Practical / Tutorial), and Month</small>
-        </div>
-        <div class="d-flex align-items-center gap-2">
-            <span class="badge bg-secondary-subtle text-secondary border">TE: Theory</span>
-            <span class="badge bg-primary-subtle text-primary border border-primary">PR: Practical</span>
-            <span class="badge bg-warning-subtle text-warning border border-warning">TU: Tutorial</span>
+<!-- SECTION 1: University Monthly Aggregate Register with IN-TABLE Filter -->
+<div class="card shadow-sm mb-4" id="academicRegisterCard">
+    <div class="card-header bg-white py-3">
+        <div class="d-flex flex-wrap justify-content-between align-items-center gap-3">
+            <div>
+                <h5 class="fw-bold mb-1 text-dark">
+                    <i class="fa-solid fa-table-list text-primary me-2"></i> Monthly Academic Attendance Register
+                </h5>
+                <small class="text-muted">Official paper-wise attendance register with Theory, Practical &amp; Tutorial demarcation</small>
+            </div>
+
+            <!-- IN-TABLE COMPONENT FILTER SECTION -->
+            <div class="d-flex flex-wrap align-items-center gap-2 bg-light p-2 rounded-3 border">
+                <label for="tableComponentFilter" class="form-label mb-0 small fw-bold text-dark text-nowrap">
+                    <i class="fa-solid fa-filter text-primary me-1"></i> Component Filter:
+                </label>
+                <select id="tableComponentFilter" class="form-select form-select-sm fw-bold border-primary shadow-sm" style="min-width: 250px;" onchange="handleComponentFilterChange(this.value)">
+                    <option value="ALL" {% if selected_component == 'ALL' %}selected{% endif %}>📊 Total Attendance (All Types)</option>
+                    <option value="TE" {% if selected_component == 'TE' %}selected{% endif %}>📘 Theory (TE) Attendance</option>
+                    <option value="PR" {% if selected_component == 'PR' %}selected{% endif %}>🔬 Practical / Lab (PR) Attendance</option>
+                    <option value="TU" {% if selected_component == 'TU' %}selected{% endif %}>📝 Tutorial (TU) Attendance</option>
+                </select>
+
+                <!-- Quick Button Pills Inside Table -->
+                <div class="btn-group btn-group-sm" role="group">
+                    <button type="button" class="btn btn-outline-primary active" id="pill_ALL" onclick="setComponentFilter('ALL')">Total</button>
+                    <button type="button" class="btn btn-outline-secondary" id="pill_TE" onclick="setComponentFilter('TE')">Theory</button>
+                    <button type="button" class="btn btn-outline-success" id="pill_PR" onclick="setComponentFilter('PR')">Practical</button>
+                    <button type="button" class="btn btn-outline-warning text-dark" id="pill_TU" onclick="setComponentFilter('TU')">Tutorial</button>
+                </div>
+            </div>
         </div>
     </div>
+
+    <!-- DYNAMIC ATTENDANCE SUMMARY STRIP (Updates based on dropdown filter) -->
+    <div class="p-3 bg-light border-bottom d-flex flex-wrap justify-content-between align-items-center gap-3" id="componentAttendanceSummary">
+        <div class="d-flex align-items-center gap-3">
+            <span class="badge bg-primary px-3 py-2 fs-6 fw-bold" id="summaryComponentBadge">
+                📊 Total Combined Attendance
+            </span>
+            <div class="small text-secondary">
+                Displaying <b id="summaryRowsCount">{{ monthly_rows|length }}</b> paper records
+            </div>
+        </div>
+        <div class="d-flex flex-wrap align-items-center gap-4 text-center">
+            <div>
+                <small class="text-secondary text-uppercase fw-semibold d-block" style="font-size: 0.72rem;">Lectures Delivered</small>
+                <span class="fw-bold fs-5 text-dark" id="summaryHeld">{{ total_lect_held }}</span>
+            </div>
+            <div>
+                <small class="text-secondary text-uppercase fw-semibold d-block" style="font-size: 0.72rem;">Lectures Attended</small>
+                <span class="fw-bold fs-5 text-success" id="summaryAttd">{{ grand_final_attd }}</span>
+            </div>
+            <div>
+                <small class="text-secondary text-uppercase fw-semibold d-block" style="font-size: 0.72rem;">Attendance Percentage</small>
+                <span class="fw-bold fs-5 text-primary" id="summaryPct">{{ overall_percentage }}%</span>
+            </div>
+            <div>
+                <small class="text-secondary text-uppercase fw-semibold d-block" style="font-size: 0.72rem;">Eligibility Compliance</small>
+                <span id="summaryCompliance">
+                    {% if overall_percentage >= 75.0 %}
+                        <span class="badge bg-success-subtle text-success border border-success py-1 px-2">
+                            <i class="fa-solid fa-circle-check me-1"></i> Satisfied (&ge; 75%)
+                        </span>
+                    {% else %}
+                        <span class="badge bg-danger-subtle text-danger border border-danger py-1 px-2">
+                            <i class="fa-solid fa-triangle-exclamation me-1"></i> Shortage (&lt; 75%)
+                        </span>
+                    {% endif %}
+                </span>
+            </div>
+        </div>
+    </div>
+
+    <!-- Monthly Register Table -->
     <div class="card-body p-0">
         <div class="table-responsive">
-            <table class="table table-bordered table-hover align-middle text-center mb-0" style="font-size: 0.88rem;">
+            <table class="table table-bordered table-hover align-middle text-center mb-0" id="monthlyRegisterTable" style="font-size: 0.88rem;">
                 <thead class="table-light">
                     <tr class="align-middle">
                         <th style="width: 45px;">Sr.<br>No.</th>
@@ -116,10 +176,10 @@
                         <th class="text-start">Faculty Name</th>
                     </tr>
                 </thead>
-                <tbody>
+                <tbody id="monthlyRegisterBody">
                     {% for row in monthly_rows %}
-                        <tr>
-                            <td>{{ row.sr_no }}</td>
+                        <tr class="register-row" data-paper-type="{{ row.paper_type }}">
+                            <td class="row-sr-no">{{ row.sr_no }}</td>
                             <td class="fw-bold text-dark font-monospace">{{ row.paper_code }}</td>
                             <td class="text-start fw-semibold text-dark">{{ row.paper_name }}</td>
                             <td>
@@ -142,17 +202,25 @@
                             <td class="text-start small">{{ row.faculty_name }}</td>
                         </tr>
                     {% empty %}
-                        <tr>
+                        <tr id="emptyRegisterRow">
                             <td colspan="17" class="py-5 text-center text-muted">
                                 <i class="fa-regular fa-folder-open fs-2 d-block mb-2 text-secondary"></i>
                                 No monthly attendance records recorded for this academic session yet.
                             </td>
                         </tr>
                     {% endfor %}
+                    <!-- Dynamic empty state when filtered component has 0 rows -->
+                    <tr id="noFilteredRowsMessage" style="display: none;">
+                        <td colspan="17" class="py-5 text-center text-muted">
+                            <i class="fa-solid fa-filter-circle-xmark fs-2 d-block mb-2 text-secondary"></i>
+                            No lecture sessions on record matching this component filter.
+                        </td>
+                    </tr>
                 </tbody>
             </table>
         </div>
     </div>
+
     <!-- Register Footer Notes (Matching Screenshot) -->
     <div class="card-footer bg-light p-3">
         <div class="row align-items-center">
@@ -166,11 +234,11 @@
             </div>
             <div class="col-md-5 text-md-end">
                 <div class="fw-bold text-dark">
-                    <span>Total Lect. Delivered: <b>{{ total_lect_held }}</b></span> • 
-                    <span>Total Attended: <b class="text-success">{{ grand_final_attd }}</b></span>
+                    <span>Delivered: <b id="footerDelivered">{{ total_lect_held }}</b></span> • 
+                    <span>Attended: <b id="footerAttended" class="text-success">{{ grand_final_attd }}</b></span>
                 </div>
                 <div class="text-muted small">
-                    Overall Percentage: <span class="fw-bold {% if overall_percentage >= 75 %}text-success{% else %}text-danger{% endif %} fs-6">{{ overall_percentage }}%</span>
+                    Filtered Attendance: <span id="footerPercentage" class="fw-bold {% if overall_percentage >= 75 %}text-success{% else %}text-danger{% endif %} fs-6">{{ overall_percentage }}%</span>
                 </div>
             </div>
         </div>
@@ -193,7 +261,7 @@
         </div>
     </div>
 
-    <!-- Filter Bar -->
+    <!-- Filter Bar for Detailed Logs -->
     <div class="card-body bg-light border-bottom p-3">
         <form method="get" class="row g-2 align-items-end">
             <div class="col-md-3">
@@ -336,4 +404,114 @@
         </div>
     </div>
 </div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+    // Pre-calculated stats from Django
+    const componentStats = {{ component_stats_json|safe }};
+
+    function setComponentFilter(type) {
+        const select = document.getElementById('tableComponentFilter');
+        if (select) {
+            select.value = type;
+            handleComponentFilterChange(type);
+        }
+    }
+
+    function handleComponentFilterChange(type) {
+        const stats = componentStats[type] || componentStats['ALL'];
+
+        // 1. Update quick pill active states
+        ['ALL', 'TE', 'PR', 'TU'].forEach(key => {
+            const pill = document.getElementById('pill_' + key);
+            if (pill) {
+                if (key === type) {
+                    pill.classList.add('active');
+                } else {
+                    pill.classList.remove('active');
+                }
+            }
+        });
+
+        // 2. Update In-Table Dynamic Summary Strip
+        const badgeEl = document.getElementById('summaryComponentBadge');
+        if (badgeEl) {
+            badgeEl.textContent = stats.label;
+            if (type === 'PR') {
+                badgeEl.className = 'badge bg-primary px-3 py-2 fs-6 fw-bold';
+            } else if (type === 'TU') {
+                badgeEl.className = 'badge bg-warning text-dark px-3 py-2 fs-6 fw-bold';
+            } else if (type === 'TE') {
+                badgeEl.className = 'badge bg-secondary px-3 py-2 fs-6 fw-bold';
+            } else {
+                badgeEl.className = 'badge bg-primary px-3 py-2 fs-6 fw-bold';
+            }
+        }
+
+        document.getElementById('summaryHeld').textContent = stats.held;
+        document.getElementById('summaryAttd').textContent = stats.final_attd;
+        document.getElementById('summaryPct').textContent = stats.pct + '%';
+
+        const compEl = document.getElementById('summaryCompliance');
+        if (stats.held === 0) {
+            compEl.innerHTML = '<span class="badge bg-secondary-subtle text-secondary border py-1 px-2">No Records</span>';
+        } else if (stats.pct >= 75.0) {
+            compEl.innerHTML = '<span class="badge bg-success-subtle text-success border border-success py-1 px-2"><i class="fa-solid fa-circle-check me-1"></i> Satisfied (&ge; 75%)</span>';
+        } else {
+            compEl.innerHTML = '<span class="badge bg-danger-subtle text-danger border border-danger py-1 px-2"><i class="fa-solid fa-triangle-exclamation me-1"></i> Shortage (&lt; 75%)</span>';
+        }
+
+        // 3. Update Top KPI Cards
+        document.getElementById('kpiPctLabel').textContent = type === 'ALL' ? 'Total Attendance' : (type === 'TE' ? 'Theory Attendance' : (type === 'PR' ? 'Practical Attendance' : 'Tutorial Attendance'));
+        document.getElementById('kpiPctValue').textContent = stats.pct + '%';
+        document.getElementById('kpiHeldValue').textContent = stats.held;
+        document.getElementById('kpiAttdValue').textContent = stats.final_attd;
+        
+        const kpiCompliance = document.getElementById('kpiComplianceBadge');
+        if (kpiCompliance) {
+            if (stats.held === 0) {
+                kpiCompliance.innerHTML = '<span class="text-white-50">No Sessions Logged</span>';
+            } else if (stats.pct >= 75.0) {
+                kpiCompliance.innerHTML = '<i class="fa-solid fa-circle-check text-light me-1"></i> Exam Eligible (&ge; 75%)';
+            } else {
+                kpiCompliance.innerHTML = '<i class="fa-solid fa-triangle-exclamation text-warning me-1"></i> Shortage Warning (&lt; 75%)';
+            }
+        }
+
+        // 4. Update Footer Counters
+        document.getElementById('footerDelivered').textContent = stats.held;
+        document.getElementById('footerAttended').textContent = stats.final_attd;
+        const footerPct = document.getElementById('footerPercentage');
+        footerPct.textContent = stats.pct + '%';
+        footerPct.className = 'fw-bold fs-6 ' + (stats.pct >= 75.0 ? 'text-success' : 'text-danger');
+
+        // 5. Filter Table Rows
+        const rows = document.querySelectorAll('.register-row');
+        let visibleCount = 0;
+        rows.forEach(r => {
+            const rowType = r.getAttribute('data-paper-type');
+            if (type === 'ALL' || rowType === type) {
+                r.style.display = '';
+                visibleCount++;
+            } else {
+                r.style.display = 'none';
+            }
+        });
+
+        const rowsCountEl = document.getElementById('summaryRowsCount');
+        if (rowsCountEl) rowsCountEl.textContent = visibleCount;
+
+        const emptyMsg = document.getElementById('noFilteredRowsMessage');
+        if (emptyMsg) {
+            emptyMsg.style.display = (visibleCount === 0 && rows.length > 0) ? '' : 'none';
+        }
+    }
+
+    // Initialize with default component (Total/ALL)
+    document.addEventListener('DOMContentLoaded', function() {
+        const initialComponent = "{{ selected_component|default:'ALL' }}";
+        setComponentFilter(initialComponent);
+    });
+</script>
 {% endblock %}

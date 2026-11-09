@@ -175,6 +175,18 @@ class AttendanceManagementTests(TestCase):
         self.assertContains(res, "Bft. Med")
         self.assertContains(res, "Bft. Sports")
         self.assertContains(res, "Note: Medical Benefit (Bft. Med) will not be added into the Attendance Marks.")
+        self.assertContains(res, "tableComponentFilter")
+        self.assertContains(res, "Total Attendance (All Types)")
+        self.assertContains(res, "Theory (TE) Attendance")
+        self.assertContains(res, "Practical / Lab (PR) Attendance")
+        self.assertContains(res, "Tutorial (TU) Attendance")
+
+        # Verify component-wise statistics
+        comp = res.context['component_stats']
+        self.assertEqual(comp['ALL']['held'], 3)
+        self.assertEqual(comp['TE']['held'], 2)
+        self.assertEqual(comp['PR']['held'], 1)
+        self.assertEqual(comp['TU']['held'], 0)
 
     def test_quick_mark_loads_existing_session_and_saves_benefits(self):
         """Quick mark detects already recorded session and updates without duplicates."""
