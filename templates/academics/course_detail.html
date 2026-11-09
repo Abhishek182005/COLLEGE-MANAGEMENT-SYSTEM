@@ -42,7 +42,7 @@
 <!-- Tabs for Semesters, Batches, Students -->
 <div class="card">
     <div class="card-header bg-white border-bottom-0 pb-0">
-        <ul class="nav nav-tabs card-header-tabs" role="tablist">
+        <ul class="nav nav-tabs card-header-tabs flex-nowrap overflow-x-auto text-nowrap" role="tablist">
             <li class="nav-item">
                 <button class="nav-link active fw-semibold" data-bs-toggle="tab" data-bs-target="#tab-curriculum">
                     <i class="fa-solid fa-book-open me-1"></i> Semester Curriculum ({{ semesters.count }})
@@ -66,7 +66,7 @@
         <div class="tab-pane fade show active" id="tab-curriculum">
             <div class="row g-4">
                 {% for sem in semesters %}
-                    <div class="col-md-6">
+                    <div class="col-12 col-md-6">
                         <div class="border rounded-3 p-3 bg-light h-100">
                             <div class="d-flex justify-content-between align-items-center mb-2 pb-2 border-bottom">
                                 <h6 class="fw-bold mb-0 text-primary">Semester {{ sem.semester_number }}</h6>
@@ -106,7 +106,7 @@
         <div class="tab-pane fade" id="tab-batches">
             <div class="row g-3">
                 {% for b in batches %}
-                    <div class="col-md-4">
+                    <div class="col-12 col-sm-6 col-md-4">
                         <div class="border rounded-3 p-3 bg-light">
                             <h6 class="fw-bold text-dark mb-1">{{ b.name }}</h6>
                             <small class="badge bg-secondary mb-2">Section {{ b.section }}</small>
@@ -121,6 +121,9 @@
 
         <!-- Tab 3: Enrolled Students -->
         <div class="tab-pane fade" id="tab-enrolled">
+            <div class="table-swipe-hint">
+                <i class="fa-solid fa-arrows-left-right me-1"></i> Swipe horizontally to view enrolled students
+            </div>
             <div class="table-responsive">
                 <table class="table table-hover align-middle">
                     <thead>

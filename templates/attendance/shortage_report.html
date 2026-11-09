@@ -17,7 +17,7 @@
 
     <!-- Filter by Department -->
     <form method="get" class="row g-2 mb-4 bg-light p-3 rounded-3 border">
-        <div class="col-md-5">
+        <div class="col-12 col-md-5">
             <select name="department" class="form-select form-select-sm">
                 <option value="">All Departments</option>
                 {% for d in departments %}
@@ -25,11 +25,14 @@
                 {% endfor %}
             </select>
         </div>
-        <div class="col-md-2">
+        <div class="col-12 col-md-2">
             <button type="submit" class="btn btn-sm btn-primary w-100"><i class="fa-solid fa-filter me-1"></i> Filter</button>
         </div>
     </form>
 
+    <div class="table-swipe-hint">
+        <i class="fa-solid fa-arrows-left-right me-1"></i> Swipe horizontally to view student records & attendance stats
+    </div>
     <div class="table-responsive">
         <table class="table table-hover align-middle">
             <thead>

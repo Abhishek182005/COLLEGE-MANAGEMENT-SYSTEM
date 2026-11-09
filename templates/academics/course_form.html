@@ -41,7 +41,7 @@
                         <input type="number" name="total_semesters" class="form-control" value="{{ course.total_semesters|default:'8' }}" min="1" max="12">
                     </div>
                 </div>
-                <div class="mt-4 d-flex gap-2">
+                <div class="mt-4 d-flex flex-column-reverse flex-sm-row gap-2">
                     <button type="submit" class="btn btn-primary px-4">{% if is_edit %}Update Course{% else %}Create Course & Generate Semesters{% endif %}</button>
                     <a href="{% if is_edit %}{% url 'course_detail' course.id %}{% else %}{% url 'course_list' %}{% endif %}" class="btn btn-light">Cancel</a>
                 </div>

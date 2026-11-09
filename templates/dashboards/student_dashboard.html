@@ -10,7 +10,7 @@
         <div class="card p-4 text-white h-100" style="background: linear-gradient(135deg, #1e3a8a 0%, #2563eb 100%);">
             <div class="d-flex flex-wrap align-items-center justify-content-between gap-3">
                 <div class="d-flex align-items-center gap-3">
-                    <img src="{{ request.user.avatar_url }}" alt="Student Avatar" class="rounded-circle border border-2 border-white" width="70" height="70">
+                    <img src="{{ request.user.avatar_url }}" alt="Student Avatar" class="rounded-circle border border-2 border-white flex-shrink-0" width="70" height="70">
                     <div>
                         <h4 class="fw-bold mb-1">{{ student.full_name }}</h4>
                         <p class="mb-0 text-white-50 small">
@@ -26,13 +26,13 @@
                         </small>
                     </div>
                 </div>
-                <div class="d-flex flex-column gap-2">
-                    <a href="{% url 'student_qr_scanner' %}" class="btn btn-light text-primary fw-bold shadow-sm">
+                <div class="d-flex flex-column flex-sm-row gap-2 w-100 w-sm-auto">
+                    <a href="{% url 'student_qr_scanner' %}" class="btn btn-light text-primary fw-bold shadow-sm text-center">
                         <i class="fa-solid fa-qrcode me-2"></i> Scan QR Attendance
                     </a>
                     {% if student %}
-                        <a href="{% url 'student_id_card_pdf' student.id %}" target="_blank" class="btn btn-outline-light btn-sm">
-                            <i class="fa-solid fa-id-card me-1"></i> Download Student ID Card
+                        <a href="{% url 'student_id_card_pdf' student.id %}" target="_blank" class="btn btn-outline-light btn-sm text-center">
+                            <i class="fa-solid fa-id-card me-1"></i> ID Card (PDF)
                         </a>
                     {% endif %}
                 </div>
