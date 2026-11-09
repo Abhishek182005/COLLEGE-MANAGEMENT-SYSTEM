@@ -52,7 +52,7 @@
                             {% endif %}
                         </td>
                         <td>
-                            <span class="badge {% if 'CORRECTION' in log.action or 'ARCHIVE' in log.action or 'DEACTIVATE' in log.action %}bg-warning text-dark{% elif 'CREATE' in log.action %}bg-success{% else %}bg-primary{% endif %}">
+                            <span class="badge {% if 'BOT' in log.action or 'LOCKOUT' in log.action or 'FAILED' in log.action %}bg-danger text-white{% elif 'CORRECTION' in log.action or 'ARCHIVE' in log.action or 'DEACTIVATE' in log.action %}bg-warning text-dark{% elif 'CREATE' in log.action or 'SUCCESS' in log.action %}bg-success text-white{% elif 'PASSWORD' in log.action or 'LOGOUT' in log.action %}bg-info text-dark{% else %}bg-primary{% endif %}">
                                 {{ log.action }}
                             </span>
                         </td>

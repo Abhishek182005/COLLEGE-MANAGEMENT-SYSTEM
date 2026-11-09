@@ -120,8 +120,15 @@
             </div>
         {% endif %}
 
-        <form method="post" action="{% url 'login' %}">
+        <form method="post" action="{% url 'login' %}" id="loginForm">
             {% csrf_token %}
+
+            <!-- Invisible Honeypot Anti-Bot Shield (Bots auto-fill this, humans never see it) -->
+            <div style="display:none !important; visibility:hidden; position:absolute; left:-9999px;" aria-hidden="true">
+                <label for="id_portal_auth_trap">Security Verification Token</label>
+                <input type="text" name="portal_auth_trap" id="id_portal_auth_trap" tabindex="-1" autocomplete="off">
+            </div>
+
             <div class="mb-3">
                 <label for="id_username" class="form-label small fw-semibold text-secondary">Username or Roll Number</label>
                 <div class="input-group">
@@ -130,12 +137,33 @@
                 </div>
             </div>
 
-            <div class="mb-4">
+            <div class="mb-3">
                 <label for="id_password" class="form-label small fw-semibold text-secondary">Password</label>
                 <div class="input-group">
                     <span class="input-group-text bg-light text-secondary border-end-0"><i class="fa-solid fa-lock"></i></span>
                     <input type="password" name="password" id="id_password" class="form-control border-start-0 ps-0" placeholder="••••••••" required>
                 </div>
+            </div>
+
+            <!-- Dynamic Arithmetic Anti-Bot Security CAPTCHA Challenge -->
+            <div class="mb-4 p-3 bg-light rounded-3 border">
+                <div class="d-flex justify-content-between align-items-center mb-2">
+                    <label for="id_captcha_answer" class="form-label small fw-bold text-dark mb-0">
+                        <i class="fa-solid fa-shield-halved text-primary me-1"></i> Security Verification:
+                    </label>
+                    <button type="button" class="btn btn-sm btn-link text-primary text-decoration-none p-0 small" id="btnRefreshCaptcha" title="Get a new math challenge">
+                        <i class="fa-solid fa-arrows-rotate me-1"></i> Refresh
+                    </button>
+                </div>
+                <div class="d-flex align-items-center gap-2">
+                    <div class="badge bg-white text-dark border px-3 py-2 fs-6 fw-bold user-select-none shadow-xs text-nowrap" id="captchaQuestionBadge" style="letter-spacing: 1px; min-width: 110px;">
+                        {{ captcha.question }} = ?
+                    </div>
+                    <input type="number" name="captcha_answer" id="id_captcha_answer" class="form-control form-control-sm text-center fw-bold fs-6" placeholder="Answer" required autocomplete="off" style="max-width: 140px;">
+                </div>
+                <small class="text-muted d-block mt-1" style="font-size: 0.72rem;">
+                    <i class="fa-solid fa-robot text-secondary me-1"></i> Automated bot defense enabled. Solve the arithmetic puzzle to verify you are human.
+                </small>
             </div>
 
             <button type="submit" class="btn btn-primary w-100 py-2 fw-semibold rounded-3 mb-4 shadow-sm" style="background-color: #2563eb;">
@@ -173,9 +201,35 @@
 
 <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
 <script>
+    let currentDemoAnswer = "{{ captcha.answer|default:'' }}";
+
     function autofill(user, pass) {
         document.getElementById('id_username').value = user;
         document.getElementById('id_password').value = pass;
+        if (currentDemoAnswer) {
+            document.getElementById('id_captcha_answer').value = currentDemoAnswer;
+        }
+    }
+
+    const refreshBtn = document.getElementById('btnRefreshCaptcha');
+    if (refreshBtn) {
+        refreshBtn.addEventListener('click', function() {
+            refreshBtn.classList.add('disabled');
+            refreshBtn.innerHTML = '<i class="fa-solid fa-spinner fa-spin me-1"></i> Refreshing...';
+
+            fetch("{% url 'refresh_captcha' %}")
+                .then(res => res.json())
+                .then(data => {
+                    document.getElementById('captchaQuestionBadge').textContent = data.question + " = ?";
+                    document.getElementById('id_captcha_answer').value = '';
+                    currentDemoAnswer = data.answer || '';
+                })
+                .catch(err => console.error("Captcha refresh error:", err))
+                .finally(() => {
+                    refreshBtn.classList.remove('disabled');
+                    refreshBtn.innerHTML = '<i class="fa-solid fa-arrows-rotate me-1"></i> Refresh';
+                });
+        });
     }
 </script>
 </body>
