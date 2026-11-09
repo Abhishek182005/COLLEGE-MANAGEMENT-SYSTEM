@@ -52,19 +52,19 @@
                             <div class="border rounded-3 p-3 bg-light h-100 d-flex flex-column justify-content-between shadow-sm">
                                 <div>
                                     <div class="d-flex justify-content-between align-items-start mb-1">
-                                        <a href="{% url 'subject_detail' item.allocation.subject.id %}" class="badge bg-primary text-decoration-none">
-                                            {{ item.allocation.subject.code }}
+                                        <a href="{% url 'subject_detail' item.subject.id %}" class="badge bg-primary text-decoration-none">
+                                            {{ item.subject.code }}
                                         </a>
                                         <span class="badge bg-light text-dark border">
-                                            {{ item.allocation.subject.get_subject_type_display }}
+                                            {{ item.subject.get_subject_type_display }}
                                         </span>
                                     </div>
                                     <h6 class="fw-bold text-dark mb-1">
-                                        <a href="{% url 'subject_detail' item.allocation.subject.id %}" class="text-dark text-decoration-none">
-                                            {{ item.allocation.subject.name }}
+                                        <a href="{% url 'subject_detail' item.subject.id %}" class="text-dark text-decoration-none">
+                                            {{ item.subject.name }}
                                         </a>
                                     </h6>
-                                    <p class="text-muted small mb-2">Sem {{ item.allocation.subject.semester.semester_number }} • {{ item.allocation.subject.credits }} Credits</p>
+                                    <p class="text-muted small mb-2">Sem {{ item.subject.semester.semester_number }} • {{ item.subject.credits }} Credits</p>
                                     
                                     <div class="small text-muted mb-2">
                                         <i class="fa-solid fa-calendar-days me-1 text-primary"></i> {{ item.schedule_summary }}
@@ -86,7 +86,7 @@
                                                 <span class="badge bg-warning-subtle text-warning border border-warning py-1">
                                                     <i class="fa-solid fa-bell me-1"></i> Class Scheduled Today ({{ item.first_slot }})
                                                 </span>
-                                                <a href="{% url 'quick_mark_attendance' %}?subject_id={{ item.allocation.subject.id }}&lecture_slot={{ item.first_slot }}&session_type={{ item.first_class_type }}" class="btn btn-sm btn-primary">
+                                                <a href="{% url 'quick_mark_attendance' %}?subject_id={{ item.subject.id }}&lecture_slot={{ item.first_slot }}&session_type={{ item.first_class_type }}" class="btn btn-sm btn-primary">
                                                     <i class="fa-solid fa-check-double me-1"></i> Mark Today's Attendance
                                                 </a>
                                             </div>
@@ -96,7 +96,7 @@
                                             <span class="badge bg-light text-muted border py-1">
                                                 <i class="fa-solid fa-calendar-xmark me-1"></i> No Class Scheduled Today
                                             </span>
-                                            <a href="{% url 'quick_mark_attendance' %}?subject_id={{ item.allocation.subject.id }}" class="btn btn-sm btn-outline-secondary">
+                                            <a href="{% url 'quick_mark_attendance' %}?subject_id={{ item.subject.id }}" class="btn btn-sm btn-outline-secondary">
                                                 <i class="fa-solid fa-calendar-plus me-1"></i> Record Extra Session
                                             </a>
                                         </div>
