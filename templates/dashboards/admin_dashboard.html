@@ -82,7 +82,7 @@
     <div class="col-lg-7">
         <div class="card h-100">
             <div class="card-header d-flex justify-content-between align-items-center">
-                <span class="text-danger fw-bold"><i class="fa-solid fa-triangle-exclamation me-2"></i> Low Attendance Shortage Alerts (&lt; 75%)</span>
+                <span class="text-danger fw-bold"><i class="fa-solid fa-triangle-exclamation me-2"></i> Low Attendance Shortage Alerts (&lt; {{ attendance_threshold|default:college_settings.attendance_threshold|default:75 }}%)</span>
                 <a href="{% url 'attendance_shortage_report' %}" class="btn btn-sm btn-outline-danger">View All Shortages</a>
             </div>
             <div class="card-body p-0">
@@ -132,7 +132,7 @@
                                 <tr>
                                     <td colspan="5" class="text-center py-4 text-success">
                                         <i class="fa-solid fa-circle-check fs-4 d-block mb-1"></i>
-                                        All active students are meeting the 75% attendance threshold!
+                                        All active students are meeting the {{ attendance_threshold|default:college_settings.attendance_threshold|default:75 }}% attendance threshold!
                                     </td>
                                 </tr>
                             {% endfor %}

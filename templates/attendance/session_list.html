@@ -12,7 +12,7 @@
         </div>
         <div class="d-flex gap-2">
             <a href="{% url 'attendance_shortage_report' %}" class="btn btn-sm btn-outline-danger">
-                <i class="fa-solid fa-triangle-exclamation me-1"></i> Shortage Alerts (<75%)
+                <i class="fa-solid fa-triangle-exclamation me-1"></i> Shortage Alerts (&lt;{{ attendance_threshold|default:college_settings.attendance_threshold|default:75 }}%)
             </a>
             {% if is_faculty or is_admin %}
                 <a href="{% url 'quick_mark_attendance' %}" class="btn btn-sm btn-primary">
@@ -74,7 +74,7 @@
                         <td><small class="text-secondary">{{ sess.topic_covered|default:"Regular Lecture"|truncatechars:30 }}</small></td>
                         <td>Sem {{ sess.semester.semester_number }}{% if sess.batch %} - {{ sess.batch.name }}{% endif %}</td>
                         <td>
-                            <span class="badge {% if sess.attendance_percentage >= 75 %}bg-success{% else %}bg-warning text-dark{% endif %} px-2 py-1">
+                            <span class="badge {% if sess.attendance_percentage >= attendance_threshold|default:college_settings.attendance_threshold|default:75 %}bg-success{% else %}bg-warning text-dark{% endif %} px-2 py-1">
                                 {{ sess.attendance_percentage }}% ({{ sess.present_count }}/{{ sess.total_students }})
                             </span>
                         </td>

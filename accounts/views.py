@@ -154,7 +154,14 @@ class AdminDashboardView(AdminRequiredMixin, TemplateView):
         today_sessions = AttendanceSession.objects.filter(date=today)
         ctx['today_sessions_count'] = today_sessions.count()
 
-        # Shortage students (< 75%)
+        # Shortage students (< threshold)
+        try:
+            from .models import CollegeSetting
+            threshold = float(CollegeSetting.get_settings().attendance_threshold)
+        except Exception:
+            threshold = float(getattr(settings, 'ATTENDANCE_SHORTAGE_THRESHOLD', 75.0))
+        ctx['attendance_threshold'] = threshold
+
         shortage_students = []
         for s in Student.objects.filter(is_archived=False).select_related('user', 'department', 'course', 'current_semester')[:30]:
             stats = s.get_attendance_stats()
@@ -465,7 +472,17 @@ def college_settings_view(request):
         if footer_text:
             settings_obj.footer_text = footer_text
 
-        if request.FILES.get('logo'):
+        logo_url = request.POST.get('logo_url', '').strip()
+        if logo_url:
+            settings_obj.logo_url = logo_url
+        elif 'logo_url' in request.POST and not logo_url:
+            settings_obj.logo_url = ''
+
+        if request.POST.get('clear_logo') == '1':
+            if settings_obj.logo:
+                settings_obj.logo.delete(save=False)
+            settings_obj.logo = None
+        elif request.FILES.get('logo'):
             settings_obj.logo = request.FILES['logo']
 
         settings_obj.save()

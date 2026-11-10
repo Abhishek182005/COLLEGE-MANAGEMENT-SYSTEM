@@ -412,6 +412,12 @@ def student_attendance_view(request, student_id=None):
     stats_map['ALL']['bft'] = total_bft_all
     stats_map['ALL']['bft_med'] = total_bft_med
 
+    try:
+        from accounts.models import CollegeSetting
+        threshold = float(CollegeSetting.get_settings().attendance_threshold)
+    except Exception:
+        threshold = float(getattr(settings, 'ATTENDANCE_SHORTAGE_THRESHOLD', 75.0))
+
     component_stats = {}
     for c_key, c_data in stats_map.items():
         f_attd = min(c_data['held'], c_data['attd'] + c_data['bft'])
@@ -424,7 +430,7 @@ def student_attendance_view(request, student_id=None):
             'bft_med': c_data['bft_med'],
             'final_attd': f_attd,
             'pct': c_pct,
-            'shortage': c_pct < 75.0 if c_data['held'] > 0 else False,
+            'shortage': c_pct < threshold if c_data['held'] > 0 else False,
         }
 
     selected_component = request.GET.get('component', 'ALL')
@@ -477,6 +483,8 @@ def student_attendance_view(request, student_id=None):
         'component_stats': component_stats,
         'component_stats_json': json.dumps(component_stats),
         'selected_component': selected_component,
+        'threshold': threshold,
+        'attendance_threshold': threshold,
     }
     return render(request, 'attendance/student_attendance_view.html', context)
 
@@ -528,8 +536,12 @@ def student_qr_attendance_view(request):
 @login_required
 @role_required('ADMIN', 'FACULTY')
 def attendance_shortage_report_view(request):
-    """List students below 75% threshold across departments."""
-    threshold = getattr(settings, 'ATTENDANCE_SHORTAGE_THRESHOLD', 75.0)
+    """List students below configured attendance threshold across departments."""
+    try:
+        from accounts.models import CollegeSetting
+        threshold = float(CollegeSetting.get_settings().attendance_threshold)
+    except Exception:
+        threshold = float(getattr(settings, 'ATTENDANCE_SHORTAGE_THRESHOLD', 75.0))
     dept_id = request.GET.get('department')
 
     students = Student.objects.filter(is_archived=False).select_related('user', 'department', 'course', 'current_semester', 'batch')

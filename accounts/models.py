@@ -38,9 +38,13 @@ class CustomUser(AbstractUser):
 
     @property
     def avatar_url(self):
-        if self.profile_picture and hasattr(self.profile_picture, 'url'):
-            return self.profile_picture.url
-        return f"https://ui-avatars.com/api/?name={self.username}&background=4f46e5&color=fff&size=128"
+        if self.profile_picture:
+            try:
+                return self.profile_picture.url
+            except Exception:
+                pass
+        display_name = self.get_full_name().strip() if hasattr(self, 'get_full_name') and self.get_full_name() else self.username
+        return f"https://ui-avatars.com/api/?name={display_name}&background=4f46e5&color=fff&size=128"
 
 
 class CollegeSetting(models.Model):
@@ -53,6 +57,7 @@ class CollegeSetting(models.Model):
     college_code = models.CharField(max_length=30, default="CCIT-092")
     tagline = models.CharField(max_length=255, default="Excellence in Academic Innovation & Leadership")
     logo = models.ImageField(upload_to='college_branding/', blank=True, null=True)
+    logo_url = models.URLField(max_length=500, blank=True, null=True, help_text="External URL for logo (e.g. hosted on college website or CDN)")
     address = models.TextField(default="Academic City, Knowledge Park III, Tech District")
     email = models.EmailField(default="admin@campusconnect.edu")
     phone = models.CharField(max_length=30, default="+91 11 2345 6789")
@@ -74,8 +79,29 @@ class CollegeSetting(models.Model):
     def __str__(self):
         return f"{self.name} ({self.college_code})"
 
+    def save(self, *args, **kwargs):
+        # Enforce singleton pattern in database
+        if not self.pk and CollegeSetting.objects.exists():
+            existing = CollegeSetting.objects.first()
+            self.pk = existing.pk
+        super().save(*args, **kwargs)
+
     @classmethod
     def get_settings(cls):
         """Returns the active settings singleton or initializes default entry."""
-        obj, _ = cls.objects.get_or_create(id=1)
+        obj = cls.objects.first()
+        if not obj:
+            obj = cls.objects.create()
         return obj
+
+    @property
+    def effective_logo_url(self):
+        """Returns uploaded logo URL or external logo URL, or None."""
+        if self.logo:
+            try:
+                return self.logo.url
+            except Exception:
+                pass
+        if self.logo_url:
+            return self.logo_url
+        return None

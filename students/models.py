@@ -63,13 +63,19 @@ class Student(models.Model):
         from attendance.models import AttendanceRecord
         records = AttendanceRecord.objects.filter(student=self)
         total = records.count()
+        try:
+            from accounts.models import CollegeSetting
+            threshold = float(CollegeSetting.get_settings().attendance_threshold)
+        except Exception:
+            threshold = float(getattr(settings, 'ATTENDANCE_SHORTAGE_THRESHOLD', 75.0))
+
         if total == 0:
-            return {'total': 0, 'present': 0, 'absent': 0, 'late': 0, 'percentage': 0.0, 'shortage': False}
+            return {'total': 0, 'present': 0, 'absent': 0, 'late': 0, 'percentage': 0.0, 'shortage': False, 'threshold': threshold}
         present_count = records.filter(status__in=['PRESENT', 'LATE']).count()
         absent_count = records.filter(status='ABSENT').count()
         late_count = records.filter(status='LATE').count()
         pct = round((present_count / total) * 100, 2)
-        shortage = pct < getattr(settings, 'ATTENDANCE_SHORTAGE_THRESHOLD', 75.0)
+        shortage = pct < threshold
         return {
             'total': total,
             'present': present_count,
@@ -77,4 +83,5 @@ class Student(models.Model):
             'late': late_count,
             'percentage': pct,
             'shortage': shortage,
+            'threshold': threshold,
         }

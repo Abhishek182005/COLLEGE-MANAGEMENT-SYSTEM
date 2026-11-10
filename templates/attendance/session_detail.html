@@ -55,7 +55,7 @@
     <div class="col-lg-4">
         <div class="card p-4 text-center h-100">
             <span class="text-secondary small fw-bold text-uppercase">Turnout Rate</span>
-            <div class="display-6 fw-bold my-2 {% if session.attendance_percentage >= 75 %}text-success{% else %}text-warning{% endif %}">
+            <div class="display-6 fw-bold my-2 {% if session.attendance_percentage >= attendance_threshold|default:college_settings.attendance_threshold|default:75 %}text-success{% else %}text-warning{% endif %}">
                 {{ session.attendance_percentage }}%
             </div>
             <div class="row g-2 mt-2 pt-2 border-top text-center small text-secondary">
