@@ -8,15 +8,18 @@ def user_role_context(request):
         college_obj = CollegeSetting.get_settings()
         college_name = college_obj.name
         college_code = college_obj.college_code
+        attendance_threshold = college_obj.attendance_threshold
     except Exception:
         college_obj = None
         college_name = getattr(settings, 'COLLEGE_NAME', 'CampusConnect Institute of Technology')
         college_code = getattr(settings, 'COLLEGE_CODE', 'CCIT-092')
+        attendance_threshold = getattr(settings, 'ATTENDANCE_SHORTAGE_THRESHOLD', 75)
 
     context = {
         'college_settings': college_obj,
         'COLLEGE_NAME': college_name,
         'COLLEGE_CODE': college_code,
+        'attendance_threshold': attendance_threshold,
         'user_role': 'GUEST',
         'is_admin': False,
         'is_faculty': False,

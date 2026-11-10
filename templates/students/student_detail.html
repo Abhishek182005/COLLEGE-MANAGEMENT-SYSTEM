@@ -60,7 +60,7 @@
                 {{ attendance_stats.percentage }}%
             </div>
             {% if attendance_stats.shortage %}
-                <span class="badge bg-danger py-2 px-3 rounded-pill mb-2">Shortage Warning (&lt; 75%)</span>
+                <span class="badge bg-danger py-2 px-3 rounded-pill mb-2">Shortage Warning (&lt; {{ attendance_threshold|default:college_settings.attendance_threshold|default:75 }}%)</span>
             {% else %}
                 <span class="badge bg-success py-2 px-3 rounded-pill mb-2">Requirement Satisfied</span>
             {% endif %}

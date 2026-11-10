@@ -10,8 +10,16 @@
         <div class="card p-4 text-white shadow-sm" style="background: linear-gradient(135deg, #0f172a 0%, #1e3a8a 100%);">
             <div class="d-flex flex-wrap align-items-center justify-content-between gap-3">
                 <div class="d-flex align-items-center gap-3">
-                    {% if settings.logo %}
-                        <img src="{{ settings.logo.url }}" alt="Logo" class="rounded bg-white p-1 border shadow-sm" width="70" height="70" style="object-fit: contain;">
+                    {% if settings.effective_logo_url %}
+                        <img src="{{ settings.effective_logo_url }}" alt="Logo" class="rounded bg-white p-1 border shadow-sm" width="70" height="70" style="object-fit: contain;" onerror="this.onerror=null; this.style.display='none'; this.nextElementSibling.classList.remove('d-none');">
+                        <div class="rounded bg-white text-primary d-flex align-items-center justify-content-center shadow-sm d-none" style="width: 70px; height: 70px; font-size: 2rem;">
+                            <i class="fa-solid fa-graduation-cap"></i>
+                        </div>
+                    {% elif settings.logo %}
+                        <img src="{{ settings.logo.url }}" alt="Logo" class="rounded bg-white p-1 border shadow-sm" width="70" height="70" style="object-fit: contain;" onerror="this.onerror=null; this.style.display='none'; this.nextElementSibling.classList.remove('d-none');">
+                        <div class="rounded bg-white text-primary d-flex align-items-center justify-content-center shadow-sm d-none" style="width: 70px; height: 70px; font-size: 2rem;">
+                            <i class="fa-solid fa-graduation-cap"></i>
+                        </div>
                     {% else %}
                         <div class="rounded bg-white text-primary d-flex align-items-center justify-content-center shadow-sm" style="width: 70px; height: 70px; font-size: 2rem;">
                             <i class="fa-solid fa-graduation-cap"></i>
@@ -113,14 +121,26 @@
                         <h6 class="fw-bold text-secondary small text-uppercase mb-2">3. Institutional Emblem & Signatory</h6>
                     </div>
                     <div class="col-md-6">
-                        <label class="form-label small fw-semibold">College Logo / Seal Image</label>
+                        <label class="form-label small fw-semibold">Upload Logo Image File</label>
                         <input type="file" name="logo" class="form-control" accept="image/*">
                         {% if settings.logo %}
-                            <div class="mt-2 d-flex align-items-center gap-2">
-                                <img src="{{ settings.logo.url }}" width="40" height="40" class="rounded border" style="object-fit: contain;">
-                                <small class="text-muted">Current Logo: {{ settings.logo.name }}</small>
+                            <div class="mt-2 d-flex align-items-center justify-content-between p-2 bg-light rounded border">
+                                <div class="d-flex align-items-center gap-2">
+                                    <img src="{{ settings.logo.url }}" width="36" height="36" class="rounded border bg-white" style="object-fit: contain;">
+                                    <small class="text-muted text-truncate" style="max-width: 180px;">{{ settings.logo.name }}</small>
+                                </div>
+                                <div class="form-check m-0">
+                                    <input class="form-check-input" type="checkbox" name="clear_logo" value="1" id="clearLogoCheck">
+                                    <label class="form-check-label small text-danger" for="clearLogoCheck">Remove</label>
+                                </div>
                             </div>
                         {% endif %}
+                        <div class="form-text small">Accepted formats: PNG, JPG, SVG, WebP.</div>
+                    </div>
+                    <div class="col-md-6">
+                        <label class="form-label small fw-semibold">Or External Logo Image URL</label>
+                        <input type="url" name="logo_url" class="form-control" value="{{ settings.logo_url|default:'' }}" placeholder="https://college.edu/assets/logo.png">
+                        <div class="form-text small">Direct link to college logo (persistent across all cloud platforms).</div>
                     </div>
                     <div class="col-md-6">
                         <label class="form-label small fw-semibold">Principal / Director / Dean Name</label>

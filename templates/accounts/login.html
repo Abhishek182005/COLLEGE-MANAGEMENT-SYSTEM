@@ -90,13 +90,17 @@
 <div class="login-card">
     <div class="login-header">
         <div class="brand-icon">
-            {% if college_settings and college_settings.logo %}
-                <img src="{{ college_settings.logo.url }}" alt="Logo" class="rounded" width="48" height="48" style="object-fit: contain;">
+            {% if college_settings and college_settings.effective_logo_url %}
+                <img src="{{ college_settings.effective_logo_url }}" alt="Logo" class="rounded" width="48" height="48" style="object-fit: contain;" onerror="this.onerror=null; this.style.display='none'; this.nextElementSibling.classList.remove('d-none');">
+                <i class="fa-solid fa-graduation-cap d-none"></i>
+            {% elif college_settings and college_settings.logo %}
+                <img src="{{ college_settings.logo.url }}" alt="Logo" class="rounded" width="48" height="48" style="object-fit: contain;" onerror="this.onerror=null; this.style.display='none'; this.nextElementSibling.classList.remove('d-none');">
+                <i class="fa-solid fa-graduation-cap d-none"></i>
             {% else %}
                 <i class="fa-solid fa-graduation-cap"></i>
             {% endif %}
         </div>
-        <h4 class="fw-bold text-dark mb-1">{{ COLLEGE_NAME }}</h4>
+        <h4 class="fw-bold text-dark mb-1">{{ college_settings.name|default:COLLEGE_NAME }}</h4>
         <p class="text-secondary small mb-0">{{ college_settings.tagline|default:"College Academic & Management System" }}</p>
     </div>
 
