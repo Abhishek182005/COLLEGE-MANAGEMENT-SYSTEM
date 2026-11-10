@@ -46,11 +46,13 @@
             <small class="text-white-50 text-uppercase fw-bold" id="kpiPctLabel">Total Attendance</small>
             <div class="display-6 fw-bold my-1" id="kpiPctValue">{{ overall_percentage }}%</div>
             <small class="text-white-50" id="kpiComplianceBadge">
-                {% if overall_percentage >= 75.0 %}
-                    <i class="fa-solid fa-circle-check text-light me-1"></i> Exam Eligible (&ge; 75%)
+                {% with thresh=attendance_threshold|default:college_settings.attendance_threshold|default:75 %}
+                {% if overall_percentage >= thresh %}
+                    <i class="fa-solid fa-circle-check text-light me-1"></i> Exam Eligible (&ge; {{ thresh }}%)
                 {% else %}
-                    <i class="fa-solid fa-triangle-exclamation text-warning me-1"></i> Shortage Warning (&lt; 75%)
+                    <i class="fa-solid fa-triangle-exclamation text-warning me-1"></i> Shortage Warning (&lt; {{ thresh }}%)
                 {% endif %}
+                {% endwith %}
             </small>
         </div>
     </div>
@@ -139,15 +141,17 @@
             <div>
                 <small class="text-secondary text-uppercase fw-semibold d-block" style="font-size: 0.72rem;">Eligibility Compliance</small>
                 <span id="summaryCompliance">
-                    {% if overall_percentage >= 75.0 %}
+                    {% with thresh=attendance_threshold|default:college_settings.attendance_threshold|default:75 %}
+                    {% if overall_percentage >= thresh %}
                         <span class="badge bg-success-subtle text-success border border-success py-1 px-2">
-                            <i class="fa-solid fa-circle-check me-1"></i> Satisfied (&ge; 75%)
+                            <i class="fa-solid fa-circle-check me-1"></i> Satisfied (&ge; {{ thresh }}%)
                         </span>
                     {% else %}
                         <span class="badge bg-danger-subtle text-danger border border-danger py-1 px-2">
-                            <i class="fa-solid fa-triangle-exclamation me-1"></i> Shortage (&lt; 75%)
+                            <i class="fa-solid fa-triangle-exclamation me-1"></i> Shortage (&lt; {{ thresh }}%)
                         </span>
                     {% endif %}
+                    {% endwith %}
                 </span>
             </div>
         </div>
@@ -241,7 +245,9 @@
                     <span>Attended: <b id="footerAttended" class="text-success">{{ grand_final_attd }}</b></span>
                 </div>
                 <div class="text-muted small">
-                    Filtered Attendance: <span id="footerPercentage" class="fw-bold {% if overall_percentage >= 75 %}text-success{% else %}text-danger{% endif %} fs-6">{{ overall_percentage }}%</span>
+                    {% with thresh=attendance_threshold|default:college_settings.attendance_threshold|default:75 %}
+                    Filtered Attendance: <span id="footerPercentage" class="fw-bold {% if overall_percentage >= thresh %}text-success{% else %}text-danger{% endif %} fs-6">{{ overall_percentage }}%</span>
+                    {% endwith %}
                 </div>
             </div>
         </div>
@@ -413,6 +419,7 @@
 <script>
     // Pre-calculated stats from Django
     const componentStats = {{ component_stats_json|safe }};
+    const ATTENDANCE_THRESHOLD = {{ attendance_threshold|default:college_settings.attendance_threshold|default:75 }};
 
     function setComponentFilter(type) {
         const select = document.getElementById('tableComponentFilter');
@@ -459,10 +466,10 @@
         const compEl = document.getElementById('summaryCompliance');
         if (stats.held === 0) {
             compEl.innerHTML = '<span class="badge bg-secondary-subtle text-secondary border py-1 px-2">No Records</span>';
-        } else if (stats.pct >= 75.0) {
-            compEl.innerHTML = '<span class="badge bg-success-subtle text-success border border-success py-1 px-2"><i class="fa-solid fa-circle-check me-1"></i> Satisfied (&ge; 75%)</span>';
+        } else if (stats.pct >= ATTENDANCE_THRESHOLD) {
+            compEl.innerHTML = `<span class="badge bg-success-subtle text-success border border-success py-1 px-2"><i class="fa-solid fa-circle-check me-1"></i> Satisfied (&ge; ${ATTENDANCE_THRESHOLD}%)</span>`;
         } else {
-            compEl.innerHTML = '<span class="badge bg-danger-subtle text-danger border border-danger py-1 px-2"><i class="fa-solid fa-triangle-exclamation me-1"></i> Shortage (&lt; 75%)</span>';
+            compEl.innerHTML = `<span class="badge bg-danger-subtle text-danger border border-danger py-1 px-2"><i class="fa-solid fa-triangle-exclamation me-1"></i> Shortage (&lt; ${ATTENDANCE_THRESHOLD}%)</span>`;
         }
 
         // 3. Update Top KPI Cards
@@ -475,10 +482,10 @@
         if (kpiCompliance) {
             if (stats.held === 0) {
                 kpiCompliance.innerHTML = '<span class="text-white-50">No Sessions Logged</span>';
-            } else if (stats.pct >= 75.0) {
-                kpiCompliance.innerHTML = '<i class="fa-solid fa-circle-check text-light me-1"></i> Exam Eligible (&ge; 75%)';
+            } else if (stats.pct >= ATTENDANCE_THRESHOLD) {
+                kpiCompliance.innerHTML = `<i class="fa-solid fa-circle-check text-light me-1"></i> Exam Eligible (&ge; ${ATTENDANCE_THRESHOLD}%)`;
             } else {
-                kpiCompliance.innerHTML = '<i class="fa-solid fa-triangle-exclamation text-warning me-1"></i> Shortage Warning (&lt; 75%)';
+                kpiCompliance.innerHTML = `<i class="fa-solid fa-triangle-exclamation text-warning me-1"></i> Shortage Warning (&lt; ${ATTENDANCE_THRESHOLD}%)`;
             }
         }
 
@@ -487,7 +494,7 @@
         document.getElementById('footerAttended').textContent = stats.final_attd;
         const footerPct = document.getElementById('footerPercentage');
         footerPct.textContent = stats.pct + '%';
-        footerPct.className = 'fw-bold fs-6 ' + (stats.pct >= 75.0 ? 'text-success' : 'text-danger');
+        footerPct.className = 'fw-bold fs-6 ' + (stats.pct >= ATTENDANCE_THRESHOLD ? 'text-success' : 'text-danger');
 
         // 5. Filter Table Rows
         const rows = document.querySelectorAll('.register-row');

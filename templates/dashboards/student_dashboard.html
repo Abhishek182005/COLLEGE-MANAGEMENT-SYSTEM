@@ -51,7 +51,7 @@
             </div>
             {% if attendance_stats.shortage %}
                 <div class="badge bg-danger py-2 px-3 rounded-pill mb-2">
-                    <i class="fa-solid fa-triangle-exclamation me-1"></i> Shortage Warning (&lt; 75%)
+                    <i class="fa-solid fa-triangle-exclamation me-1"></i> Shortage Warning (&lt; {{ attendance_threshold|default:college_settings.attendance_threshold|default:75 }}%)
                 </div>
                 <small class="text-danger fw-semibold d-block">
                     You have attended {{ attendance_stats.present }} of {{ attendance_stats.total }} sessions. You must attend upcoming classes to be eligible for exams.

@@ -278,14 +278,18 @@
     <aside class="sidebar">
         <div class="sidebar-brand d-flex align-items-center justify-content-between">
             <a href="{% url 'dashboard_redirect' %}" class="d-flex align-items-center gap-2 text-white text-decoration-none overflow-hidden">
-                {% if college_settings and college_settings.logo %}
-                    <img src="{{ college_settings.logo.url }}" alt="Logo" class="rounded bg-white p-1 flex-shrink-0" width="34" height="34" style="object-fit: contain;">
+                {% if college_settings and college_settings.effective_logo_url %}
+                    <img src="{{ college_settings.effective_logo_url }}" alt="Logo" class="rounded bg-white p-1 flex-shrink-0" width="34" height="34" style="object-fit: contain;" onerror="this.onerror=null; this.style.display='none'; this.nextElementSibling.classList.remove('d-none');">
+                    <i class="fa-solid fa-graduation-cap flex-shrink-0 d-none"></i>
+                {% elif college_settings and college_settings.logo %}
+                    <img src="{{ college_settings.logo.url }}" alt="Logo" class="rounded bg-white p-1 flex-shrink-0" width="34" height="34" style="object-fit: contain;" onerror="this.onerror=null; this.style.display='none'; this.nextElementSibling.classList.remove('d-none');">
+                    <i class="fa-solid fa-graduation-cap flex-shrink-0 d-none"></i>
                 {% else %}
                     <i class="fa-solid fa-graduation-cap flex-shrink-0"></i>
                 {% endif %}
                 <div class="overflow-hidden">
-                    <span class="d-block text-truncate fw-bold" style="line-height: 1.2; max-width: 170px;" title="{{ COLLEGE_NAME }}">{{ college_settings.short_name|default:COLLEGE_NAME }}</span>
-                    <small class="text-secondary fw-normal" style="font-size: 0.72rem;">{{ COLLEGE_CODE }}</small>
+                    <span class="d-block text-truncate fw-bold" style="line-height: 1.2; max-width: 170px;" title="{{ college_settings.name|default:COLLEGE_NAME }}">{{ college_settings.short_name|default:college_settings.name|default:COLLEGE_NAME }}</span>
+                    <small class="text-secondary fw-normal" style="font-size: 0.72rem;">{{ college_settings.college_code|default:COLLEGE_CODE }}</small>
                 </div>
             </a>
             <button type="button" class="btn btn-sm btn-link text-white-50 d-lg-none p-1 text-decoration-none" id="sidebarClose" aria-label="Close Navigation">
@@ -321,7 +325,7 @@
                     <i class="fa-solid fa-clipboard-check"></i> Attendance Hub
                 </a>
                 <a href="{% url 'attendance_shortage_report' %}" class="nav-link">
-                    <i class="fa-solid fa-triangle-exclamation text-warning"></i> Shortage Alerts (<75%)
+                    <i class="fa-solid fa-triangle-exclamation text-warning"></i> Shortage Alerts (&lt;{{ attendance_threshold|default:college_settings.attendance_threshold|default:75 }}%)
                 </a>
                 <a href="{% url 'timetable_master' %}" class="nav-link">
                     <i class="fa-solid fa-calendar-days"></i> Master Timetable
@@ -492,7 +496,7 @@
         <!-- Institutional Branded Footer -->
         <footer class="mt-auto py-3 px-4 bg-white border-top text-secondary small d-flex flex-wrap justify-content-between align-items-center">
             <div>
-                <b>{{ COLLEGE_NAME }}</b> &bull; {{ college_settings.affiliation|default:"Accredited Higher Education Institution" }}
+                <b>{{ college_settings.name|default:COLLEGE_NAME }}</b> &bull; {{ college_settings.affiliation|default:"Accredited Higher Education Institution" }}
             </div>
             <div>
                 <span>{{ college_settings.footer_text|default:"CampusConnect ERP - Complete Academic Management Platform" }}</span>

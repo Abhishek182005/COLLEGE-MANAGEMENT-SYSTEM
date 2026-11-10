@@ -219,7 +219,7 @@
                                         <small class="text-muted">{{ sess.lecture_slot }}</small>
                                     </td>
                                     <td>
-                                        <span class="badge {% if sess.attendance_percentage >= 75 %}bg-success{% else %}bg-warning text-dark{% endif %}">
+                                        <span class="badge {% if sess.attendance_percentage >= attendance_threshold|default:college_settings.attendance_threshold|default:75 %}bg-success{% else %}bg-warning text-dark{% endif %}">
                                             {{ sess.attendance_percentage }}% ({{ sess.present_count }}/{{ sess.total_students }})
                                         </span>
                                     </td>

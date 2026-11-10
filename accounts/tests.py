@@ -153,6 +153,34 @@ class AccountsSecurityAndRoleTests(TestCase):
         self.assertContains(login_resp, "Excellence in Engineering")
         self.assertContains(login_resp, "St. Xavier&#x27;s Engineering College")
 
+    def test_college_setting_logo_and_media_routing(self):
+        """Verify uploaded logo or external logo URL resolves and media endpoint serves files."""
+        from accounts.models import CollegeSetting
+        import os
+        from django.conf import settings
+        setting = CollegeSetting.get_settings()
+        setting.logo_url = "https://example.com/logo.png"
+        setting.save()
+        self.assertEqual(setting.effective_logo_url, "https://example.com/logo.png")
+
+        # Test media serving endpoint
+        media_test_path = os.path.join(settings.MEDIA_ROOT, 'test_media.txt')
+        os.makedirs(settings.MEDIA_ROOT, exist_ok=True)
+        with open(media_test_path, 'w') as f:
+            f.write('media ok')
+        try:
+            resp = self.client.get('/media/test_media.txt')
+            self.assertEqual(resp.status_code, 200)
+            file_data = b"".join(resp.streaming_content).decode().strip()
+            self.assertEqual(file_data, 'media ok')
+            resp.close()
+        finally:
+            if os.path.exists(media_test_path):
+                try:
+                    os.remove(media_test_path)
+                except Exception:
+                    pass
+
     def test_login_captcha_challenge_generated_on_get(self):
         """Visiting login page creates dynamic arithmetic puzzle in session."""
         response = self.client.get(reverse('login'))

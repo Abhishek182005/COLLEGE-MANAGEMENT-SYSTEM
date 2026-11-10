@@ -69,6 +69,34 @@ class AttendanceManagementTests(TestCase):
         self.assertEqual(stats2['percentage'], 25.0)
         self.assertTrue(stats2['shortage'])
 
+    def test_dynamic_attendance_threshold_from_admin(self):
+        """Verify dynamic attendance threshold set in admin (e.g. 67%) reflects across stats and views."""
+        from accounts.models import CollegeSetting
+        setting = CollegeSetting.get_settings()
+        setting.attendance_threshold = 67
+        setting.save()
+
+        # Create 10 sessions: student attends 7 (70% attendance)
+        for i in range(10):
+            s = AttendanceSession.objects.create(
+                subject=self.subj, faculty=self.faculty, semester=self.sem, batch=self.batch,
+                date=date.today() - timedelta(days=i), lecture_slot="11:00 - 12:00"
+            )
+            status = 'PRESENT' if i < 7 else 'ABSENT'
+            AttendanceRecord.objects.create(session=s, student=self.st1, status=status)
+
+        stats = self.st1.get_attendance_stats()
+        self.assertEqual(stats['percentage'], 70.0)
+        self.assertEqual(stats['threshold'], 67.0)
+        # Under 67% threshold, 70% is NOT a shortage (under default 75% it would be)
+        self.assertFalse(stats['shortage'])
+
+        # Now raise threshold to 75%: 70% should immediately become a shortage
+        setting.attendance_threshold = 75
+        setting.save()
+        stats_updated = self.st1.get_attendance_stats()
+        self.assertTrue(stats_updated['shortage'])
+
     def test_qr_token_expiration(self):
         """QR tokens expire after designated timestamp."""
         sess = AttendanceSession.objects.create(
