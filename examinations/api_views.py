@@ -4,6 +4,7 @@ from rest_framework.views import APIView
 from rest_framework.response import Response
 from rest_framework import status, permissions
 from .models import AssessmentComponent, Marks
+from academics.models import SubjectAllocation
 from faculty.models import Faculty
 from reports.utils import log_audit
 
@@ -25,11 +26,22 @@ class BulkMarksEntryAPIView(APIView):
             return Response({'error': 'component_id is required.'}, status=status.HTTP_400_BAD_REQUEST)
 
         try:
-            component = AssessmentComponent.objects.get(id=component_id)
+            component = AssessmentComponent.objects.select_related('subject').get(id=component_id)
         except AssessmentComponent.DoesNotExist:
             return Response({'error': 'Assessment component not found.'}, status=status.HTTP_404_NOT_FOUND)
 
         faculty = getattr(request.user, 'faculty_profile', None)
+        if request.user.is_faculty_role and not request.user.is_admin_role:
+            is_allocated = bool(
+                faculty and SubjectAllocation.objects.filter(
+                    faculty=faculty, subject=component.subject, is_active=True
+                ).exists()
+            )
+            if not is_allocated:
+                return Response(
+                    {'error': 'Access denied: You can only enter marks for your assigned courses and subjects.'},
+                    status=status.HTTP_403_FORBIDDEN
+                )
 
         saved_count = 0
         with transaction.atomic():

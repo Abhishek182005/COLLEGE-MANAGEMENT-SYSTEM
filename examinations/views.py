@@ -1,21 +1,55 @@
 from decimal import Decimal
 from django.shortcuts import render, redirect, get_object_or_404
 from django.contrib.auth.decorators import login_required
+from django.contrib.auth.mixins import LoginRequiredMixin
 from django.contrib import messages
 from django.views.generic import ListView
-from django.http import HttpResponse
+from django.http import HttpResponse, HttpResponseForbidden
 from .models import Examination, AssessmentComponent, Marks
-from academics.models import AcademicSession, Subject, Semester
+from academics.models import AcademicSession, Subject, Semester, SubjectAllocation
 from students.models import Student
 from faculty.models import Faculty
 from accounts.permissions import role_required, FacultyRequiredMixin, StudentRequiredMixin
 from reports.utils import generate_marksheet_pdf, log_audit
 
 
-class ExaminationListView(ListView):
+def _faculty_allocated_subject_ids(user):
+    """Return set of active Subject IDs allocated to the given faculty user."""
+    faculty = getattr(user, 'faculty_profile', None)
+    if not faculty:
+        return set()
+    return set(
+        SubjectAllocation.objects.filter(faculty=faculty, is_active=True)
+        .values_list('subject_id', flat=True)
+    )
+
+
+class ExaminationListView(LoginRequiredMixin, ListView):
     model = Examination
     template_name = 'examinations/exam_list.html'
     context_object_name = 'examinations'
+
+    def get_context_data(self, **kwargs):
+        ctx = super().get_context_data(**kwargs)
+        user = self.request.user
+        is_restricted_faculty = user.is_faculty_role and not user.is_admin_role
+        allowed_subj_ids = _faculty_allocated_subject_ids(user) if is_restricted_faculty else None
+
+        filtered_exams = []
+        for ex in ctx['examinations']:
+            comps_qs = ex.components.select_related('subject', 'subject__semester__course')
+            if is_restricted_faculty:
+                comps_qs = comps_qs.filter(subject_id__in=allowed_subj_ids)
+                ex.visible_components = list(comps_qs)
+                if ex.visible_components:
+                    filtered_exams.append(ex)
+            else:
+                ex.visible_components = list(comps_qs)
+                filtered_exams.append(ex)
+
+        ctx['examinations'] = filtered_exams
+        ctx['is_restricted_faculty'] = is_restricted_faculty
+        return ctx
 
 
 @login_required
@@ -64,9 +98,17 @@ def toggle_exam_publish(request, pk):
 @role_required('FACULTY', 'ADMIN')
 def marks_entry_view(request, component_id):
     """Faculty entry screen for student assessment marks with instant grade generation."""
-    component = get_object_or_404(AssessmentComponent, id=component_id)
+    component = get_object_or_404(AssessmentComponent.objects.select_related('subject', 'subject__semester__course'), id=component_id)
     subject = component.subject
-    students = Student.objects.filter(current_semester=subject.semester, is_archived=False).select_related('user', 'batch')
+
+    if request.user.is_faculty_role and not request.user.is_admin_role:
+        if component.subject_id not in _faculty_allocated_subject_ids(request.user):
+            return HttpResponseForbidden(
+                "Access denied: You can only view or enter marks for courses and subjects assigned to you."
+            )
+
+    students = list(Student.objects.filter(current_semester=subject.semester, is_archived=False).select_related('user', 'batch'))
+    valid_student_ids = {s.id for s in students}
 
     # Existing marks mapping
     existing_marks = {m.student_id: m for m in Marks.objects.filter(assessment_component=component)}
@@ -87,12 +129,17 @@ def marks_entry_view(request, component_id):
 
         for key, val in request.POST.items():
             if key.startswith('marks_') and val.strip():
-                st_id = key.replace('marks_', '')
+                try:
+                    st_id = int(key.replace('marks_', ''))
+                except ValueError:
+                    continue
+                if st_id not in valid_student_ids:
+                    continue
                 remarks = request.POST.get(f'remarks_{st_id}', '')
                 marks_val = Decimal(val.strip())
 
-                if marks_val > component.max_marks:
-                    messages.error(request, f"Error: Marks ({marks_val}) cannot exceed maximum {component.max_marks}.")
+                if marks_val < 0 or marks_val > component.max_marks:
+                    messages.error(request, f"Error: Marks ({marks_val}) must be between 0 and {component.max_marks}.")
                     continue
 
                 Marks.objects.update_or_create(
@@ -153,6 +200,8 @@ def student_results_view(request):
             examination=selected_exam,
             subject__semester=student.current_semester
         ).select_related('subject')
+        if request.user.is_faculty_role and not request.user.is_admin_role:
+            components = components.filter(subject_id__in=_faculty_allocated_subject_ids(request.user))
 
         marks_map = {m.assessment_component_id: m for m in Marks.objects.filter(student=student, assessment_component__in=components)}
 
@@ -189,6 +238,15 @@ def download_marksheet_pdf_view(request, exam_id):
     if not student:
         messages.error(request, "Unauthorized access to transcript.")
         return redirect('dashboard_redirect')
+
+    if request.user.is_faculty_role and not request.user.is_admin_role:
+        allowed_subj_ids = _faculty_allocated_subject_ids(request.user)
+        if not student.current_semester or not Subject.objects.filter(
+            semester=student.current_semester, id__in=allowed_subj_ids
+        ).exists():
+            return HttpResponseForbidden(
+                "Access denied: You can only view transcripts for students enrolled in your assigned subjects."
+            )
 
     pdf_bytes = generate_marksheet_pdf(student, examination)
     response = HttpResponse(pdf_bytes, content_type='application/pdf')
