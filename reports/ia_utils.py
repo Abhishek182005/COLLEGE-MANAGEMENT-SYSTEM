@@ -121,17 +121,29 @@ def build_final_ia_report_data(
     else:
         students_qs = students_qs.order_by('roll_number')
 
-    students = list(students_qs)
-    student_ids = [s.id for s in students]
-
     # Determine allocated subjects if filtering to faculty's subjects
     faculty_subject_ids = None
-    if my_subjects_only and user and hasattr(user, 'faculty_profile'):
-        faculty_subject_ids = set(
-            SubjectAllocation.objects.filter(
-                faculty=user.faculty_profile, is_active=True
-            ).values_list('subject_id', flat=True)
-        )
+    if my_subjects_only:
+        if user and hasattr(user, 'faculty_profile'):
+            faculty_subject_ids = set(
+                SubjectAllocation.objects.filter(
+                    faculty=user.faculty_profile, is_active=True
+                ).values_list('subject_id', flat=True)
+            )
+        else:
+            faculty_subject_ids = set()
+
+    if faculty_subject_ids is not None:
+        students_qs = students_qs.filter(
+            current_semester__subjects__id__in=faculty_subject_ids
+        ).distinct()
+        if section_sorting == 'YES':
+            students_qs = students_qs.order_by('batch__name', 'roll_number')
+        else:
+            students_qs = students_qs.order_by('roll_number')
+
+    students = list(students_qs)
+    student_ids = [s.id for s in students]
 
     # Preload subjects grouped by semester
     sem_ids = {s.current_semester_id for s in students if s.current_semester_id}
@@ -277,8 +289,8 @@ def build_final_ia_report_data(
                 te_ia_val = min(max_ia, te_ia_val)
 
             confirm_status_raw = saved.confirm_status if saved else ''
-            confirm_status_disp = 'Confirmed' if confirm_status_raw == 'CONFIRMED' else ''
-            confirm_date_disp = saved.confirm_date.strftime('%d %b %Y') if (saved and saved.confirm_date) else ''
+            confirm_status_disp = 'Confirmed' if confirm_status_raw == 'CONFIRMED' else 'Pending'
+            confirm_date_disp = saved.confirm_date.strftime('%d %b %Y') if (saved and saved.confirm_date) else '—'
 
             rows.append({
                 'sr_no': sr_no,
@@ -286,17 +298,18 @@ def build_final_ia_report_data(
                 'subject_id': subj.id,
                 'univ_rollno': st.registration_number,
                 'college_rollno': st.roll_number,
-                'name': st.full_name.upper(),
+                'name': st.full_name.title(),
                 'paper_id': subj.code,
-                'paper_name': subj.name.upper(),
+                'paper_name': subj.name,
                 'max_ia_marks': _fmt_num(max_ia),
                 'max_ia_raw': str(max_ia),
                 'lect_deliver': lect_held,
-                'lect_attd': '' if (lect_held == 0 and lect_attd_val == 0) else lect_attd_val,
+                'lect_attd': '—' if (lect_held == 0 and lect_attd_val == 0) else lect_attd_val,
                 'pct_attd': f"{pct_attd:.2f}",
+                'pct_attd_num': pct_attd,
                 'attd_mks': f"{float(attd_max):.1f}",
                 'attd_mks_raw': str(attd_max),
-                'benefit_dash': str(att_data['bft']) if att_data['bft'] > 0 else '',
+                'benefit_dash': str(att_data['bft']) if att_data['bft'] > 0 else '—',
                 'final_marks_attd': _fmt_num(final_attd_marks),
                 'final_attd_raw': str(saved.final_attd_marks) if (saved and saved.final_attd_marks is not None) else '',
                 'marks_ct': _fmt_num(marks_ct_val),
@@ -306,46 +319,59 @@ def build_final_ia_report_data(
                 'mod_marks': _fmt_num(mod_val),
                 'mod_raw': str(mod_val) if mod_val is not None else '',
                 'te_ia': _fmt_num(te_ia_val),
-                'class_section': st.batch.name if st.batch else 'NILL',
+                'te_ia_num': float(te_ia_val),
+                'class_section': st.batch.name if st.batch else '—',
                 'ia_confirm_status': confirm_status_disp,
                 'ia_confirm_date': confirm_date_disp,
                 'is_confirmed': confirm_status_raw == 'CONFIRMED',
             })
             sr_no += 1
 
-    # Header Metadata strings matching screenshot
-    college_name_line = f"({college_code}) {college_name}"
+    # Modern structured institutional metadata
+    college_name_line = f"{college_name} ({college_code})"
     if selected_course:
-        course_display = f"{selected_course.code} -||- {selected_course.name.upper()}"
+        course_display = f"{selected_course.code} — {selected_course.name}"
     else:
-        course_display = "ALL ENROLLED COURSES"
+        course_display = "Assigned Courses Overview" if my_subjects_only else "All Enrolled Courses"
 
     if selected_semester:
         sem_num = selected_semester.semester_number
         part_num = (sem_num + 1) // 2
-        part_sem_display = f"Part: {ROMAN_MAP.get(part_num, part_num)}   Sem: {ROMAN_MAP.get(sem_num, sem_num)}"
+        part_sem_display = f"Semester {sem_num} ({ROMAN_MAP.get(sem_num, sem_num)}) • Year {ROMAN_MAP.get(part_num, part_num)}"
     else:
         part_sem_display = "All Semesters"
+
+    confirmed_cnt = sum(1 for r in rows if r['is_confirmed'])
+    shortage_cnt = sum(1 for r in rows if r['lect_deliver'] > 0 and r['pct_attd_num'] < threshold)
+    avg_ia = round(sum(r['te_ia_num'] for r in rows) / len(rows), 2) if rows else 0.0
 
     return {
         'college_name_line': college_name_line,
         'exam_type': exam_type or 'CBCS_NEP',
         'course_display': course_display,
         'part_sem_display': part_sem_display,
-        'section_sorting': 'YES' if section_sorting == 'YES' else 'NO',
-        'printing_date': timezone.localtime().strftime('%d %b %Y %H:%M:%S'),
+        'section_sorting': 'Section-Wise' if section_sorting == 'YES' else 'Roll Number',
+        'printing_date': timezone.localtime().strftime('%d %b %Y, %H:%M'),
         'rows': rows,
         'selected_course': selected_course,
         'selected_semester': selected_semester,
         'selected_subject': selected_subject,
         'selected_batch': selected_batch,
         'threshold': threshold,
+        'my_subjects_only': my_subjects_only,
+        'summary': {
+            'total_rows': len(rows),
+            'confirmed_count': confirmed_cnt,
+            'pending_count': len(rows) - confirmed_cnt,
+            'shortage_count': shortage_cnt,
+            'avg_te_ia': avg_ia,
+        },
     }
 
 
 def generate_final_ia_report_pdf(report_data):
     """
-    Generate landscape A4 PDF matching the official university Final IA Report (Course Wise) format.
+    Generate landscape A4 PDF using the CampusConnect modern navy & slate IA Evaluation Ledger design.
     """
     buffer = io.BytesIO()
     doc = SimpleDocTemplate(
@@ -360,91 +386,105 @@ def generate_final_ia_report_pdf(report_data):
 
     title_style = ParagraphStyle(
         'IATitle', parent=styles['Normal'],
-        fontName='Helvetica-Bold', fontSize=14, leading=16,
-        textColor=colors.HexColor('#8b0000'), alignment=1, spaceAfter=2
+        fontName='Helvetica-Bold', fontSize=14, leading=17,
+        textColor=colors.HexColor('#1e3a8a'), alignment=0, spaceAfter=2
     )
     subtitle_style = ParagraphStyle(
         'IASubtitle', parent=styles['Normal'],
-        fontName='Helvetica-Bold', fontSize=9.5, leading=12,
-        textColor=colors.HexColor('#006400'), alignment=1, spaceAfter=6
-    )
-    right_label_style = ParagraphStyle(
-        'IARight', parent=styles['Normal'],
-        fontName='Helvetica-Bold', fontSize=9, alignment=2
+        fontName='Helvetica', fontSize=8.5, leading=11,
+        textColor=colors.HexColor('#475569'), alignment=0, spaceAfter=6
     )
     meta_label_style = ParagraphStyle(
         'IAMetaLabel', parent=styles['Normal'],
-        fontName='Helvetica', fontSize=8.5, leading=11
+        fontName='Helvetica-Bold', fontSize=7.5, leading=10,
+        textColor=colors.HexColor('#475569')
     )
     meta_val_style = ParagraphStyle(
         'IAMetaVal', parent=styles['Normal'],
-        fontName='Helvetica-Bold', fontSize=8.5, leading=11
+        fontName='Helvetica-Bold', fontSize=8.2, leading=11,
+        textColor=colors.HexColor('#0f172a')
     )
     th_style = ParagraphStyle(
         'IATH', parent=styles['Normal'],
-        fontName='Helvetica-Bold', fontSize=6.8, leading=8,
-        alignment=1, textColor=colors.black
+        fontName='Helvetica-Bold', fontSize=6.6, leading=8,
+        alignment=1, textColor=colors.white
     )
     td_style = ParagraphStyle(
         'IATD', parent=styles['Normal'],
         fontName='Helvetica', fontSize=6.8, leading=8.2,
-        alignment=1, textColor=colors.black
+        alignment=1, textColor=colors.HexColor('#0f172a')
+    )
+    td_bold_style = ParagraphStyle(
+        'IATDBold', parent=styles['Normal'],
+        fontName='Helvetica-Bold', fontSize=7.0, leading=8.5,
+        alignment=1, textColor=colors.HexColor('#1e3a8a')
     )
     td_left_style = ParagraphStyle(
         'IATDLeft', parent=styles['Normal'],
-        fontName='Helvetica', fontSize=6.5, leading=8,
-        alignment=0, textColor=colors.black
+        fontName='Helvetica', fontSize=6.6, leading=8,
+        alignment=0, textColor=colors.HexColor('#0f172a')
     )
 
     elements = []
-    elements.append(Paragraph("Final IA Report (Course Wise)", title_style))
-    elements.append(Paragraph("(Report is Valid After Final Attendance & IA Calculation)", subtitle_style))
-    elements.append(Paragraph("COLLEGE", right_label_style))
-    elements.append(Spacer(1, 2))
+    elements.append(Paragraph("Internal Assessment (IA) Evaluation & Grade Ledger", title_style))
+    elements.append(Paragraph(
+        f"{report_data['college_name_line']} &nbsp;•&nbsp; Consolidated Attendance, Class Test, Assignment &amp; Moderation Statement",
+        subtitle_style
+    ))
 
     meta_rows = [
-        [Paragraph("College Name", meta_label_style), Paragraph(report_data['college_name_line'], meta_val_style)],
-        [Paragraph("Exam Type", meta_label_style), Paragraph(report_data['exam_type'], meta_val_style)],
-        [Paragraph("Course Code and Name", meta_label_style), Paragraph(report_data['course_display'], meta_val_style)],
-        [Paragraph("", meta_label_style), Paragraph(report_data['part_sem_display'], meta_val_style)],
-        [Paragraph("Class Section Wise Sorting", meta_label_style), Paragraph(report_data['section_sorting'], meta_val_style)],
-        [Paragraph("Printing Date", meta_label_style), Paragraph(report_data['printing_date'], meta_val_style)],
+        [
+            Paragraph("COURSE / PROGRAMME", meta_label_style),
+            Paragraph(report_data['course_display'], meta_val_style),
+            Paragraph("SEMESTER & SCHEME", meta_label_style),
+            Paragraph(f"{report_data['part_sem_display']} ({report_data['exam_type']})", meta_val_style),
+        ],
+        [
+            Paragraph("SORTING ORDER", meta_label_style),
+            Paragraph(report_data['section_sorting'], meta_val_style),
+            Paragraph("GENERATED ON", meta_label_style),
+            Paragraph(report_data['printing_date'], meta_val_style),
+        ],
     ]
-    meta_table = Table(meta_rows, colWidths=[165, 635])
+    meta_table = Table(meta_rows, colWidths=[110, 310, 110, 276])
     meta_table.setStyle(TableStyle([
-        ('VALIGN', (0, 0), (-1, -1), 'TOP'),
-        ('TOPPADDING', (0, 0), (-1, -1), 1),
-        ('BOTTOMPADDING', (0, 0), (-1, -1), 1),
-        ('LEFTPADDING', (0, 0), (-1, -1), 0),
+        ('BACKGROUND', (0, 0), (-1, -1), colors.HexColor('#f1f5f9')),
+        ('BOX', (0, 0), (-1, -1), 0.75, colors.HexColor('#cbd5e1')),
+        ('INNERGRID', (0, 0), (-1, -1), 0.35, colors.HexColor('#e2e8f0')),
+        ('VALIGN', (0, 0), (-1, -1), 'MIDDLE'),
+        ('TOPPADDING', (0, 0), (-1, -1), 4),
+        ('BOTTOMPADDING', (0, 0), (-1, -1), 4),
+        ('LEFTPADDING', (0, 0), (-1, -1), 6),
+        ('RIGHTPADDING', (0, 0), (-1, -1), 6),
     ]))
     elements.append(meta_table)
     elements.append(Spacer(1, 8))
 
     headers = [
-        Paragraph("Sr.<br/>No.", th_style),
-        Paragraph("Univ. Rollno", th_style),
-        Paragraph("College<br/>Rollno", th_style),
-        Paragraph("Name", th_style),
-        Paragraph("Paper_Id", th_style),
-        Paragraph("Paper Name", th_style),
-        Paragraph("Max<br/>IA<br/>Marks", th_style),
-        Paragraph("Lect.<br/>Deliver", th_style),
-        Paragraph("Lect.<br/>Attd.", th_style),
-        Paragraph("%<br/>Attd.", th_style),
-        Paragraph("Attd.<br/>MKS", th_style),
-        Paragraph("-", th_style),
-        Paragraph("Final<br/>Marks<br/>Attd.", th_style),
-        Paragraph("Marks<br/>C.T.", th_style),
-        Paragraph("Marks<br/>Assi.", th_style),
+        Paragraph("#", th_style),
+        Paragraph("Reg. No", th_style),
+        Paragraph("Roll No", th_style),
+        Paragraph("Student Name", th_style),
+        Paragraph("Sec.", th_style),
+        Paragraph("Code", th_style),
+        Paragraph("Subject Title", th_style),
+        Paragraph("Max<br/>IA", th_style),
+        Paragraph("Held", th_style),
+        Paragraph("Attd.", th_style),
+        Paragraph("Attd.<br/>%", th_style),
+        Paragraph("Bft.", th_style),
+        Paragraph("Attd.<br/>Cap", th_style),
+        Paragraph("Attd.<br/>Score", th_style),
+        Paragraph("Class<br/>Test", th_style),
+        Paragraph("Assign.", th_style),
         Paragraph("Mod.", th_style),
-        Paragraph("TE_IA", th_style),
-        Paragraph("Class<br/>Section", th_style),
-        Paragraph("IA<br/>Confirm<br/>Status", th_style),
-        Paragraph("IA Confirm<br/>Date", th_style),
+        Paragraph("Total<br/>IA", th_style),
+        Paragraph("Status", th_style),
+        Paragraph("Verified", th_style),
     ]
 
-    # Landscape A4 width ~ 842pt - 36pt margins = 806pt total
-    col_widths = [20, 56, 44, 72, 48, 108, 28, 30, 28, 34, 28, 12, 30, 30, 30, 24, 28, 42, 42, 48]
+    # Landscape A4 usable width: 806pt total
+    col_widths = [20, 56, 44, 82, 34, 48, 118, 26, 26, 26, 34, 18, 26, 32, 30, 30, 26, 32, 46, 52]
 
     table_data = [headers]
     for r in report_data['rows']:
@@ -453,20 +493,20 @@ def generate_final_ia_report_pdf(report_data):
             Paragraph(str(r['univ_rollno']), td_style),
             Paragraph(str(r['college_rollno']), td_style),
             Paragraph(r['name'], td_left_style),
+            Paragraph(str(r['class_section']), td_style),
             Paragraph(str(r['paper_id']), td_style),
             Paragraph(r['paper_name'], td_left_style),
             Paragraph(str(r['max_ia_marks']), td_style),
             Paragraph(str(r['lect_deliver']), td_style),
             Paragraph(str(r['lect_attd']), td_style),
-            Paragraph(str(r['pct_attd']), td_style),
-            Paragraph(str(r['attd_mks']), td_style),
+            Paragraph(f"{r['pct_attd']}%", td_style),
             Paragraph(str(r['benefit_dash']), td_style),
+            Paragraph(str(r['attd_mks']), td_style),
             Paragraph(str(r['final_marks_attd']), td_style),
-            Paragraph(str(r['marks_ct']), td_style),
-            Paragraph(str(r['marks_assi']), td_style),
-            Paragraph(str(r['mod_marks']), td_style),
-            Paragraph(str(r['te_ia']), td_style),
-            Paragraph(str(r['class_section']), td_style),
+            Paragraph(str(r['marks_ct']) if r['marks_ct'] else '—', td_style),
+            Paragraph(str(r['marks_assi']) if r['marks_assi'] else '—', td_style),
+            Paragraph(str(r['mod_marks']) if r['mod_marks'] else '—', td_style),
+            Paragraph(str(r['te_ia']), td_bold_style),
             Paragraph(str(r['ia_confirm_status']), td_style),
             Paragraph(str(r['ia_confirm_date']), td_style),
         ])
@@ -476,15 +516,20 @@ def generate_final_ia_report_pdf(report_data):
 
     data_table = Table(table_data, colWidths=col_widths, repeatRows=1)
     style_cmds = [
-        ('GRID', (0, 0), (-1, -1), 0.5, colors.black),
-        ('BACKGROUND', (0, 0), (-1, 0), colors.HexColor('#f8fafc')),
+        ('GRID', (0, 0), (-1, -1), 0.4, colors.HexColor('#cbd5e1')),
+        ('BACKGROUND', (0, 0), (-1, 0), colors.HexColor('#0f172a')),
         ('VALIGN', (0, 0), (-1, -1), 'MIDDLE'),
-        ('TOPPADDING', (0, 0), (-1, -1), 3),
-        ('BOTTOMPADDING', (0, 0), (-1, -1), 3),
-        ('LEFTPADDING', (0, 0), (-1, -1), 2),
-        ('RIGHTPADDING', (0, 0), (-1, -1), 2),
+        ('TOPPADDING', (0, 0), (-1, -1), 3.5),
+        ('BOTTOMPADDING', (0, 0), (-1, -1), 3.5),
+        ('LEFTPADDING', (0, 0), (-1, -1), 2.5),
+        ('RIGHTPADDING', (0, 0), (-1, -1), 2.5),
     ]
-    if not report_data['rows']:
+    for r_idx in range(1, len(table_data)):
+        if r_idx % 2 == 0:
+            style_cmds.append(('BACKGROUND', (0, r_idx), (-1, r_idx), colors.HexColor('#f8fafc')))
+    if report_data['rows']:
+        style_cmds.append(('BACKGROUND', (17, 1), (17, -1), colors.HexColor('#eef2ff')))
+    else:
         style_cmds.append(('SPAN', (0, 1), (19, 1)))
     data_table.setStyle(TableStyle(style_cmds))
     elements.append(data_table)
@@ -496,78 +541,91 @@ def generate_final_ia_report_pdf(report_data):
 
 def export_final_ia_report_excel(report_data):
     """
-    Export the Final IA Report (Course Wise) table as a formatted Excel (.xlsx) workbook.
+    Export the Internal Assessment Evaluation & Grade Ledger as a styled Excel (.xlsx) workbook.
     """
     wb = Workbook()
     ws = wb.active
-    ws.title = "Final IA Report"
+    ws.title = "IA Evaluation Ledger"
 
-    # Title block
+    # Branded Navy Banner Title block
     ws.merge_cells("A1:T1")
-    ws["A1"] = "Final IA Report (Course Wise)"
-    ws["A1"].font = Font(name="Calibri", size=14, bold=True, color="8B0000")
-    ws["A1"].alignment = Alignment(horizontal="center")
+    ws["A1"] = "Internal Assessment (IA) Evaluation & Grade Ledger"
+    ws["A1"].font = Font(name="Calibri", size=14, bold=True, color="FFFFFF")
+    ws["A1"].fill = PatternFill(start_color="1E3A8A", end_color="1E3A8A", fill_type="solid")
+    ws["A1"].alignment = Alignment(horizontal="left", vertical="center", indent=1)
+    ws.row_dimensions[1].height = 28
 
     ws.merge_cells("A2:T2")
-    ws["A2"] = "(Report is Valid After Final Attendance & IA Calculation)"
-    ws["A2"].font = Font(name="Calibri", size=10, bold=True, color="006400")
-    ws["A2"].alignment = Alignment(horizontal="center")
+    ws["A2"] = f"{report_data['college_name_line']}  •  Consolidated Attendance, C.T., Assignment & Moderation Statement"
+    ws["A2"].font = Font(name="Calibri", size=10, italic=True, color="334155")
+    ws["A2"].fill = PatternFill(start_color="F1F5F9", end_color="F1F5F9", fill_type="solid")
+    ws["A2"].alignment = Alignment(horizontal="left", vertical="center", indent=1)
+    ws.row_dimensions[2].height = 20
 
     meta_rows = [
-        ("College Name", report_data['college_name_line']),
-        ("Exam Type", report_data['exam_type']),
-        ("Course Code and Name", f"{report_data['course_display']} ({report_data['part_sem_display']})"),
-        ("Class Section Wise Sorting", report_data['section_sorting']),
-        ("Printing Date", report_data['printing_date']),
+        ("Institution", report_data['college_name_line'], "Exam Scheme", report_data['exam_type']),
+        ("Course / Programme", f"{report_data['course_display']} ({report_data['part_sem_display']})", "Sort Order", report_data['section_sorting']),
+        ("Generated On", report_data['printing_date'], "Total Entries", str(report_data['summary']['total_rows'])),
     ]
     row_idx = 4
-    for label, val in meta_rows:
-        ws.cell(row=row_idx, column=1, value=label).font = Font(bold=True, size=10)
+    for l1, v1, l2, v2 in meta_rows:
+        ws.cell(row=row_idx, column=1, value=l1).font = Font(bold=True, size=9.5, color="475569")
         ws.merge_cells(start_row=row_idx, start_column=1, end_row=row_idx, end_column=3)
-        ws.cell(row=row_idx, column=4, value=val).font = Font(bold=True, size=10)
-        ws.merge_cells(start_row=row_idx, start_column=4, end_row=row_idx, end_column=10)
+        ws.cell(row=row_idx, column=4, value=v1).font = Font(bold=True, size=10, color="0F172A")
+        ws.merge_cells(start_row=row_idx, start_column=4, end_row=row_idx, end_column=11)
+        ws.cell(row=row_idx, column=12, value=l2).font = Font(bold=True, size=9.5, color="475569")
+        ws.merge_cells(start_row=row_idx, start_column=12, end_row=row_idx, end_column=14)
+        ws.cell(row=row_idx, column=15, value=v2).font = Font(bold=True, size=10, color="0F172A")
+        ws.merge_cells(start_row=row_idx, start_column=15, end_row=row_idx, end_column=20)
         row_idx += 1
 
     header_row = row_idx + 1
     headers = [
-        "Sr. No.", "Univ. Rollno", "College Rollno", "Name", "Paper_Id", "Paper Name",
-        "Max IA Marks", "Lect. Deliver", "Lect. Attd.", "% Attd.", "Attd. MKS", "-",
-        "Final Marks Attd.", "Marks C.T.", "Marks Assi.", "Mod.", "TE_IA",
-        "Class Section", "IA Confirm Status", "IA Confirm Date"
+        "#", "Reg. No", "Roll No", "Student Name", "Section", "Paper Code", "Subject Title",
+        "Max IA", "Held", "Attd.", "Attd. %", "Benefit", "Attd. Cap",
+        "Attd. Score", "Class Test", "Assignment", "Moderation", "Total IA",
+        "Status", "Verified On"
     ]
 
-    thin_border = Border(
-        left=Side(style='thin'), right=Side(style='thin'),
-        top=Side(style='thin'), bottom=Side(style='thin')
+    slate_border = Border(
+        left=Side(style='thin', color='CBD5E1'), right=Side(style='thin', color='CBD5E1'),
+        top=Side(style='thin', color='CBD5E1'), bottom=Side(style='thin', color='CBD5E1')
     )
-    header_fill = PatternFill(start_color="E2E8F0", end_color="E2E8F0", fill_type="solid")
+    header_fill = PatternFill(start_color="0F172A", end_color="0F172A", fill_type="solid")
+    zebra_fill = PatternFill(start_color="F8FAFC", end_color="F8FAFC", fill_type="solid")
+    total_fill = PatternFill(start_color="EEF2FF", end_color="EEF2FF", fill_type="solid")
 
     for col_num, h in enumerate(headers, 1):
         cell = ws.cell(row=header_row, column=col_num, value=h)
-        cell.font = Font(name="Calibri", size=10, bold=True)
+        cell.font = Font(name="Calibri", size=10, bold=True, color="FFFFFF")
         cell.fill = header_fill
         cell.alignment = Alignment(horizontal="center", vertical="center", wrap_text=True)
-        cell.border = thin_border
+        cell.border = slate_border
     ws.row_dimensions[header_row].height = 28
 
     for idx, r in enumerate(report_data['rows'], start=header_row + 1):
         row_vals = [
-            r['sr_no'], r['univ_rollno'], r['college_rollno'], r['name'],
+            r['sr_no'], r['univ_rollno'], r['college_rollno'], r['name'], r['class_section'],
             r['paper_id'], r['paper_name'], r['max_ia_marks'], r['lect_deliver'],
-            r['lect_attd'], r['pct_attd'], r['attd_mks'], r['benefit_dash'],
-            r['final_marks_attd'], r['marks_ct'], r['marks_assi'], r['mod_marks'],
-            r['te_ia'], r['class_section'], r['ia_confirm_status'], r['ia_confirm_date']
+            r['lect_attd'], f"{r['pct_attd']}%", r['benefit_dash'], r['attd_mks'],
+            r['final_marks_attd'], r['marks_ct'] or '—', r['marks_assi'] or '—',
+            r['mod_marks'] or '—', r['te_ia'], r['ia_confirm_status'], r['ia_confirm_date']
         ]
+        is_even = (idx - header_row) % 2 == 0
         for col_num, val in enumerate(row_vals, 1):
             cell = ws.cell(row=idx, column=col_num, value=val)
-            cell.font = Font(name="Calibri", size=10)
-            cell.border = thin_border
-            if col_num in (4, 6):
+            cell.font = Font(name="Calibri", size=10, bold=(col_num == 18), color="1E3A8A" if col_num == 18 else "0F172A")
+            cell.border = slate_border
+            if col_num == 18:
+                cell.fill = total_fill
+            elif is_even:
+                cell.fill = zebra_fill
+            if col_num in (4, 7):
                 cell.alignment = Alignment(horizontal="left", vertical="center")
             else:
                 cell.alignment = Alignment(horizontal="center", vertical="center")
 
-    col_widths = [7, 15, 13, 22, 13, 34, 10, 10, 10, 10, 10, 5, 12, 10, 10, 8, 9, 13, 14, 14]
+    col_widths = [6, 15, 13, 24, 11, 13, 34, 9, 8, 8, 10, 9, 10, 11, 11, 11, 11, 10, 12, 14]
     for i, w in enumerate(col_widths, 1):
         col_letter = ws.cell(row=header_row, column=i).column_letter
         ws.column_dimensions[col_letter].width = w
