@@ -1,7 +1,7 @@
 import json
 from decimal import Decimal, InvalidOperation
 from django.shortcuts import render, redirect
-from django.http import HttpResponse
+from django.http import HttpResponse, HttpResponseForbidden
 from django.contrib import messages
 from django.contrib.auth.decorators import login_required
 from django.utils import timezone
@@ -16,7 +16,7 @@ from reports.ia_utils import (
     export_final_ia_report_excel,
 )
 from students.models import Student, Batch
-from academics.models import Department, Course, Semester, Subject
+from academics.models import Department, Course, Semester, Subject, SubjectAllocation
 from attendance.models import AttendanceRecord, AttendanceSession
 from examinations.models import Marks, InternalAssessmentRecord
 
@@ -92,7 +92,46 @@ def _parse_decimal_or_none(val_str):
         return None
 
 
-def _parse_ia_filter_params(request):
+def _get_faculty_ia_scope(user):
+    """
+    Return scoping metadata for IA views.
+    Admins see all courses/subjects; restricted faculty only see their own allocated subjects/courses.
+    """
+    is_restricted = user.is_faculty_role and not user.is_admin_role
+    if not is_restricted:
+        return {
+            'is_restricted': False,
+            'subject_ids': None,
+            'semester_ids': None,
+            'course_ids': None,
+        }
+
+    faculty_profile = getattr(user, 'faculty_profile', None)
+    if not faculty_profile:
+        return {
+            'is_restricted': True,
+            'subject_ids': set(),
+            'semester_ids': set(),
+            'course_ids': set(),
+        }
+
+    allocated = Subject.objects.filter(
+        allocations__faculty=faculty_profile,
+        allocations__is_active=True,
+    ).select_related('semester').distinct()
+
+    subject_ids = set(allocated.values_list('id', flat=True))
+    semester_ids = set(allocated.values_list('semester_id', flat=True))
+    course_ids = set(allocated.values_list('semester__course_id', flat=True))
+    return {
+        'is_restricted': True,
+        'subject_ids': subject_ids,
+        'semester_ids': semester_ids,
+        'course_ids': course_ids,
+    }
+
+
+def _parse_ia_filter_params(request, scope):
     params = request.GET if request.method == 'GET' else request.POST
     course_id = params.get('course') or None
     semester_id = params.get('semester') or None
@@ -100,11 +139,15 @@ def _parse_ia_filter_params(request):
     batch_id = params.get('batch') or None
     exam_type = params.get('exam_type', 'CBCS_NEP').strip() or 'CBCS_NEP'
     section_sorting = params.get('section_sorting', 'NO')
-    my_subjects_only = params.get('my_subjects') == '1'
+    # Restricted faculty are ALWAYS locked to their own assigned subjects
+    my_subjects_only = True if scope['is_restricted'] else (params.get('my_subjects') == '1')
 
-    # Auto-select first course if none selected and courses exist (for cleaner initial Course Wise view)
+    # Auto-select first allowed course on clean initial GET load
     if not course_id and not semester_id and not subject_id and request.method == 'GET' and 'course' not in request.GET:
-        first_course = Course.objects.first()
+        courses_qs = Course.objects.order_by('code')
+        if scope['is_restricted']:
+            courses_qs = courses_qs.filter(id__in=scope['course_ids'])
+        first_course = courses_qs.first()
         if first_course:
             course_id = str(first_course.id)
 
@@ -119,27 +162,70 @@ def _parse_ia_filter_params(request):
     }
 
 
+def _validate_faculty_filter_scope(scope, filters):
+    """Ensure a restricted faculty user cannot inspect or export courses/semesters/subjects they don't teach."""
+    if not scope['is_restricted']:
+        return True
+    try:
+        if filters['subject_id'] and int(filters['subject_id']) not in scope['subject_ids']:
+            return False
+        if filters['semester_id'] and int(filters['semester_id']) not in scope['semester_ids']:
+            return False
+        if filters['course_id'] and int(filters['course_id']) not in scope['course_ids']:
+            return False
+    except (ValueError, TypeError):
+        return False
+    return True
+
+
 @login_required
 @role_required('ADMIN', 'FACULTY')
 def final_ia_report_view(request):
     """
-    Final IA Report (Course Wise) module for Faculty & Admin.
-    Combines attendance metrics, C.T. marks, Assignment marks, Moderation & Total TE_IA.
-    Supports inline editing/confirmation, browser printing, PDF download, and Excel download.
+    Internal Assessment Evaluation & Grade Ledger for Faculty & Admin.
+    Strictly scopes faculty access to their own assigned subjects & courses.
     """
+    scope = _get_faculty_ia_scope(request.user)
+
     if request.method == 'POST':
         row_keys = request.POST.getlist('row_keys')
         action_type = request.POST.get('action_type', 'save')
         faculty_obj = getattr(request.user, 'faculty_profile', None)
         today = timezone.localdate()
-        updated_count = 0
 
+        parsed_rows = []
         for rk in row_keys:
             try:
                 st_id_str, subj_id_str = rk.split('_', 1)
                 st_id = int(st_id_str)
                 subj_id = int(subj_id_str)
             except (ValueError, TypeError):
+                continue
+
+            if scope['is_restricted'] and subj_id not in scope['subject_ids']:
+                log_audit(
+                    request=request,
+                    action="UNAUTHORIZED_IA_EDIT_ATTEMPT",
+                    entity_type="Subject",
+                    entity_id=subj_id,
+                    details=f"Blocked faculty {request.user.username} from modifying IA marks for unassigned subject ID {subj_id}."
+                )
+                return HttpResponseForbidden(
+                    "Access denied: You can only enter or confirm marks for your own assigned courses and subjects."
+                )
+            parsed_rows.append((rk, st_id, subj_id))
+
+        # Preload valid (student_id, semester_id) & subject_semester for integrity
+        subj_sem_map = dict(
+            Subject.objects.filter(id__in=[p[2] for p in parsed_rows]).values_list('id', 'semester_id')
+        )
+        valid_students_sem = dict(
+            Student.objects.filter(id__in=[p[1] for p in parsed_rows], is_archived=False).values_list('id', 'current_semester_id')
+        )
+
+        updated_count = 0
+        for rk, st_id, subj_id in parsed_rows:
+            if subj_id not in subj_sem_map or valid_students_sem.get(st_id) != subj_sem_map[subj_id]:
                 continue
 
             max_ia = _parse_decimal_or_none(request.POST.get(f'max_ia_{rk}'))
@@ -202,8 +288,7 @@ def final_ia_report_view(request):
             entity_id=0,
             details=f"Updated/confirmed Final IA marks for {updated_count} student-subject rows (action={action_type})."
         )
-        messages.success(request, f"Successfully saved Final IA evaluations for {updated_count} records.")
-        # Redirect back preserving query string filters
+        messages.success(request, f"Successfully saved IA evaluations for {updated_count} records.")
         qs_params = []
         for k in ('course', 'semester', 'subject', 'batch', 'exam_type', 'section_sorting', 'my_subjects'):
             v = request.POST.get(k)
@@ -212,7 +297,12 @@ def final_ia_report_view(request):
         redirect_url = request.path + ("?" + "&".join(qs_params) if qs_params else "")
         return redirect(redirect_url)
 
-    filters = _parse_ia_filter_params(request)
+    filters = _parse_ia_filter_params(request, scope)
+    if not _validate_faculty_filter_scope(scope, filters):
+        return HttpResponseForbidden(
+            "Access denied: You can only view IA records for your own assigned courses and subjects."
+        )
+
     report_data = build_final_ia_report_data(
         course_id=filters['course_id'],
         semester_id=filters['semester_id'],
@@ -226,18 +316,23 @@ def final_ia_report_view(request):
 
     courses = Course.objects.all().order_by('code')
     semesters = Semester.objects.select_related('course', 'academic_session').order_by('course__code', 'semester_number')
+    subjects = Subject.objects.select_related('semester__course').order_by('code')
+    batches = Batch.objects.select_related('course').order_by('name')
+
+    if scope['is_restricted']:
+        courses = courses.filter(id__in=scope['course_ids'])
+        semesters = semesters.filter(id__in=scope['semester_ids'])
+        subjects = subjects.filter(id__in=scope['subject_ids'])
+        batches = batches.filter(course_id__in=scope['course_ids'])
+
     if filters['course_id']:
         semesters = semesters.filter(course_id=filters['course_id'])
+        batches = batches.filter(course_id=filters['course_id'])
 
-    subjects = Subject.objects.select_related('semester__course').order_by('code')
     if filters['semester_id']:
         subjects = subjects.filter(semester_id=filters['semester_id'])
     elif filters['course_id']:
         subjects = subjects.filter(semester__course_id=filters['course_id'])
-
-    batches = Batch.objects.select_related('course').order_by('name')
-    if filters['course_id']:
-        batches = batches.filter(course_id=filters['course_id'])
 
     context = {
         'report': report_data,
@@ -252,6 +347,8 @@ def final_ia_report_view(request):
         'exam_type': filters['exam_type'],
         'section_sorting': filters['section_sorting'],
         'my_subjects_only': filters['my_subjects_only'],
+        'is_restricted_faculty': scope['is_restricted'],
+        'has_allocated_subjects': bool(scope['subject_ids']) if scope['is_restricted'] else True,
         'edit_mode': request.GET.get('edit') == '1',
     }
     return render(request, 'reports/final_ia_report.html', context)
@@ -260,8 +357,13 @@ def final_ia_report_view(request):
 @login_required
 @role_required('ADMIN', 'FACULTY')
 def final_ia_report_pdf_view(request):
-    """Download or print-preview the Final IA Report (Course Wise) as a landscape A4 PDF."""
-    filters = _parse_ia_filter_params(request)
+    """Download or print-preview the IA Evaluation Ledger as a landscape A4 PDF."""
+    scope = _get_faculty_ia_scope(request.user)
+    filters = _parse_ia_filter_params(request, scope)
+    if not _validate_faculty_filter_scope(scope, filters):
+        return HttpResponseForbidden(
+            "Access denied: You can only export IA records for your own assigned courses and subjects."
+        )
     report_data = build_final_ia_report_data(
         course_id=filters['course_id'],
         semester_id=filters['semester_id'],
@@ -274,17 +376,22 @@ def final_ia_report_pdf_view(request):
     )
     pdf_bytes = generate_final_ia_report_pdf(report_data)
     disposition = 'inline' if request.GET.get('view') == '1' else 'attachment'
-    course_slug = report_data['selected_course'].code if report_data['selected_course'] else 'All_Courses'
+    course_slug = report_data['selected_course'].code if report_data['selected_course'] else 'Assigned_Courses'
     response = HttpResponse(pdf_bytes, content_type='application/pdf')
-    response['Content-Disposition'] = f'{disposition}; filename="Final_IA_Report_{course_slug}.pdf"'
+    response['Content-Disposition'] = f'{disposition}; filename="IA_Evaluation_Ledger_{course_slug}.pdf"'
     return response
 
 
 @login_required
 @role_required('ADMIN', 'FACULTY')
 def final_ia_report_excel_view(request):
-    """Download the Final IA Report (Course Wise) as an Excel (.xlsx) spreadsheet."""
-    filters = _parse_ia_filter_params(request)
+    """Download the IA Evaluation Ledger as an Excel (.xlsx) spreadsheet."""
+    scope = _get_faculty_ia_scope(request.user)
+    filters = _parse_ia_filter_params(request, scope)
+    if not _validate_faculty_filter_scope(scope, filters):
+        return HttpResponseForbidden(
+            "Access denied: You can only export IA records for your own assigned courses and subjects."
+        )
     report_data = build_final_ia_report_data(
         course_id=filters['course_id'],
         semester_id=filters['semester_id'],
@@ -296,10 +403,10 @@ def final_ia_report_excel_view(request):
         user=request.user,
     )
     excel_bytes = export_final_ia_report_excel(report_data)
-    course_slug = report_data['selected_course'].code if report_data['selected_course'] else 'All_Courses'
+    course_slug = report_data['selected_course'].code if report_data['selected_course'] else 'Assigned_Courses'
     response = HttpResponse(
         excel_bytes,
         content_type='application/vnd.openxmlformats-officedocument.spreadsheetml.sheet'
     )
-    response['Content-Disposition'] = f'attachment; filename="Final_IA_Report_{course_slug}.xlsx"'
+    response['Content-Disposition'] = f'attachment; filename="IA_Evaluation_Ledger_{course_slug}.xlsx"'
     return response

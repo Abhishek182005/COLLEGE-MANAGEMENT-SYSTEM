@@ -13,7 +13,7 @@
         <div class="d-flex flex-wrap gap-2">
             {% if is_admin or is_faculty %}
                 <a href="{% url 'final_ia_report' %}" class="btn btn-sm btn-dark">
-                    <i class="fa-solid fa-file-invoice me-1"></i> Final IA Report (Course Wise)
+                    <i class="fa-solid fa-file-invoice me-1"></i> IA Evaluation Ledger
                 </a>
             {% endif %}
             {% if is_admin %}
@@ -33,7 +33,7 @@
                 <div class="border rounded-3 p-4 bg-light shadow-sm">
                     <div class="d-flex flex-wrap justify-content-between align-items-center gap-3 mb-3">
                         <div>
-                            <div class="d-flex align-items-center gap-2 mb-1">
+                            <div class="d-flex flex-wrap align-items-center gap-2 mb-1">
                                 <h5 class="fw-bold text-dark mb-0">{{ ex.name }}</h5>
                                 <span class="badge bg-secondary-subtle text-secondary border">{{ ex.get_exam_type_display }}</span>
                                 {% if ex.is_published %}
@@ -80,7 +80,7 @@
                                 </tr>
                             </thead>
                             <tbody>
-                                {% for comp in ex.components.all %}
+                                {% for comp in ex.visible_components %}
                                     <tr>
                                         <td>
                                             <a href="{% url 'subject_detail' comp.subject.id %}" class="fw-semibold text-primary text-decoration-none">
@@ -103,7 +103,7 @@
                                         </td>
                                     </tr>
                                 {% empty %}
-                                    <tr><td colspan="6" class="text-center py-3 text-muted">No assessment components configured for this examination.</td></tr>
+                                    <tr><td colspan="6" class="text-center py-3 text-muted">{% if is_restricted_faculty %}No assessment components assigned to your courses.{% else %}No assessment components configured for this examination.{% endif %}</td></tr>
                                 {% endfor %}
                             </tbody>
                         </table>
@@ -111,7 +111,13 @@
                 </div>
             </div>
         {% empty %}
-            <div class="col-12 text-center py-5 text-muted">No examinations scheduled yet.</div>
+            <div class="col-12 text-center py-5 text-muted">
+                {% if is_restricted_faculty %}
+                    No examinations found for your assigned courses and subjects.
+                {% else %}
+                    No examinations scheduled yet.
+                {% endif %}
+            </div>
         {% endfor %}
     </div>
 </div>

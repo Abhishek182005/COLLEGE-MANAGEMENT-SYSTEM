@@ -1,101 +1,200 @@
 {% extends 'base.html' %}
 
-{% block title %}Final IA Report (Course Wise){% endblock %}
-{% block page_heading %}Final IA Report (Course Wise){% endblock %}
+{% block title %}IA Evaluation & Grade Ledger{% endblock %}
+{% block page_heading %}Internal Assessment Ledger{% endblock %}
 
 {% block extra_css %}
 <style>
-    /* Official University IA Report Sheet Styling */
-    .ia-sheet {
-        background: #ffffff;
-        color: #111827;
-        padding: 1.5rem;
-        border: 1px solid #cbd5e1;
-        border-radius: 0.75rem;
-        box-shadow: 0 2px 6px rgba(15, 23, 42, 0.04);
+    /* Modern CampusConnect Internal Assessment Ledger Styling */
+    .ia-hero-banner {
+        background: linear-gradient(135deg, #0f172a 0%, #1e3a8a 58%, #0284c7 100%);
+        color: #ffffff;
+        border-radius: 14px;
+        padding: 1.4rem 1.6rem;
+        box-shadow: 0 8px 24px rgba(15, 23, 42, 0.12);
     }
-    .ia-title {
-        color: #8b0000;
+    .ia-scope-pill {
+        display: inline-flex;
+        align-items: center;
+        gap: 0.4rem;
+        background: rgba(255, 255, 255, 0.14);
+        border: 1px solid rgba(255, 255, 255, 0.24);
+        color: #f8fafc;
+        padding: 0.28rem 0.72rem;
+        border-radius: 999px;
+        font-size: 0.76rem;
+        font-weight: 600;
+        backdrop-filter: blur(4px);
+    }
+    .ia-kpi-grid {
+        display: grid;
+        grid-template-columns: repeat(4, minmax(0, 1fr));
+        gap: 0.85rem;
+    }
+    .ia-kpi-card {
+        background: #ffffff;
+        border: 1px solid #e2e8f0;
+        border-radius: 12px;
+        padding: 0.9rem 1.05rem;
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        gap: 0.75rem;
+        box-shadow: 0 1px 3px rgba(15, 23, 42, 0.04);
+    }
+    .ia-kpi-label {
+        font-size: 0.74rem;
+        font-weight: 600;
+        color: #64748b;
+        text-transform: uppercase;
+        letter-spacing: 0.04em;
+    }
+    .ia-kpi-val {
+        font-size: 1.35rem;
         font-weight: 800;
-        font-size: 1.45rem;
-        text-align: center;
+        color: #0f172a;
+        line-height: 1.2;
+    }
+    .ia-kpi-icon {
+        width: 38px;
+        height: 38px;
+        border-radius: 10px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        font-size: 1rem;
+        flex-shrink: 0;
+    }
+
+    .ia-ledger-shell {
+        background: #ffffff;
+        border: 1px solid #e2e8f0;
+        border-radius: 14px;
+        overflow: hidden;
+        box-shadow: 0 4px 16px rgba(15, 23, 42, 0.05);
+    }
+    .ia-ledger-meta-strip {
+        background: #f8fafc;
+        border-bottom: 1px solid #e2e8f0;
+        padding: 1rem 1.35rem;
+        display: grid;
+        grid-template-columns: repeat(auto-fit, minmax(190px, 1fr));
+        gap: 0.85rem;
+    }
+    .ia-meta-item-label {
+        font-size: 0.7rem;
+        text-transform: uppercase;
+        letter-spacing: 0.05em;
+        color: #64748b;
+        font-weight: 700;
         margin-bottom: 0.15rem;
     }
-    .ia-subtitle {
-        color: #006400;
-        font-weight: 700;
-        font-size: 0.92rem;
-        text-align: center;
-        margin-bottom: 0.5rem;
-    }
-    .ia-college-tag {
-        text-align: right;
-        font-weight: 800;
-        font-size: 0.85rem;
-        letter-spacing: 0.04em;
-        color: #0f172a;
-        margin-bottom: 0.25rem;
-    }
-    .ia-meta-table {
-        width: 100%;
-        margin-bottom: 1rem;
+    .ia-meta-item-value {
         font-size: 0.86rem;
-    }
-    .ia-meta-table td {
-        padding: 2px 6px 2px 0;
-        vertical-align: top;
-    }
-    .ia-meta-label {
-        width: 190px;
-        color: #1e293b;
-        font-weight: 500;
-    }
-    @media (max-width: 575.98px) {
-        .ia-sheet {
-            padding: 0.85rem;
-        }
-        .ia-meta-label {
-            width: 120px;
-            font-size: 0.78rem;
-        }
-        .ia-meta-val {
-            font-size: 0.78rem;
-        }
-    }
-    .ia-meta-val {
         font-weight: 700;
         color: #0f172a;
+        word-break: break-word;
     }
-    .ia-report-table {
+
+    .ia-ledger-table {
         width: 100%;
-        border-collapse: collapse;
-        font-size: 0.78rem;
-        color: #0f172a;
+        border-collapse: separate;
+        border-spacing: 0;
+        font-size: 0.8rem;
+        color: #1e293b;
+        margin-bottom: 0;
     }
-    .ia-report-table th,
-    .ia-report-table td {
-        border: 1px solid #334155;
-        padding: 5px 6px;
+    .ia-ledger-table thead tr.ia-group-row th {
+        background: #0f172a;
+        color: #cbd5e1;
+        font-size: 0.68rem;
+        font-weight: 700;
+        text-transform: uppercase;
+        letter-spacing: 0.06em;
+        padding: 0.45rem 0.6rem;
+        border-bottom: 1px solid #1e293b;
+        border-right: 1px solid rgba(255, 255, 255, 0.08);
+        text-align: center;
+        white-space: nowrap;
+    }
+    .ia-ledger-table thead tr.ia-col-row th {
+        background: #1e293b;
+        color: #ffffff;
+        font-size: 0.73rem;
+        font-weight: 600;
+        padding: 0.55rem 0.5rem;
+        border-bottom: 2px solid #334155;
+        border-right: 1px solid rgba(255, 255, 255, 0.08);
+        text-align: center;
+        vertical-align: middle;
+        white-space: nowrap;
+    }
+    .ia-ledger-table tbody tr {
+        transition: background-color 0.15s ease;
+    }
+    .ia-ledger-table tbody tr:nth-child(even) {
+        background-color: #f8fafc;
+    }
+    .ia-ledger-table tbody tr:hover {
+        background-color: #eff6ff;
+    }
+    .ia-ledger-table tbody td {
+        padding: 0.55rem 0.5rem;
+        border-bottom: 1px solid #e2e8f0;
+        border-right: 1px solid #f1f5f9;
         text-align: center;
         vertical-align: middle;
     }
-    .ia-report-table th {
-        background-color: #f8fafc;
-        font-weight: 700;
-        color: #0f172a;
-        line-height: 1.2;
-        white-space: nowrap;
-    }
-    .ia-report-table td.text-col-left {
+    .ia-ledger-table tbody td.text-col-left {
         text-align: left;
     }
+    .ia-total-col {
+        background-color: #eef2ff !important;
+        font-weight: 800;
+        color: #1e3a8a;
+    }
     .ia-inline-input {
-        width: 54px;
-        padding: 2px 4px;
+        width: 56px;
+        padding: 0.24rem 0.3rem;
         font-size: 0.78rem;
         text-align: center;
         border: 1px solid #94a3b8;
-        border-radius: 4px;
+        border-radius: 6px;
+        background: #ffffff;
+    }
+    .ia-inline-input:focus {
+        outline: none;
+        border-color: #2563eb;
+        box-shadow: 0 0 0 2px rgba(37, 99, 235, 0.18);
+    }
+    .ia-print-header {
+        display: none;
+    }
+
+    @media (max-width: 991.98px) {
+        .ia-kpi-grid {
+            grid-template-columns: repeat(2, minmax(0, 1fr));
+        }
+    }
+    @media (max-width: 575.98px) {
+        .ia-hero-banner {
+            padding: 1.05rem;
+        }
+        .ia-kpi-grid {
+            grid-template-columns: repeat(2, minmax(0, 1fr));
+            gap: 0.6rem;
+        }
+        .ia-kpi-card {
+            padding: 0.75rem;
+        }
+        .ia-kpi-val {
+            font-size: 1.15rem;
+        }
+        .ia-ledger-meta-strip {
+            padding: 0.85rem;
+            grid-template-columns: 1fr;
+            gap: 0.6rem;
+        }
     }
 
     @media print {
@@ -104,10 +203,10 @@
             margin: 8mm;
         }
         body {
-            background: #fff !important;
+            background: #ffffff !important;
         }
         .sidebar,
-        .top-navbar,
+        .topbar,
         footer,
         .no-print,
         .table-swipe-hint,
@@ -121,73 +220,158 @@
         .content-body {
             padding: 0 !important;
         }
-        .ia-sheet {
-            border: none !important;
+        .ia-print-header {
+            display: flex !important;
+            justify-content: space-between;
+            align-items: flex-end;
+            border-bottom: 2px solid #1e3a8a;
+            padding-bottom: 6px;
+            margin-bottom: 8px;
+        }
+        .ia-ledger-shell {
+            border: 1px solid #94a3b8 !important;
             box-shadow: none !important;
-            padding: 0 !important;
+            border-radius: 0 !important;
+        }
+        .ia-ledger-meta-strip {
+            padding: 6px 8px !important;
+            grid-template-columns: repeat(4, 1fr) !important;
+            background: #f8fafc !important;
         }
         .table-responsive {
             overflow: visible !important;
         }
-        .ia-report-table {
+        .ia-ledger-table {
             font-size: 8.5px !important;
         }
-        .ia-report-table th,
-        .ia-report-table td {
+        .ia-ledger-table th,
+        .ia-ledger-table td {
             padding: 3px 3px !important;
-            border: 1px solid #000 !important;
+            border: 1px solid #cbd5e1 !important;
+        }
+        .ia-ledger-table thead tr.ia-group-row th {
+            background: #0f172a !important;
+            color: #ffffff !important;
+            -webkit-print-color-adjust: exact;
+            print-color-adjust: exact;
+        }
+        .ia-ledger-table thead tr.ia-col-row th {
+            background: #1e293b !important;
+            color: #ffffff !important;
+            -webkit-print-color-adjust: exact;
+            print-color-adjust: exact;
         }
     }
 </style>
 {% endblock %}
 
 {% block content %}
-<!-- Toolbar & Filters (Hidden when printing) -->
-<div class="card p-4 mb-4 no-print">
-    <div class="d-flex flex-wrap justify-content-between align-items-center gap-3 mb-3 pb-3 border-bottom">
+<!-- Hero Header & Export Actions -->
+<div class="ia-hero-banner mb-4 no-print">
+    <div class="d-flex flex-wrap justify-content-between align-items-start gap-3">
         <div>
-            <h5 class="fw-bold mb-1">
-                <i class="fa-solid fa-file-invoice text-primary me-2"></i> Internal Assessment (IA) Course-Wise Report
-            </h5>
-            <p class="text-secondary small mb-0">
-                Consolidates enrolled students, lectures delivered/attended, attendance marks, Class Test (C.T.), Assignment (Assi.), Moderation, and Total IA (TE_IA).
+            <div class="d-flex flex-wrap align-items-center gap-2 mb-2">
+                <span class="ia-scope-pill">
+                    <i class="fa-solid fa-building-columns"></i> {{ report.college_name_line }}
+                </span>
+                {% if is_restricted_faculty %}
+                    <span class="ia-scope-pill">
+                        <i class="fa-solid fa-lock"></i> Assigned Courses Only
+                    </span>
+                {% else %}
+                    <span class="ia-scope-pill">
+                        <i class="fa-solid fa-shield-halved"></i> Administrative View
+                    </span>
+                {% endif %}
+            </div>
+            <h4 class="fw-bold mb-1 text-white">Internal Assessment (IA) Evaluation &amp; Grade Ledger</h4>
+            <p class="mb-0 small text-white-50">
+                Evaluate, verify, print, and export attendance weightage, Class Test, Assignment, and Moderation scores for enrolled students.
             </p>
         </div>
+
         <div class="d-flex flex-wrap gap-2">
             {% with qs="course="|add:selected_course_id|add:"&semester="|add:selected_semester_id|add:"&subject="|add:selected_subject_id|add:"&batch="|add:selected_batch_id|add:"&exam_type="|add:exam_type|add:"&section_sorting="|add:section_sorting %}
-                {% if edit_mode %}
-                    <a href="{% url 'final_ia_report' %}?{{ qs }}{% if my_subjects_only %}&my_subjects=1{% endif %}" class="btn btn-sm btn-outline-secondary">
-                        <i class="fa-solid fa-eye me-1"></i> View Official Sheet
-                    </a>
-                {% else %}
-                    <a href="{% url 'final_ia_report' %}?{{ qs }}{% if my_subjects_only %}&my_subjects=1{% endif %}&edit=1" class="btn btn-sm btn-outline-primary">
-                        <i class="fa-solid fa-pen-to-square me-1"></i> Edit / Confirm IA Marks
-                    </a>
+                {% if has_allocated_subjects %}
+                    {% if edit_mode %}
+                        <a href="{% url 'final_ia_report' %}?{{ qs }}{% if my_subjects_only %}&my_subjects=1{% endif %}" class="btn btn-sm btn-light fw-semibold">
+                            <i class="fa-solid fa-eye me-1"></i> Done Editing
+                        </a>
+                    {% else %}
+                        <a href="{% url 'final_ia_report' %}?{{ qs }}{% if my_subjects_only %}&my_subjects=1{% endif %}&edit=1" class="btn btn-sm btn-warning fw-semibold text-dark">
+                            <i class="fa-solid fa-pen-to-square me-1"></i> Enter / Confirm Marks
+                        </a>
+                    {% endif %}
                 {% endif %}
-                <button type="button" onclick="window.print()" class="btn btn-sm btn-dark">
-                    <i class="fa-solid fa-print me-1"></i> Print Table
+                <button type="button" onclick="window.print()" class="btn btn-sm btn-outline-light fw-semibold">
+                    <i class="fa-solid fa-print me-1"></i> Print
                 </button>
-                <a href="{% url 'final_ia_report_pdf' %}?{{ qs }}{% if my_subjects_only %}&my_subjects=1{% endif %}" class="btn btn-sm btn-danger">
-                    <i class="fa-solid fa-file-pdf me-1"></i> Download PDF
+                <a href="{% url 'final_ia_report_pdf' %}?{{ qs }}{% if my_subjects_only %}&my_subjects=1{% endif %}" class="btn btn-sm btn-danger fw-semibold">
+                    <i class="fa-solid fa-file-pdf me-1"></i> PDF
                 </a>
-                <a href="{% url 'final_ia_report_excel' %}?{{ qs }}{% if my_subjects_only %}&my_subjects=1{% endif %}" class="btn btn-sm btn-success">
-                    <i class="fa-solid fa-file-excel me-1"></i> Download Excel
+                <a href="{% url 'final_ia_report_excel' %}?{{ qs }}{% if my_subjects_only %}&my_subjects=1{% endif %}" class="btn btn-sm btn-success fw-semibold">
+                    <i class="fa-solid fa-file-excel me-1"></i> Excel
                 </a>
             {% endwith %}
         </div>
     </div>
+</div>
 
+<!-- Summary KPI Strip -->
+<div class="ia-kpi-grid mb-4 no-print">
+    <div class="ia-kpi-card">
+        <div>
+            <div class="ia-kpi-label">Evaluations</div>
+            <div class="ia-kpi-val">{{ report.summary.total_rows }}</div>
+        </div>
+        <div class="ia-kpi-icon bg-primary-subtle text-primary">
+            <i class="fa-solid fa-users"></i>
+        </div>
+    </div>
+    <div class="ia-kpi-card">
+        <div>
+            <div class="ia-kpi-label">Confirmed</div>
+            <div class="ia-kpi-val text-success">{{ report.summary.confirmed_count }}</div>
+        </div>
+        <div class="ia-kpi-icon bg-success-subtle text-success">
+            <i class="fa-solid fa-circle-check"></i>
+        </div>
+    </div>
+    <div class="ia-kpi-card">
+        <div>
+            <div class="ia-kpi-label">Pending Review</div>
+            <div class="ia-kpi-val text-warning">{{ report.summary.pending_count }}</div>
+        </div>
+        <div class="ia-kpi-icon bg-warning-subtle text-warning">
+            <i class="fa-solid fa-hourglass-half"></i>
+        </div>
+    </div>
+    <div class="ia-kpi-card">
+        <div>
+            <div class="ia-kpi-label">Avg. Total IA</div>
+            <div class="ia-kpi-val text-primary">{{ report.summary.avg_te_ia }}</div>
+        </div>
+        <div class="ia-kpi-icon bg-info-subtle text-info">
+            <i class="fa-solid fa-chart-line"></i>
+        </div>
+    </div>
+</div>
+
+<!-- Filter Bar -->
+<div class="card p-3 p-md-4 mb-4 no-print">
     <form method="get" class="row g-2 align-items-end">
         {% if edit_mode %}
             <input type="hidden" name="edit" value="1">
         {% endif %}
         <div class="col-12 col-sm-6 col-md-3">
-            <label class="form-label small fw-semibold mb-1">Course</label>
+            <label class="form-label small fw-semibold mb-1">
+                {% if is_restricted_faculty %}My Assigned Course{% else %}Course{% endif %}
+            </label>
             <select name="course" class="form-select form-select-sm" onchange="this.form.submit()">
-                <option value="">All Courses</option>
+                <option value="">{% if is_restricted_faculty %}All My Assigned Courses{% else %}All Courses{% endif %}</option>
                 {% for c in courses %}
                     <option value="{{ c.id }}" {% if selected_course_id == c.id|stringformat:"s" %}selected{% endif %}>
-                        {{ c.code }} - {{ c.name }}
+                        {{ c.code }} — {{ c.name }}
                     </option>
                 {% endfor %}
             </select>
@@ -198,24 +382,26 @@
                 <option value="">All Semesters</option>
                 {% for sem in semesters %}
                     <option value="{{ sem.id }}" {% if selected_semester_id == sem.id|stringformat:"s" %}selected{% endif %}>
-                        {{ sem.course.code }} - Sem {{ sem.semester_number }}
+                        {{ sem.course.code }} • Sem {{ sem.semester_number }}
                     </option>
                 {% endfor %}
             </select>
         </div>
         <div class="col-6 col-sm-3 col-md-2">
-            <label class="form-label small fw-semibold mb-1">Subject / Paper</label>
+            <label class="form-label small fw-semibold mb-1">
+                {% if is_restricted_faculty %}My Subject{% else %}Subject{% endif %}
+            </label>
             <select name="subject" class="form-select form-select-sm">
-                <option value="">All Subjects</option>
+                <option value="">{% if is_restricted_faculty %}All My Subjects{% else %}All Subjects{% endif %}</option>
                 {% for subj in subjects %}
                     <option value="{{ subj.id }}" {% if selected_subject_id == subj.id|stringformat:"s" %}selected{% endif %}>
-                        {{ subj.code }} - {{ subj.name|truncatechars:20 }}
+                        {{ subj.code }} — {{ subj.name|truncatechars:20 }}
                     </option>
                 {% endfor %}
             </select>
         </div>
         <div class="col-6 col-sm-4 col-md-2">
-            <label class="form-label small fw-semibold mb-1">Class Section / Batch</label>
+            <label class="form-label small fw-semibold mb-1">Section / Batch</label>
             <select name="batch" class="form-select form-select-sm">
                 <option value="">All Sections</option>
                 {% for b in batches %}
@@ -226,204 +412,240 @@
             </select>
         </div>
         <div class="col-6 col-sm-4 col-md-1">
-            <label class="form-label small fw-semibold mb-1">Sort Sec.</label>
+            <label class="form-label small fw-semibold mb-1">Order By</label>
             <select name="section_sorting" class="form-select form-select-sm">
-                <option value="NO" {% if section_sorting == 'NO' %}selected{% endif %}>NO</option>
-                <option value="YES" {% if section_sorting == 'YES' %}selected{% endif %}>YES</option>
+                <option value="NO" {% if section_sorting == 'NO' %}selected{% endif %}>Roll</option>
+                <option value="YES" {% if section_sorting == 'YES' %}selected{% endif %}>Sec.</option>
             </select>
         </div>
         <div class="col-12 col-sm-4 col-md-2">
-            <label class="form-label small fw-semibold mb-1">Exam Type</label>
+            <label class="form-label small fw-semibold mb-1">Exam Scheme</label>
             <div class="input-group input-group-sm">
                 <input type="text" name="exam_type" class="form-control" value="{{ exam_type }}" placeholder="CBCS_NEP">
-                <button type="submit" class="btn btn-primary"><i class="fa-solid fa-filter"></i></button>
+                <button type="submit" class="btn btn-primary" title="Apply Filters"><i class="fa-solid fa-filter"></i></button>
             </div>
         </div>
-        {% if is_faculty %}
+        {% if is_admin %}
             <div class="col-12 mt-2">
-                <div class="form-check form-switch">
-                    <input class="form-check-input" type="checkbox" name="my_subjects" value="1" id="mySubjSwitch" {% if my_subjects_only %}checked{% endif %} onchange="this.form.submit()">
-                    <label class="form-check-label small fw-semibold" for="mySubjSwitch">Show only my allocated subjects</label>
-                </div>
+                <small class="text-muted">Admin mode shows all courses and subjects across the institution.</small>
+            </div>
+        {% elif is_restricted_faculty %}
+            <div class="col-12 mt-2">
+                <small class="text-primary fw-medium">
+                    <i class="fa-solid fa-circle-info me-1"></i> Access Policy: As a faculty member, you can view and enter marks only for subjects explicitly allocated to you.
+                </small>
             </div>
         {% endif %}
     </form>
 </div>
 
-<!-- Official IA Report Sheet -->
-<div class="ia-sheet">
-    <div class="ia-title">Final IA Report (Course Wise)</div>
-    <div class="ia-subtitle">(Report is Valid After Final Attendance &amp; IA Calculation)</div>
-    <div class="ia-college-tag">COLLEGE</div>
+<!-- Print-only Header -->
+<div class="ia-print-header">
+    <div>
+        <div class="fw-bold" style="font-size: 14px; color: #1e3a8a;">Internal Assessment (IA) Evaluation &amp; Grade Ledger</div>
+        <div style="font-size: 10px; color: #475569;">{{ report.college_name_line }}</div>
+    </div>
+    <div class="text-end" style="font-size: 9px; color: #475569;">
+        Printed: {{ report.printing_date }}
+    </div>
+</div>
 
-    <table class="ia-meta-table">
-        <tr>
-            <td class="ia-meta-label">College Name</td>
-            <td class="ia-meta-val">{{ report.college_name_line }}</td>
-        </tr>
-        <tr>
-            <td class="ia-meta-label">Exam Type</td>
-            <td class="ia-meta-val">{{ report.exam_type }}</td>
-        </tr>
-        <tr>
-            <td class="ia-meta-label">Course Code and Name</td>
-            <td class="ia-meta-val">
-                {{ report.course_display }}<br>
-                <span>{{ report.part_sem_display }}</span>
-            </td>
-        </tr>
-        <tr>
-            <td class="ia-meta-label">Class Section Wise Sorting</td>
-            <td class="ia-meta-val">{{ report.section_sorting }}</td>
-        </tr>
-        <tr>
-            <td class="ia-meta-label">Printing Date</td>
-            <td class="ia-meta-val">{{ report.printing_date }}</td>
-        </tr>
-    </table>
-
-    <div class="table-swipe-hint no-print">
-        <i class="fa-solid fa-arrows-left-right me-1"></i> Swipe horizontally to inspect all 20 IA report columns
+<!-- Evaluation Ledger Card -->
+<div class="ia-ledger-shell">
+    <div class="ia-ledger-meta-strip">
+        <div>
+            <div class="ia-meta-item-label">Programme / Course</div>
+            <div class="ia-meta-item-value">{{ report.course_display }}</div>
+        </div>
+        <div>
+            <div class="ia-meta-item-label">Semester &amp; Scheme</div>
+            <div class="ia-meta-item-value">{{ report.part_sem_display }} ({{ report.exam_type }})</div>
+        </div>
+        <div>
+            <div class="ia-meta-item-label">Sorting Order</div>
+            <div class="ia-meta-item-value">{{ report.section_sorting }}</div>
+        </div>
+        <div>
+            <div class="ia-meta-item-label">Snapshot Timestamp</div>
+            <div class="ia-meta-item-value">{{ report.printing_date }}</div>
+        </div>
     </div>
 
-    {% if edit_mode %}
-        <form method="post">
-            {% csrf_token %}
-            <input type="hidden" name="course" value="{{ selected_course_id }}">
-            <input type="hidden" name="semester" value="{{ selected_semester_id }}">
-            <input type="hidden" name="subject" value="{{ selected_subject_id }}">
-            <input type="hidden" name="batch" value="{{ selected_batch_id }}">
-            <input type="hidden" name="exam_type" value="{{ exam_type }}">
-            <input type="hidden" name="section_sorting" value="{{ section_sorting }}">
-            {% if my_subjects_only %}<input type="hidden" name="my_subjects" value="1">{% endif %}
+    {% if is_restricted_faculty and not has_allocated_subjects %}
+        <div class="p-5 text-center">
+            <i class="fa-solid fa-book-open-reader fa-2x text-secondary mb-3"></i>
+            <h6 class="fw-bold text-dark">No Subjects Allocated Yet</h6>
+            <p class="text-secondary small mb-0">
+                You do not have any active course or subject allocations yet. Contact an Administrator to allocate your subjects before viewing or entering IA marks.
+            </p>
+        </div>
+    {% else %}
+        <div class="table-swipe-hint px-3 pt-2 no-print">
+            <i class="fa-solid fa-arrows-left-right me-1"></i> Swipe horizontally to inspect all evaluation columns
+        </div>
 
-            <div class="alert alert-info py-2 small d-flex flex-wrap justify-content-between align-items-center gap-2 no-print">
-                <span><i class="fa-solid fa-circle-info me-1"></i> <strong>Edit Mode Active:</strong> Customize Max IA, Attendance Marks, C.T., Assignment, Moderation, or mark rows as Confirmed. Leave Attendance Marks blank to keep auto-calculation from live attendance %.</span>
-                <div class="d-flex gap-2">
-                    <button type="submit" name="action_type" value="confirm_all" class="btn btn-sm btn-success fw-semibold">
-                        <i class="fa-solid fa-check-double me-1"></i> Save &amp; Confirm All
-                    </button>
-                    <button type="submit" name="action_type" value="save" class="btn btn-sm btn-primary fw-semibold">
-                        <i class="fa-solid fa-floppy-disk me-1"></i> Save Changes
-                    </button>
+        {% if edit_mode %}
+            <form method="post">
+                {% csrf_token %}
+                <input type="hidden" name="course" value="{{ selected_course_id }}">
+                <input type="hidden" name="semester" value="{{ selected_semester_id }}">
+                <input type="hidden" name="subject" value="{{ selected_subject_id }}">
+                <input type="hidden" name="batch" value="{{ selected_batch_id }}">
+                <input type="hidden" name="exam_type" value="{{ exam_type }}">
+                <input type="hidden" name="section_sorting" value="{{ section_sorting }}">
+                {% if my_subjects_only %}<input type="hidden" name="my_subjects" value="1">{% endif %}
+
+                <div class="alert alert-primary m-3 mb-2 py-2 small d-flex flex-wrap justify-content-between align-items-center gap-2 no-print">
+                    <span>
+                        <i class="fa-solid fa-pen-ruler me-1"></i>
+                        <strong>Marks Entry Active:</strong> Update Class Test, Assignment, Moderation, or Attendance Override scores. Leave Attendance Score blank to auto-compute from live attendance %.
+                    </span>
+                    <div class="d-flex flex-wrap gap-2">
+                        <button type="submit" name="action_type" value="confirm_all" class="btn btn-sm btn-success fw-semibold">
+                            <i class="fa-solid fa-check-double me-1"></i> Save &amp; Finalize All
+                        </button>
+                        <button type="submit" name="action_type" value="save" class="btn btn-sm btn-primary fw-semibold">
+                            <i class="fa-solid fa-floppy-disk me-1"></i> Save Draft
+                        </button>
+                    </div>
                 </div>
-            </div>
-    {% endif %}
+        {% endif %}
 
-    <div class="table-responsive">
-        <table class="ia-report-table">
-            <thead>
-                <tr>
-                    <th>Sr.<br>No.</th>
-                    <th>Univ. Rollno</th>
-                    <th>College<br>Rollno</th>
-                    <th>Name</th>
-                    <th>Paper_Id</th>
-                    <th>Paper Name</th>
-                    <th>Max<br>IA<br>Marks</th>
-                    <th>Lect.<br>Deliver</th>
-                    <th>Lect.<br>Attd.</th>
-                    <th>%<br>Attd.</th>
-                    <th>Attd.<br>MKS</th>
-                    <th>-</th>
-                    <th>Final<br>Marks<br>Attd.</th>
-                    <th>Marks<br>C.T.</th>
-                    <th>Marks<br>Assi.</th>
-                    <th>Mod.</th>
-                    <th>TE_IA</th>
-                    <th>Class<br>Section</th>
-                    <th>IA<br>Confirm<br>Status</th>
-                    <th>IA Confirm<br>Date</th>
-                </tr>
-            </thead>
-            <tbody>
-                {% for r in report.rows %}
-                    <tr>
-                        <td>
-                            {{ r.sr_no }}
-                            {% if edit_mode %}
-                                <input type="hidden" name="row_keys" value="{{ r.student_id }}_{{ r.subject_id }}">
-                            {% endif %}
-                        </td>
-                        <td>{{ r.univ_rollno }}</td>
-                        <td>{{ r.college_rollno }}</td>
-                        <td class="text-col-left fw-semibold">{{ r.name }}</td>
-                        <td>{{ r.paper_id }}</td>
-                        <td class="text-col-left">{{ r.paper_name }}</td>
-                        <td>
-                            {% if edit_mode %}
-                                <input type="number" step="0.5" min="0" name="max_ia_{{ r.student_id }}_{{ r.subject_id }}" value="{{ r.max_ia_raw }}" class="ia-inline-input">
-                            {% else %}
-                                {{ r.max_ia_marks }}
-                            {% endif %}
-                        </td>
-                        <td>{{ r.lect_deliver }}</td>
-                        <td>{{ r.lect_attd }}</td>
-                        <td>{{ r.pct_attd }}</td>
-                        <td>
-                            {% if edit_mode %}
-                                <input type="number" step="0.5" min="0" name="attd_max_{{ r.student_id }}_{{ r.subject_id }}" value="{{ r.attd_mks_raw }}" class="ia-inline-input">
-                            {% else %}
-                                {{ r.attd_mks }}
-                            {% endif %}
-                        </td>
-                        <td>{{ r.benefit_dash }}</td>
-                        <td>
-                            {% if edit_mode %}
-                                <input type="number" step="0.5" min="0" name="final_attd_{{ r.student_id }}_{{ r.subject_id }}" value="{{ r.final_attd_raw }}" placeholder="{{ r.final_marks_attd }}" class="ia-inline-input" title="Blank = auto ({{ r.final_marks_attd }})">
-                            {% else %}
-                                {{ r.final_marks_attd }}
-                            {% endif %}
-                        </td>
-                        <td>
-                            {% if edit_mode %}
-                                <input type="number" step="0.5" min="0" name="marks_ct_{{ r.student_id }}_{{ r.subject_id }}" value="{{ r.marks_ct_raw }}" class="ia-inline-input">
-                            {% else %}
-                                {{ r.marks_ct }}
-                            {% endif %}
-                        </td>
-                        <td>
-                            {% if edit_mode %}
-                                <input type="number" step="0.5" min="0" name="marks_assi_{{ r.student_id }}_{{ r.subject_id }}" value="{{ r.marks_assi_raw }}" class="ia-inline-input">
-                            {% else %}
-                                {{ r.marks_assi }}
-                            {% endif %}
-                        </td>
-                        <td>
-                            {% if edit_mode %}
-                                <input type="number" step="0.5" min="0" name="mod_{{ r.student_id }}_{{ r.subject_id }}" value="{{ r.mod_raw }}" class="ia-inline-input">
-                            {% else %}
-                                {{ r.mod_marks }}
-                            {% endif %}
-                        </td>
-                        <td class="fw-bold">{{ r.te_ia }}</td>
-                        <td>{{ r.class_section }}</td>
-                        <td>
-                            {% if edit_mode %}
-                                <input type="checkbox" class="form-check-input" name="confirm_{{ r.student_id }}_{{ r.subject_id }}" value="1" {% if r.is_confirmed %}checked{% endif %} title="Confirm IA">
-                            {% else %}
-                                {% if r.ia_confirm_status == 'Confirmed' %}
-                                    <span class="text-success fw-bold">Confirmed</span>
-                                {% else %}
-                                    {{ r.ia_confirm_status }}
+        <div class="table-responsive">
+            <table class="ia-ledger-table">
+                <thead>
+                    <tr class="ia-group-row">
+                        <th colspan="5">Student Identity</th>
+                        <th colspan="3">Course &amp; Paper</th>
+                        <th colspan="6">Attendance Component</th>
+                        <th colspan="4">IA Marks Breakdown</th>
+                        <th colspan="2">Verification</th>
+                    </tr>
+                    <tr class="ia-col-row">
+                        <th>#</th>
+                        <th>Reg. No</th>
+                        <th>Roll No</th>
+                        <th class="text-start">Student Name</th>
+                        <th>Sec.</th>
+                        <th>Code</th>
+                        <th class="text-start">Subject Title</th>
+                        <th>Max IA</th>
+                        <th>Held</th>
+                        <th>Attd.</th>
+                        <th>%</th>
+                        <th>Credit</th>
+                        <th>Cap</th>
+                        <th>Attd. Score</th>
+                        <th>Class Test</th>
+                        <th>Assign.</th>
+                        <th>Mod.</th>
+                        <th>Total IA</th>
+                        <th>Status</th>
+                        <th>Verified On</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for r in report.rows %}
+                        <tr>
+                            <td class="text-secondary fw-semibold">
+                                {{ r.sr_no }}
+                                {% if edit_mode %}
+                                    <input type="hidden" name="row_keys" value="{{ r.student_id }}_{{ r.subject_id }}">
                                 {% endif %}
-                            {% endif %}
-                        </td>
-                        <td>{{ r.ia_confirm_date }}</td>
-                    </tr>
-                {% empty %}
-                    <tr>
-                        <td colspan="20" class="py-4 text-muted">
-                            No enrolled students or subjects match your selected filter criteria.
-                        </td>
-                    </tr>
-                {% endfor %}
-            </tbody>
-        </table>
-    </div>
+                            </td>
+                            <td class="small">{{ r.univ_rollno }}</td>
+                            <td><span class="badge bg-light text-dark border">{{ r.college_rollno }}</span></td>
+                            <td class="text-col-left fw-semibold text-dark">{{ r.name }}</td>
+                            <td><span class="badge bg-secondary-subtle text-secondary">{{ r.class_section }}</span></td>
+                            <td class="fw-semibold text-primary">{{ r.paper_id }}</td>
+                            <td class="text-col-left">{{ r.paper_name }}</td>
+                            <td>
+                                {% if edit_mode %}
+                                    <input type="number" step="0.5" min="0" name="max_ia_{{ r.student_id }}_{{ r.subject_id }}" value="{{ r.max_ia_raw }}" class="ia-inline-input">
+                                {% else %}
+                                    {{ r.max_ia_marks }}
+                                {% endif %}
+                            </td>
+                            <td>{{ r.lect_deliver }}</td>
+                            <td>{{ r.lect_attd }}</td>
+                            <td>
+                                {% if r.lect_deliver > 0 %}
+                                    <span class="fw-semibold {% if r.pct_attd_num < report.threshold %}text-danger{% else %}text-success{% endif %}">
+                                        {{ r.pct_attd }}%
+                                    </span>
+                                {% else %}
+                                    <span class="text-muted">0.00%</span>
+                                {% endif %}
+                            </td>
+                            <td>{{ r.benefit_dash }}</td>
+                            <td>
+                                {% if edit_mode %}
+                                    <input type="number" step="0.5" min="0" name="attd_max_{{ r.student_id }}_{{ r.subject_id }}" value="{{ r.attd_mks_raw }}" class="ia-inline-input">
+                                {% else %}
+                                    {{ r.attd_mks }}
+                                {% endif %}
+                            </td>
+                            <td>
+                                {% if edit_mode %}
+                                    <input type="number" step="0.5" min="0" name="final_attd_{{ r.student_id }}_{{ r.subject_id }}" value="{{ r.final_attd_raw }}" placeholder="{{ r.final_marks_attd }}" class="ia-inline-input" title="Blank = auto ({{ r.final_marks_attd }})">
+                                {% else %}
+                                    <span class="fw-medium">{{ r.final_marks_attd }}</span>
+                                {% endif %}
+                            </td>
+                            <td>
+                                {% if edit_mode %}
+                                    <input type="number" step="0.5" min="0" name="marks_ct_{{ r.student_id }}_{{ r.subject_id }}" value="{{ r.marks_ct_raw }}" class="ia-inline-input">
+                                {% else %}
+                                    {{ r.marks_ct|default:"—" }}
+                                {% endif %}
+                            </td>
+                            <td>
+                                {% if edit_mode %}
+                                    <input type="number" step="0.5" min="0" name="marks_assi_{{ r.student_id }}_{{ r.subject_id }}" value="{{ r.marks_assi_raw }}" class="ia-inline-input">
+                                {% else %}
+                                    {{ r.marks_assi|default:"—" }}
+                                {% endif %}
+                            </td>
+                            <td>
+                                {% if edit_mode %}
+                                    <input type="number" step="0.5" min="0" name="mod_{{ r.student_id }}_{{ r.subject_id }}" value="{{ r.mod_raw }}" class="ia-inline-input">
+                                {% else %}
+                                    {{ r.mod_marks|default:"—" }}
+                                {% endif %}
+                            </td>
+                            <td class="ia-total-col">
+                                <span class="badge bg-primary-subtle text-primary border border-primary-subtle px-2 py-1">
+                                    {{ r.te_ia }}
+                                </span>
+                            </td>
+                            <td>
+                                {% if edit_mode %}
+                                    <input type="checkbox" class="form-check-input" name="confirm_{{ r.student_id }}_{{ r.subject_id }}" value="1" {% if r.is_confirmed %}checked{% endif %} title="Confirm IA">
+                                {% else %}
+                                    {% if r.is_confirmed %}
+                                        <span class="badge bg-success-subtle text-success border border-success-subtle">Confirmed</span>
+                                    {% else %}
+                                        <span class="badge bg-warning-subtle text-warning border border-warning-subtle">Pending</span>
+                                    {% endif %}
+                                {% endif %}
+                            </td>
+                            <td class="small text-secondary">{{ r.ia_confirm_date }}</td>
+                        </tr>
+                    {% empty %}
+                        <tr>
+                            <td colspan="20" class="py-5 text-center text-muted">
+                                <i class="fa-regular fa-folder-open fa-lg mb-2 d-block"></i>
+                                No enrolled student records match your current filter selection.
+                            </td>
+                        </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
 
-    {% if edit_mode %}
-        </form>
+        {% if edit_mode %}
+            </form>
+        {% endif %}
     {% endif %}
 </div>
 {% endblock %}

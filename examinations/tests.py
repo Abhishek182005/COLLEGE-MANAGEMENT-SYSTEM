@@ -3,7 +3,7 @@ from datetime import date
 from django.test import TestCase
 from django.urls import reverse
 from django.contrib.auth import get_user_model
-from academics.models import Department, Course, AcademicSession, Semester, Subject
+from academics.models import Department, Course, AcademicSession, Semester, Subject, SubjectAllocation
 from students.models import Batch, Student
 from faculty.models import Faculty
 from examinations.models import Examination, AssessmentComponent, Marks, InternalAssessmentRecord
@@ -80,9 +80,10 @@ class ExaminationAndReportGenerationTests(TestCase):
 
     def test_final_ia_report_access_calculation_and_downloads(self):
         """Faculty/Admin can view, edit, confirm, and download Final IA Report (PDF & Excel); Students are blocked."""
-        # Create faculty user
+        # Create faculty user and allocate CS501 to them
         u_fac = User.objects.create_user(username='ia_fac', first_name='Dr', last_name='Sharma', password='Password123', role='FACULTY')
-        Faculty.objects.create(user=u_fac, employee_id='FAC_IA_1', department=self.dept)
+        fac_profile = Faculty.objects.create(user=u_fac, employee_id='FAC_IA_1', department=self.dept)
+        SubjectAllocation.objects.create(subject=self.subj, faculty=fac_profile, academic_session=self.session, is_active=True)
 
         # Create attendance & exam marks
         from attendance.models import AttendanceSession, AttendanceRecord
@@ -93,17 +94,17 @@ class ExaminationAndReportGenerationTests(TestCase):
         AttendanceRecord.objects.create(session=sess, student=self.student, status='PRESENT')
         Marks.objects.create(assessment_component=self.comp, student=self.student, marks_obtained=Decimal('80.00'))
 
-        # Student should NOT access Final IA Report
+        # Student should NOT access IA Evaluation Ledger
         self.client.login(username='exam_st', password='Password123')
         st_resp = self.client.get(reverse('final_ia_report'))
         self.assertEqual(st_resp.status_code, 302)
         self.client.logout()
 
-        # Faculty CAN view Final IA Report
+        # Faculty CAN view IA Evaluation Ledger for their allocated course/subject
         self.client.login(username='ia_fac', password='Password123')
         fac_resp = self.client.get(reverse('final_ia_report'), {'course': self.course.id})
         self.assertEqual(fac_resp.status_code, 200)
-        self.assertContains(fac_resp, "Final IA Report (Course Wise)")
+        self.assertContains(fac_resp, "Internal Assessment (IA) Evaluation")
         self.assertContains(fac_resp, self.student.roll_number)
         self.assertContains(fac_resp, self.subj.code)
         self.assertContains(fac_resp, "100.00")
@@ -156,3 +157,84 @@ class ExaminationAndReportGenerationTests(TestCase):
 
         ms_pdf_resp = self.client.get(reverse('download_marksheet_pdf', args=[self.exam.id]))
         self.assertEqual(ms_pdf_resp.status_code, 302)
+
+    def test_faculty_strictly_scoped_to_assigned_course_marks_and_ia(self):
+        """Faculty can only view, enter, and export marks/IA for courses and subjects allocated to them."""
+        dept2 = Department.objects.create(name="ECE", code="ECE")
+        course2 = Course.objects.create(name="B.Tech ECE", code="BT-ECE", department=dept2)
+        sem2 = Semester.objects.create(course=course2, semester_number=3, academic_session=self.session)
+        batch2 = Batch.objects.create(name="ECE 2026", course=course2, academic_session=self.session)
+        subj2 = Subject.objects.create(code="EC301", name="Digital Electronics", semester=sem2)
+        comp2 = AssessmentComponent.objects.create(
+            examination=self.exam, subject=subj2, title="Mid-Term Theory", max_marks=Decimal('100.00'), pass_marks=Decimal('40.00')
+        )
+
+        u_st2 = User.objects.create_user(username='ece_st', first_name='Other', last_name='Learner', password='Password123', role='STUDENT')
+        student2 = Student.objects.create(
+            user=u_st2, roll_number="2026EC001", registration_number="REG2026EC1",
+            department=dept2, course=course2, current_semester=sem2, batch=batch2
+        )
+
+        # Faculty A teaches ONLY self.subj (CS501 in BT-CSE)
+        u_fac_a = User.objects.create_user(username='fac_a', first_name='Prof', last_name='Alpha', password='Password123', role='FACULTY')
+        fac_a = Faculty.objects.create(user=u_fac_a, employee_id='FAC_A', department=self.dept)
+        SubjectAllocation.objects.create(subject=self.subj, faculty=fac_a, academic_session=self.session, is_active=True)
+
+        self.client.login(username='fac_a', password='Password123')
+
+        # 1. Examination list only displays CS501, not EC301
+        exam_list_resp = self.client.get(reverse('examination_list'))
+        self.assertEqual(exam_list_resp.status_code, 200)
+        self.assertContains(exam_list_resp, self.subj.code)
+        self.assertNotContains(exam_list_resp, subj2.code)
+
+        # 2. Marks entry allowed for CS501, blocked (403) for EC301 (both HTML view & bulk API)
+        ok_entry = self.client.get(reverse('marks_entry', args=[self.comp.id]))
+        self.assertEqual(ok_entry.status_code, 200)
+
+        blocked_get = self.client.get(reverse('marks_entry', args=[comp2.id]))
+        self.assertEqual(blocked_get.status_code, 403)
+
+        blocked_post = self.client.post(reverse('marks_entry', args=[comp2.id]), {
+            f'marks_{student2.id}': '85',
+        })
+        self.assertEqual(blocked_post.status_code, 403)
+        self.assertFalse(Marks.objects.filter(assessment_component=comp2, student=student2).exists())
+
+        api_resp = self.client.post(
+            reverse('api_bulk_marks_entry'),
+            data={'component_id': comp2.id, 'records': [{'student_id': student2.id, 'marks_obtained': 90}]},
+            content_type='application/json'
+        )
+        self.assertEqual(api_resp.status_code, 403)
+
+        # 3. IA Evaluation Ledger shows only Faculty A's course & rejects access/edits for course2/subj2
+        ia_ok = self.client.get(reverse('final_ia_report'))
+        self.assertEqual(ia_ok.status_code, 200)
+        self.assertContains(ia_ok, self.subj.code)
+        self.assertNotContains(ia_ok, subj2.code)
+        self.assertNotContains(ia_ok, course2.code)
+
+        for url_name in ('final_ia_report', 'final_ia_report_pdf', 'final_ia_report_excel'):
+            r_course = self.client.get(reverse(url_name), {'course': course2.id})
+            self.assertEqual(r_course.status_code, 403)
+            r_subj = self.client.get(reverse(url_name), {'subject': subj2.id})
+            self.assertEqual(r_subj.status_code, 403)
+
+        bad_rk = f"{student2.id}_{subj2.id}"
+        tamper_post = self.client.post(reverse('final_ia_report'), {
+            'row_keys': [bad_rk],
+            'action_type': 'save',
+            f'marks_ct_{bad_rk}': '12',
+        })
+        self.assertEqual(tamper_post.status_code, 403)
+        self.assertFalse(InternalAssessmentRecord.objects.filter(student=student2, subject=subj2).exists())
+        self.client.logout()
+
+        # 4. Admin can still view both courses on IA Evaluation Ledger
+        u_admin = User.objects.create_user(username='ia_admin', password='Password123', role='ADMIN')
+        self.client.login(username='ia_admin', password='Password123')
+        admin_ia = self.client.get(reverse('final_ia_report'), {'course': course2.id})
+        self.assertEqual(admin_ia.status_code, 200)
+        self.assertContains(admin_ia, subj2.code)
+        self.assertContains(admin_ia, student2.roll_number)
