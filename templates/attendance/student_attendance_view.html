@@ -96,7 +96,7 @@
                     <label for="tableComponentFilter" class="form-label mb-0 small fw-bold text-dark text-nowrap">
                         <i class="fa-solid fa-filter text-primary me-1"></i> Filter:
                     </label>
-                    <select id="tableComponentFilter" class="form-select form-select-sm fw-bold border-primary shadow-sm flex-fill" style="min-width: 220px;" onchange="handleComponentFilterChange(this.value)">
+                    <select id="tableComponentFilter" class="form-select form-select-sm fw-bold border-primary shadow-sm flex-fill" style="min-width: 0;" onchange="handleComponentFilterChange(this.value)">
                         <option value="ALL" {% if selected_component == 'ALL' %}selected{% endif %}>📊 Total Attendance (All Types)</option>
                         <option value="TE" {% if selected_component == 'TE' %}selected{% endif %}>📘 Theory (TE) Attendance</option>
                         <option value="PR" {% if selected_component == 'PR' %}selected{% endif %}>🔬 Practical / Lab (PR) Attendance</option>
