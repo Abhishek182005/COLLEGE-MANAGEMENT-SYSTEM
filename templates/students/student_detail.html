@@ -19,9 +19,6 @@
             </div>
 
             <div class="d-grid gap-2 mb-3">
-                <a href="{% url 'student_id_card_pdf' student.id %}" target="_blank" class="btn btn-primary btn-sm">
-                    <i class="fa-solid fa-id-card me-2"></i> Download ID Card (PDF)
-                </a>
                 {% if is_admin %}
                     <div class="d-flex gap-2">
                         <a href="{% url 'student_edit' student.id %}" class="btn btn-outline-secondary btn-sm w-50">

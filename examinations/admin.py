@@ -1,5 +1,5 @@
 from django.contrib import admin
-from .models import Examination, AssessmentComponent, Marks
+from .models import Examination, AssessmentComponent, Marks, InternalAssessmentRecord
 
 
 class AssessmentComponentInline(admin.TabularInline):
@@ -25,3 +25,10 @@ class MarksAdmin(admin.ModelAdmin):
     list_display = ['assessment_component', 'student', 'marks_obtained', 'grade', 'graded_by', 'updated_at']
     list_filter = ['grade', 'assessment_component__examination']
     search_fields = ['student__roll_number', 'student__user__first_name']
+
+
+@admin.register(InternalAssessmentRecord)
+class InternalAssessmentRecordAdmin(admin.ModelAdmin):
+    list_display = ['student', 'subject', 'max_ia_marks', 'final_attd_marks', 'marks_ct', 'marks_assi', 'moderation_marks', 'confirm_status', 'confirm_date']
+    list_filter = ['confirm_status', 'subject']
+    search_fields = ['student__roll_number', 'student__user__first_name', 'subject__code']
