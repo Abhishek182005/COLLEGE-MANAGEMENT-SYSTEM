@@ -30,11 +30,6 @@
                     <a href="{% url 'student_qr_scanner' %}" class="btn btn-light text-primary fw-bold shadow-sm text-center">
                         <i class="fa-solid fa-qrcode me-2"></i> Scan QR Attendance
                     </a>
-                    {% if student %}
-                        <a href="{% url 'student_id_card_pdf' student.id %}" target="_blank" class="btn btn-outline-light btn-sm text-center">
-                            <i class="fa-solid fa-id-card me-1"></i> ID Card (PDF)
-                        </a>
-                    {% endif %}
                 </div>
             </div>
         </div>
@@ -117,7 +112,7 @@
         <div class="card h-100">
             <div class="card-header d-flex justify-content-between align-items-center">
                 <span class="fw-bold"><i class="fa-solid fa-award text-success me-2"></i> Academic Results & Marks</span>
-                <a href="{% url 'student_results' %}" class="btn btn-sm btn-light">View All / Transcript</a>
+                <a href="{% url 'student_results' %}" class="btn btn-sm btn-light">View Exam Marks</a>
             </div>
             <div class="card-body p-0">
                 <div class="table-responsive">
