@@ -21,28 +21,40 @@
             --sidebar-hover: #1e293b;
             --card-border: #e2e8f0;
         }
+        html, body {
+            overflow-x: hidden;
+            max-width: 100%;
+        }
         body {
             font-family: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif;
             background-color: var(--bg-canvas);
             color: #1e293b;
             min-height: 100vh;
+            min-height: 100dvh;
         }
         /* Sidebar Styling */
         .sidebar {
             width: 270px;
             background-color: var(--sidebar-bg);
             color: #94a3b8;
-            min-height: 100vh;
+            height: 100vh;
+            height: 100dvh;
             position: fixed;
             top: 0;
             left: 0;
+            bottom: 0;
             z-index: 1030;
-            transition: all 0.3s ease;
+            transition: transform 0.28s cubic-bezier(0.4, 0, 0.2, 1), visibility 0.28s ease;
             box-shadow: 4px 0 16px rgba(0,0,0,0.06);
             overflow-y: auto;
+            overflow-x: hidden;
+            -webkit-overflow-scrolling: touch;
+            overscroll-behavior: contain;
+            display: flex;
+            flex-direction: column;
         }
         .sidebar-brand {
-            padding: 1.4rem 1.5rem;
+            padding: 1.25rem 1.35rem;
             border-bottom: 1px solid rgba(255,255,255,0.08);
             display: flex;
             align-items: center;
@@ -51,6 +63,11 @@
             text-decoration: none;
             font-weight: 700;
             font-size: 1.15rem;
+            position: sticky;
+            top: 0;
+            background-color: var(--sidebar-bg);
+            z-index: 2;
+            flex-shrink: 0;
         }
         .sidebar-brand i {
             color: #38bdf8;
@@ -92,24 +109,32 @@
         /* Main Layout */
         .main-content {
             margin-left: 270px;
+            width: calc(100% - 270px);
+            min-width: 0;
             min-height: 100vh;
+            min-height: 100dvh;
             display: flex;
             flex-direction: column;
+            transition: margin-left 0.28s ease;
         }
         .topbar {
             background: #fff;
             border-bottom: 1px solid var(--card-border);
-            padding: 0.85rem 2rem;
+            padding: 0.75rem 1.75rem;
             display: flex;
             justify-content: space-between;
             align-items: center;
+            gap: 0.75rem;
             position: sticky;
             top: 0;
             z-index: 1020;
+            width: 100%;
+            min-width: 0;
         }
         .content-body {
-            padding: 2rem;
+            padding: 1.75rem;
             flex: 1;
+            min-width: 0;
         }
         /* Modern Cards */
         .card {
@@ -117,12 +142,18 @@
             border-radius: 12px;
             box-shadow: 0 1px 3px rgba(0,0,0,0.04);
             background-color: #fff;
+            min-width: 0;
+        }
+        .card-body {
+            min-width: 0;
         }
         .card-header {
             background-color: transparent;
             border-bottom: 1px solid var(--card-border);
             padding: 1rem 1.3rem;
             font-weight: 600;
+            flex-wrap: wrap;
+            gap: 0.5rem;
         }
         .stat-card {
             border-radius: 12px;
@@ -211,21 +242,25 @@
         @media (max-width: 991.98px) {
             .sidebar {
                 transform: translateX(-100%);
+                visibility: hidden;
                 z-index: 1050;
                 width: 280px;
-                box-shadow: 8px 0 24px rgba(0,0,0,0.25);
+                max-width: 85vw;
+                box-shadow: 8px 0 24px rgba(0,0,0,0.28);
             }
             .sidebar.show {
                 transform: translateX(0);
+                visibility: visible;
             }
             .main-content {
                 margin-left: 0;
+                width: 100%;
             }
             .topbar {
-                padding: 0.75rem 1.25rem;
+                padding: 0.65rem 1rem;
             }
             .content-body {
-                padding: 1.25rem 1rem;
+                padding: 1.15rem 0.95rem;
             }
             .table-swipe-hint {
                 display: block;
@@ -233,8 +268,8 @@
         }
         @media (max-width: 575.98px) {
             .sidebar {
-                width: 84vw;
-                max-width: 310px;
+                width: 82vw;
+                max-width: 300px;
             }
             .topbar {
                 padding: 0.55rem 0.75rem;
@@ -242,17 +277,31 @@
             .content-body {
                 padding: 0.85rem 0.65rem;
             }
+            .card.p-4 {
+                padding: 1rem !important;
+            }
             .card-header {
                 padding: 0.75rem 1rem;
             }
             .stat-card {
-                padding: 1rem;
-                gap: 12px;
+                flex-direction: column;
+                align-items: flex-start;
+                padding: 0.85rem;
+                gap: 8px;
+            }
+            .stat-card h3 {
+                font-size: 1.35rem;
+            }
+            .display-5, .display-6 {
+                font-size: 1.85rem;
             }
             .stat-icon {
-                width: 44px;
-                height: 44px;
-                font-size: 1.2rem;
+                width: 40px;
+                height: 40px;
+                font-size: 1.1rem;
+            }
+            .table-responsive .table {
+                font-size: 0.84rem;
             }
             .badge-role-admin, .badge-role-faculty, .badge-role-student {
                 padding: 0.25rem 0.55rem !important;
@@ -426,24 +475,24 @@
     <div class="main-content">
         <!-- Topbar -->
         <header class="topbar">
-            <div class="d-flex align-items-center gap-3">
-                <button class="btn btn-sm btn-outline-secondary d-lg-none" id="sidebarToggle">
+            <div class="d-flex align-items-center gap-2 gap-md-3 flex-grow-1" style="min-width: 0;">
+                <button type="button" class="btn btn-sm btn-outline-secondary d-lg-none flex-shrink-0 d-inline-flex align-items-center justify-content-center" id="sidebarToggle" aria-label="Toggle navigation" aria-expanded="false" style="width: 38px; height: 36px;">
                     <i class="fa-solid fa-bars"></i>
                 </button>
                 <h5 class="mb-0 fw-semibold text-secondary d-none d-md-block text-truncate" style="max-width: 450px;">
                     {% block page_heading %}{{ COLLEGE_NAME }}{% endblock %}
                 </h5>
-                <span class="d-md-none fw-bold text-dark text-truncate small" style="max-width: 140px;">
+                <span class="d-md-none fw-bold text-dark text-truncate small" style="min-width: 0;">
                     {{ college_settings.short_name|default:COLLEGE_NAME }}
                 </span>
             </div>
 
-            <div class="d-flex align-items-center gap-3">
+            <div class="d-flex align-items-center gap-1 gap-sm-2 gap-md-3 flex-shrink-0">
                 <!-- Notices Bell -->
-                <a href="{% url 'notice_list' %}" class="btn btn-light position-relative rounded-pill px-3 py-1">
+                <a href="{% url 'notice_list' %}" class="btn btn-light position-relative rounded-pill px-2 px-sm-3 py-1" aria-label="Notices">
                     <i class="fa-regular fa-bell text-secondary"></i>
                     {% if unread_notices_count > 0 %}
-                        <span class="position-absolute top-0 start-100 translate-middle badge rounded-pill bg-danger">
+                        <span class="position-absolute top-0 start-100 translate-middle badge rounded-pill bg-danger" style="font-size: 0.65rem;">
                             {{ unread_notices_count }}
                         </span>
                     {% endif %}
@@ -451,21 +500,25 @@
 
                 <!-- User Role Badge -->
                 {% if is_admin %}
-                    <span class="badge badge-role-admin px-3 py-2 rounded-pill"><i class="fa-solid fa-user-shield me-1"></i> Admin</span>
+                    <span class="badge badge-role-admin px-2 px-sm-3 py-1 py-sm-2 rounded-pill d-none d-sm-inline-flex align-items-center"><i class="fa-solid fa-user-shield me-1"></i> Admin</span>
                 {% elif is_faculty %}
-                    <span class="badge badge-role-faculty px-3 py-2 rounded-pill"><i class="fa-solid fa-chalkboard-user me-1"></i> Faculty</span>
+                    <span class="badge badge-role-faculty px-2 px-sm-3 py-1 py-sm-2 rounded-pill d-none d-sm-inline-flex align-items-center"><i class="fa-solid fa-chalkboard-user me-1"></i> Faculty</span>
                 {% elif is_student %}
-                    <span class="badge badge-role-student px-3 py-2 rounded-pill"><i class="fa-solid fa-user-graduate me-1"></i> Student</span>
+                    <span class="badge badge-role-student px-2 px-sm-3 py-1 py-sm-2 rounded-pill d-none d-sm-inline-flex align-items-center"><i class="fa-solid fa-user-graduate me-1"></i> Student</span>
                 {% endif %}
 
                 <!-- Profile Dropdown -->
                 <div class="dropdown">
-                    <button class="btn btn-white d-flex align-items-center gap-2 border-0" data-bs-toggle="dropdown">
-                        <img src="{{ request.user.avatar_url }}" alt="User" class="rounded-circle" width="36" height="36">
-                        <span class="fw-medium text-dark d-none d-sm-inline">{{ request.user.get_full_name|default:request.user.username }}</span>
-                        <i class="fa-solid fa-chevron-down text-secondary" style="font-size: 0.75rem;"></i>
+                    <button class="btn btn-white d-flex align-items-center gap-1 gap-sm-2 border-0 p-1 p-sm-2" data-bs-toggle="dropdown" aria-expanded="false">
+                        <img src="{{ request.user.avatar_url }}" alt="User" class="rounded-circle object-fit-cover" width="32" height="32" onerror="this.onerror=null; this.src='https://ui-avatars.com/api/?name={{ request.user.username }}&background=4f46e5&color=fff&size=128';">
+                        <span class="fw-medium text-dark d-none d-sm-inline text-truncate" style="max-width: 140px;">{{ request.user.get_full_name|default:request.user.username }}</span>
+                        <i class="fa-solid fa-chevron-down text-secondary" style="font-size: 0.72rem;"></i>
                     </button>
                     <ul class="dropdown-menu dropdown-menu-end shadow-sm border-0">
+                        <li class="px-3 py-2 border-bottom d-sm-none">
+                            <div class="fw-bold small text-dark">{{ request.user.get_full_name|default:request.user.username }}</div>
+                            <div class="small text-muted">{{ user_role }}</div>
+                        </li>
                         <li><a class="dropdown-item" href="{% url 'profile' %}"><i class="fa-solid fa-user me-2 text-secondary"></i> View Profile</a></li>
                         <li><a class="dropdown-item" href="{% url 'change_password' %}"><i class="fa-solid fa-key me-2 text-secondary"></i> Change Password</a></li>
                         <li><hr class="dropdown-divider"></li>
@@ -519,27 +572,73 @@
         const sidebarBackdrop = document.getElementById('sidebarBackdrop');
 
         function openSidebar() {
-            if (sidebar) sidebar.classList.add('show');
+            if (!sidebar) return;
+            sidebar.classList.add('show');
             if (sidebarBackdrop) sidebarBackdrop.classList.add('show');
+            if (sidebarToggle) sidebarToggle.setAttribute('aria-expanded', 'true');
             document.body.style.overflow = 'hidden';
         }
 
         function closeSidebar() {
-            if (sidebar) sidebar.classList.remove('show');
+            if (!sidebar) return;
+            sidebar.classList.remove('show');
             if (sidebarBackdrop) sidebarBackdrop.classList.remove('show');
+            if (sidebarToggle) sidebarToggle.setAttribute('aria-expanded', 'false');
             document.body.style.overflow = '';
         }
 
-        if (sidebarToggle) sidebarToggle.addEventListener('click', openSidebar);
+        function toggleSidebar() {
+            if (sidebar && sidebar.classList.contains('show')) {
+                closeSidebar();
+            } else {
+                openSidebar();
+            }
+        }
+
+        if (sidebarToggle) sidebarToggle.addEventListener('click', toggleSidebar);
         if (sidebarClose) sidebarClose.addEventListener('click', closeSidebar);
         if (sidebarBackdrop) sidebarBackdrop.addEventListener('click', closeSidebar);
 
-        // Auto-close drawer on link click in mobile viewport
-        if (window.innerWidth < 992) {
-            document.querySelectorAll('.sidebar .nav-link').forEach(link => {
-                link.addEventListener('click', closeSidebar);
+        // Close drawer with Escape key
+        document.addEventListener('keydown', (e) => {
+            if (e.key === 'Escape' && sidebar && sidebar.classList.contains('show')) {
+                closeSidebar();
+            }
+        });
+
+        // Always close mobile drawer on navigation link click when in mobile/tablet viewport
+        document.querySelectorAll('.sidebar .nav-link').forEach(link => {
+            link.addEventListener('click', () => {
+                if (window.innerWidth < 992) closeSidebar();
             });
-        }
+        });
+
+        // Reset drawer state when resizing back to desktop
+        window.addEventListener('resize', () => {
+            if (window.innerWidth >= 992 && sidebar && sidebar.classList.contains('show')) {
+                closeSidebar();
+            }
+        });
+
+        // Highlight active sidebar nav link
+        (function highlightActiveNav() {
+            const currentPath = window.location.pathname;
+            const links = document.querySelectorAll('.sidebar .nav-link');
+            let bestMatch = null;
+            links.forEach(link => {
+                try {
+                    const linkPath = new URL(link.href).pathname;
+                    if (currentPath === linkPath || (linkPath !== '/' && currentPath.startsWith(linkPath))) {
+                        if (!bestMatch || linkPath.length > new URL(bestMatch.href).pathname.length) {
+                            bestMatch = link;
+                        }
+                    }
+                } catch (err) {}
+            });
+            if (bestMatch) {
+                bestMatch.classList.add('active');
+            }
+        })();
     </script>
     {% block extra_js %}{% endblock %}
 </body>
