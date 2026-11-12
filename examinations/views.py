@@ -176,6 +176,9 @@ def student_results_view(request):
 
 @login_required
 def download_marksheet_pdf_view(request, exam_id):
+    if request.user.is_student_role:
+        messages.info(request, "Marksheet PDF download is disabled for student accounts.")
+        return redirect('student_results')
     examination = get_object_or_404(Examination, id=exam_id)
     student = None
     if request.user.is_student_role and hasattr(request.user, 'student_profile'):

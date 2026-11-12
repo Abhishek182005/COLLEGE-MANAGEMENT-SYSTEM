@@ -84,3 +84,32 @@ class Marks(models.Model):
     def save(self, *args, **kwargs):
         self.grade = self.calculate_grade()
         super().save(*args, **kwargs)
+
+
+class InternalAssessmentRecord(models.Model):
+    """Stores customizable/confirmed Internal Assessment (IA) marks for Final IA Report (Course Wise)."""
+    CONFIRM_CHOICES = [
+        ('', 'Pending'),
+        ('CONFIRMED', 'Confirmed'),
+    ]
+
+    student = models.ForeignKey(Student, on_delete=models.CASCADE, related_name='ia_records')
+    subject = models.ForeignKey(Subject, on_delete=models.CASCADE, related_name='ia_records')
+    academic_session = models.ForeignKey(AcademicSession, on_delete=models.SET_NULL, null=True, blank=True)
+    max_ia_marks = models.DecimalField(max_digits=5, decimal_places=2, default=Decimal('30.00'))
+    attd_max_marks = models.DecimalField(max_digits=4, decimal_places=1, default=Decimal('6.0'))
+    final_attd_marks = models.DecimalField(max_digits=5, decimal_places=2, null=True, blank=True)
+    marks_ct = models.DecimalField(max_digits=5, decimal_places=2, null=True, blank=True)
+    marks_assi = models.DecimalField(max_digits=5, decimal_places=2, null=True, blank=True)
+    moderation_marks = models.DecimalField(max_digits=5, decimal_places=2, null=True, blank=True)
+    confirm_status = models.CharField(max_length=20, choices=CONFIRM_CHOICES, blank=True, default='')
+    confirm_date = models.DateField(null=True, blank=True)
+    updated_by = models.ForeignKey(Faculty, on_delete=models.SET_NULL, null=True, blank=True)
+    updated_at = models.DateTimeField(auto_now=True)
+
+    class Meta:
+        unique_together = ('student', 'subject')
+        ordering = ['student__roll_number', 'subject__code']
+
+    def __str__(self):
+        return f"IA: {self.student.roll_number} - {self.subject.code}"

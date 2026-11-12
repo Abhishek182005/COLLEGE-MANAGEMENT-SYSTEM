@@ -9,13 +9,8 @@
     <div class="d-flex flex-wrap justify-content-between align-items-center gap-3 mb-4">
         <div>
             <h5 class="fw-bold mb-1">Published Examination Results</h5>
-            <p class="text-secondary small mb-0">Official grade cards, internal assessment evaluations, and downloadable marksheet PDFs.</p>
+            <p class="text-secondary small mb-0">View your published examination scores and internal assessment evaluations.</p>
         </div>
-        {% if selected_exam %}
-            <a href="{% url 'download_marksheet_pdf' selected_exam.id %}?student_id={{ student.id }}" target="_blank" class="btn btn-outline-danger">
-                <i class="fa-solid fa-file-pdf me-2"></i> Download Official Marksheet (PDF)
-            </a>
-        {% endif %}
     </div>
 
     <!-- Exam Filter -->

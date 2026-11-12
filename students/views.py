@@ -176,9 +176,11 @@ def student_archive_view(request, pk):
 
 @login_required
 def student_id_card_pdf_view(request, pk):
+    if request.user.is_student_role:
+        messages.info(request, "ID card download is disabled for student accounts.")
+        return redirect('student_dashboard')
     student = get_object_or_404(Student, pk=pk)
-    # Check permissions: Admin, Faculty, or the student themselves
-    if not (request.user.is_admin_role or request.user.is_faculty_role or (hasattr(request.user, 'student_profile') and request.user.student_profile == student)):
+    if not (request.user.is_admin_role or request.user.is_faculty_role):
         messages.error(request, "Permission denied.")
         return redirect('dashboard_redirect')
 
